@@ -1,5 +1,451 @@
 <!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="oldeucryptoboi" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/memory-vs-rlm/"><!-- Primary Meta Tags --><title>Memory-Assisted Learning vs Recursive Language Models: An Empirical Study</title><meta name="title" content="Memory-Assisted Learning vs Recursive Language Models: An Empirical Study"><meta name="description" content="Can an LLM improve at a game by reading its own past failures? A 72-game tic-tac-toe experiment using a swarm-based testbed shows hybrid memory+code beats pure prompt-recursive self-improvement."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/memory-vs-rlm/"><meta property="og:title" content="Memory-Assisted Learning vs Recursive Language Models: An Empirical Study"><meta property="og:description" content="Can an LLM improve at a game by reading its own past failures? A 72-game tic-tac-toe experiment using a swarm-based testbed shows hybrid memory+code beats pure prompt-recursive self-improvement."><meta property="og:site_name" content="oldeucryptoboi"><meta property="article:published_time" content="2026-02-28T00:00:00.000Z"><meta property="article:tag" content="AI Agents"><meta property="article:tag" content="KarnEvil9"><meta property="article:tag" content="Machine Learning"><meta property="article:tag" content="Tic-Tac-Toe"><meta property="article:tag" content="Research"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/memory-vs-rlm/"><meta name="twitter:title" content="Memory-Assisted Learning vs Recursive Language Models: An Empirical Study"><meta name="twitter:description" content="Can an LLM improve at a game by reading its own past failures? A 72-game tic-tac-toe experiment using a swarm-based testbed shows hybrid memory+code beats pure prompt-recursive self-improvement."><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"oldeucryptoboi","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Memory-Assisted Learning vs Recursive Language Models: An Empirical Study","description":"Can an LLM improve at a game by reading its own past failures? A 72-game tic-tac-toe experiment using a swarm-based testbed shows hybrid memory+code beats pure prompt-recursive self-improvement.","url":"https://oldeucryptoboi.com/blog/memory-vs-rlm/","datePublished":"2026-02-28T00:00:00.000Z","author":{"@type":"Person","name":"oldeucryptoboi","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"oldeucryptoboi","url":"https://oldeucryptoboi.com"},"keywords":"AI Agents, KarnEvil9, Machine Learning, Tic-Tac-Toe, Research","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/memory-vs-rlm/"}}</script><link rel="stylesheet" href="/_astro/_slug_.Cx7orS44.css">
 <style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
-</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2>oldeucryptoboi</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-02-28T00:00:00.000Z"> Feb 28, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>Memory-Assisted Learning vs Recursive Language Models: An Empirical Study</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>AI Agents</span><span data-astro-cid-bvzihdzo>KarnEvil9</span><span data-astro-cid-bvzihdzo>Machine Learning</span><span data-astro-cid-bvzihdzo>Tic-Tac-Toe</span><span data-astro-cid-bvzihdzo>Research</span> </div> </div>  <p>Read the full paper at <a href="https://oldeucryptoboi.com/KarnEvil9/demos/memory-vs-rlm.html">oldeucryptoboi.com/KarnEvil9/demos/memory-vs-rlm.html</a>.</p>  <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/skills-vs-karnevil9/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>Anthropic Just Validated What KarnEvil9 Has Been Building</span> </a> <a class="nav-link nav-next" href="/blog/tarkus-native-client/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Next</span> <span class="nav-title" data-astro-cid-bvzihdzo>Tarkus: a Native macOS Client for My AI Agent</span> </a> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2>oldeucryptoboi</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-02-28T00:00:00.000Z"> Feb 28, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>Memory-Assisted Learning vs Recursive Language Models: An Empirical Study</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>AI Agents</span><span data-astro-cid-bvzihdzo>KarnEvil9</span><span data-astro-cid-bvzihdzo>Machine Learning</span><span data-astro-cid-bvzihdzo>Tic-Tac-Toe</span><span data-astro-cid-bvzihdzo>Research</span> </div> </div>  <h2 id="can-an-llm-improve-at-a-game-by-reading-its-own-past-failures">Can an LLM improve at a game by reading its own past failures?</h2>
+<p><strong>72 games. 72 lessons (36/phase). 6 experimental runs.</strong></p>
+<p>Dependencies: Claude Haiku 4.5, Claude Sonnet 4.5, KarnEvil9 Swarm Package</p>
+<h2 id="abstract">Abstract</h2>
+<p>This report compares two approaches for enabling an LLM to improve at strategic games without weight updates:</p>
+<p><strong>(A) Memory-Assisted Learning (MAL):</strong> Combines LLM reasoning with deterministic code rules derived from accumulated lessons, allowing rule-based execution for specific decision classes.</p>
+<p><strong>(B) Prompt-recursive lessons:</strong> Appends the model’s own prior analyses back into its prompt context; all decisions remain language-mediated.</p>
+<p>Both systems involve an LLM playing tic-tac-toe as player O (moving first) against a deterministic minimax opponent playing X (moving second) with a 10% random blunder rate.</p>
+<p><strong>Key Results:</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Metric</th><th>MAL</th><th>Prompt-recursive</th></tr></thead><tbody><tr><td>Run 1 loss rate</td><td>41.7%</td><td>41.7%</td></tr><tr><td>Run 3 loss rate</td><td>0%</td><td>25.0%</td></tr><tr><td>Dominant failure</td><td>Missed blocks</td><td>Two-in-a-row threats not blocked</td></tr></tbody></table>
+<p><strong>Core Finding:</strong> Both approaches rapidly generate strategically correct statements (“block two-in-a-row threats”), yet prompt-only recursion struggles to convert those insights into reliable move-level execution. MAL bridges this “knowing-doing gap” by codifying stable patterns into deterministic procedures, achieving monotonic improvement with lower token costs once rules activate.</p>
+<p><strong>Critical Distinction:</strong> In reinforcement learning, knowledge is stored in model weights. In prompt-recursive learning, knowledge is stored in context. Neither phase modifies any weights.</p>
+<h2 id="1-background-and-related-work">1. Background and Related Work</h2>
+<p>This experiment sits at the intersection of external memory systems, agentic tool use, and inference-time scaffolding. Key research threads include:</p>
+<h3 id="memory-augmentation-and-retrieval">Memory Augmentation and Retrieval</h3>
+<ul>
+<li><strong>Retrieval-Augmented Generation (RAG):</strong> Combines parametric memory with retrieved documents. (Lewis et al. 2020)</li>
+<li><strong>kNN-LMs and RETRO:</strong> Retrieval-augmented language modeling via nearest-neighbor datastores or large corpora. (Khandelwal et al. 2020; Borgeaud et al. 2022)</li>
+<li><strong>Agent memory hierarchies:</strong> Systems managing memory tiers and context paging. (Packer et al. 2023 — MemGPT)</li>
+</ul>
+<h3 id="language-feedback-loops-and-agentic-learning-without-weight-updates">Language Feedback Loops and Agentic Learning Without Weight Updates</h3>
+<ul>
+<li><strong>Reflexion:</strong> Improves agents using verbal reflection stored in episodic memory, not weight updates. (Shinn et al. 2023)</li>
+<li><strong>Generative Agents:</strong> Structured memory plus reflection for long-horizon behavior in simulations. (Park et al. 2023)</li>
+</ul>
+<h3 id="tool-use-reasoning-and-acting-and-programmatic-scaffolds">Tool Use, Reasoning-and-Acting, and Programmatic Scaffolds</h3>
+<ul>
+<li><strong>ReAct:</strong> Interleaves reasoning traces with actions querying external environments. (Yao et al. 2022)</li>
+<li><strong>Toolformer:</strong> Trains language models to decide when to call external tools and incorporate results. (Schick et al. 2023)</li>
+</ul>
+<h3 id="long-context-limitations-and-recursive-language-models">Long-Context Limitations and Recursive Language Models</h3>
+<ul>
+<li><strong>Context degradation (“context rot”):</strong> Performance degrades with increasing input length in non-uniform ways. (Chroma Research 2025)</li>
+<li><strong>RULER:</strong> Benchmark extending needle-in-haystack tests into multi-hop and aggregation tasks, showing performance drops as context grows. (Hsieh et al. 2024)</li>
+<li><strong>Interactive reading:</strong> Treating the model as an agent that decides how to read long contexts via iterative prompting (MemWalker). (Chen et al. 2023)</li>
+<li><strong>Recursive Language Models (RLMs):</strong> An inference strategy treating long prompts as external environments, allowing programmatic decomposition and recursive sub-calls. (Zhang, Kraska, Khattab 2025)</li>
+</ul>
+<h3 id="where-this-study-fits">Where This Study Fits</h3>
+<p>MAL functions as a lightweight agent architecture: the LLM creates and updates natural-language memory, but deterministic code executes critical subroutines. Phase B is closer to “reflection-in-context” than to the full 2025 MIT CSAIL RLM framework.</p>
+<h2 id="2-terminology-note">2. Terminology Note</h2>
+<p>In recent literature, “Recursive Language Models (RLMs)” refers to an inference paradigm where an LLM treats the prompt as an external environment and can programmatically inspect, decompose, and recursively invoke sub-calls. This report’s Phase B implements a simplified “prompt-recursive lesson injection” baseline, not the full MIT CSAIL RLM framework. See arXiv:2512.24601 for complete details.</p>
+<h2 id="3-experimental-setup">3. Experimental Setup</h2>
+<h3 id="task">Task</h3>
+<p>Tic-Tac-Toe provides a controlled environment where optimal play is known and failure modes are classifiable. The learner always plays <strong>O</strong> and <strong>moves first</strong> — a deliberate advantage. The opponent plays X (second) using <strong>deterministic minimax</strong> with a <strong>10% random blunder rate</strong>: on any move, there is a 1-in-10 chance the expert picks a random legal square instead of the optimal one.</p>
+<p><strong>Research question:</strong> Given first-move advantage and a near-perfect opponent with a known 10% weakness, can an LLM learn to reliably exploit that weakness through accumulated experience?</p>
+<h3 id="agent-testbed">Agent Testbed</h3>
+<p>A three-node KarnEvil9 swarm mesh runs repeated games and extracts lessons:</p>
+<ul>
+<li><strong>Learner agent (O):</strong> Chooses moves; receives accumulated lesson text. Moves first.</li>
+<li><strong>Opponent agent (X):</strong> Deterministic minimax policy with 10% random blunder.</li>
+<li><strong>Referee node:</strong> Coordinates games, delegates moves, extracts lessons from transcripts.</li>
+</ul>
+<h3 id="phases">Phases</h3>
+<p><strong>Phase A: Memory-Assisted Learning (MAL)</strong></p>
+<p>Uses an LLM for general reasoning and lesson generation. Introduces programmatic rules that bypass the model when conditions are met (immediate wins, mandatory blocks). Intent: convert reliable high-level insights into deterministic execution.</p>
+<p><strong>Phase B: Prompt-Recursive Lessons (Simplified Baseline)</strong></p>
+<p>Removes the programmatic rule layer. Every learner move is produced by the LLM, guided only by accumulated lesson text. The Phase B baseline deliberately used a stronger model (Claude Sonnet 4.5) to give the prompt-only approach the best possible chance.</p>
+<h3 id="controls">Controls</h3>
+<ul>
+<li>Memory wiped between phases (Phase B starts with 0 lessons).</li>
+<li>Same opponent configuration (deterministic minimax + 10% random blunder).</li>
+<li>Same lesson extraction prompt.</li>
+<li>Learner always plays O and moves first.</li>
+<li>12 games per run, lessons persist across runs within each phase.</li>
+</ul>
+<h3 id="evaluation-metrics">Evaluation Metrics</h3>
+<ul>
+<li>Win/loss/draw counts per run.</li>
+<li>Loss rate (losses / 12 games) per run.</li>
+<li>Failure mode labeling for each loss (missed block, fork trap, etc.).</li>
+</ul>
+<h2 id="4-results">4. Results</h2>
+<h3 id="phase-a-memory-assisted-learning-mal">Phase A: Memory-Assisted Learning (MAL)</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Run</th><th>Lessons in</th><th>Wins</th><th>Losses</th><th>Draws</th><th>Loss rate</th></tr></thead><tbody><tr><td>MAL-1 (fresh)</td><td>0</td><td>2</td><td>5</td><td>5</td><td>41.7%</td></tr><tr><td>MAL-2</td><td>12</td><td>3</td><td>1</td><td>8</td><td>8.3%</td></tr><tr><td>MAL-3</td><td>24</td><td>4</td><td>0</td><td>8</td><td>0%</td></tr></tbody></table>
+<p>MAL reaches zero losses by run 3, coinciding with activation of deterministic block logic that prevents missed two-in-a-row defenses.</p>
+<h3 id="phase-b-prompt-recursive-lessons-baseline">Phase B: Prompt-Recursive Lessons Baseline</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Run</th><th>Lessons in</th><th>Wins</th><th>Losses</th><th>Draws</th><th>Loss rate</th></tr></thead><tbody><tr><td>B-1 (fresh)</td><td>0</td><td>1</td><td>5</td><td>6</td><td>41.7%</td></tr><tr><td>B-2</td><td>12</td><td>2</td><td>6</td><td>4</td><td>50.0%</td></tr><tr><td>B-3</td><td>24</td><td>1</td><td>3</td><td>8</td><td>25.0%</td></tr></tbody></table>
+<p>Note the non-monotonic trajectory: more lessons can help, but can also introduce noise or conflicting guidance.</p>
+<h3 id="head-to-head-comparison">Head-to-Head Comparison</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Run</th><th>MAL loss rate</th><th>Prompt-recursive loss rate</th></tr></thead><tbody><tr><td>Run 1 (fresh)</td><td>41.7%</td><td>41.7%</td></tr><tr><td>Run 2 (12 lessons)</td><td>8.3%</td><td>50.0%</td></tr><tr><td>Run 3 (24 lessons)</td><td>0%</td><td>25.0%</td></tr></tbody></table>
+<h3 id="failure-mode-breakdown">Failure Mode Breakdown</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Failure Mode (losses only)</th><th>MAL occurrences</th><th>Prompt-recursive occurrences</th></tr></thead><tbody><tr><td>Failed to block a two-in-a-row threat</td><td>4 (67%)</td><td>9 (64%)</td></tr><tr><td>Fell into a fork trap</td><td>1 (17%)</td><td>3 (21%)</td></tr><tr><td>Poor positional play (edges over corners)</td><td>1 (17%)</td><td>2 (14%)</td></tr></tbody></table>
+<h2 id="5-analysis-and-interpretation">5. Analysis and Interpretation</h2>
+<h3 id="the-knowing-doing-gap">The Knowing-Doing Gap</h3>
+<p>After only a few games, both systems produced lessons describing correct strategy: “block two-in-a-row threats immediately,” “prioritize corners over edges,” “avoid fork setups.” The critical finding: the prompt-recursive baseline repeatedly failed at the simplest procedural task — reliably detecting and blocking imminent threats.</p>
+<p>A natural-language lesson like “always block when the opponent has two in a row” is strategically sound but algorithmically underspecified. It does not force an explicit scan over all eight winning lines or a deterministic board-state-to-block mapping. The lesson is strategic but not procedural. MAL reduces this gap by compiling strategy into deterministic control logic.</p>
+<h3 id="convergence-characteristics">Convergence Characteristics</h3>
+<p>MAL improves monotonically (5 -> 1 -> 0 losses), consistent with deterministic rules never regressing once enabled. The prompt-recursive baseline is non-monotonic (5 -> 6 -> 3 losses): adding more lesson text can introduce conflict, redundancy, or prompt drift — consistent with broader long-context research showing performance degradation as context grows.</p>
+<p><strong>Connection to Long-Context Research:</strong> While this experiment is small-scale, the non-monotonic behavior aligns with findings from long-context evaluation work. See Chroma’s Context Rot report and RULER benchmark.</p>
+<h3 id="purity-vs-practicality">Purity vs Practicality</h3>
+<p>The prompt-recursive baseline is attractive for simplicity: no special tooling, no hand-written heuristics. However, in environments where correctness depends on exact symbolic checks (like threat detection), code-level execution provides a large reliability and compute win.</p>
+<p><strong>Critical observation:</strong> The prompt-recursive approach used Claude Sonnet 4.5 (significantly more capable than Haiku 4.5) yet underperformed MAL with Haiku. This suggests the bottleneck is not model capability — it is the <strong>representation gap</strong> between natural-language lessons and procedural execution. A weaker model with code-level scaffolding outperforms a stronger model with only natural-language self-guidance.</p>
+<h2 id="6-token-economics-and-scaling-behavior">6. Token Economics and Scaling Behavior</h2>
+<h3 id="per-move-token-growth">Per-Move Token Growth</h3>
+<p>Both approaches inject lessons into the learner prompt, so input tokens grow approximately linearly with lesson count:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Lessons in memory</th><th>Estimated input tokens per move</th><th>Where observed</th></tr></thead><tbody><tr><td>0</td><td>~300</td><td>Run 1, game 1</td></tr><tr><td>12</td><td>~660</td><td>Run 2, game 1</td></tr><tr><td>24</td><td>~1,020</td><td>Run 3, game 1</td></tr><tr><td>36</td><td>~1,380</td><td>Run 3, game 12</td></tr></tbody></table>
+<h3 id="decomposing-the-cost-advantage">Decomposing the Cost Advantage</h3>
+<p>Once deterministic rules activate, MAL reduces LLM calls per game by bypassing the model for forced tactical decisions:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Metric</th><th>MAL (Run 3)</th><th>Prompt-recursive (Run 3)</th><th>Prompt-recursive (same model)</th></tr></thead><tbody><tr><td>LLM calls per game</td><td>~3.5</td><td>~6</td><td>~6</td></tr><tr><td>Total tokens per game</td><td>~3,100</td><td>~5,800</td><td>~5,800</td></tr><tr><td>Estimated per run (12 games)</td><td>~37,000</td><td>~70,000</td><td>~70,000</td></tr><tr><td>Model</td><td>Haiku 4.5</td><td>Sonnet 4.5</td><td>Haiku 4.5</td></tr><tr><td>Estimated cost per run</td><td>~$0.03</td><td>~$0.25</td><td>~$0.06</td></tr></tbody></table>
+<p>The headline comparison — MAL at ~$0.03 vs prompt-recursive at ~$0.25 — represents ~8x savings, but this conflates two independent variables:</p>
+<ol>
+<li><strong>Architectural advantage (~2x):</strong> MAL’s programmatic rules bypass Claude for ~50% of moves. Code execution is always cheaper than LLM inference.</li>
+<li><strong>Model pricing advantage (~4x):</strong> MAL used Haiku ($0.80/M input) while Phase B used Sonnet ($3/M input). This was deliberate — MAL’s scaffolding compensates for a weaker model — but represents a design choice.</li>
+</ol>
+<p>The third column shows the apples-to-apples comparison: prompt-recursive on Haiku would cost ~$0.06 per run, making MAL only ~2x cheaper. The architectural token savings is real but modest. <strong>The larger implication:</strong> MAL enables cheaper models by offloading critical decisions to code, while prompt-recursive learning demands more capable (and expensive) models because every decision flows through the LLM.</p>
+<h3 id="scaling-neither-has-infinite-context">Scaling: Neither Has Infinite Context</h3>
+<p>A natural question: does prompt-recursive learning offer scaling advantages through “infinite context”? This is misconceived. <strong>Both approaches are bounded by the context window</strong>, and MAL actually scales better:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Scaling property</th><th>MAL</th><th>Prompt-recursive</th></tr></thead><tbody><tr><td>Knowledge in context</td><td>Only unpromoted lessons</td><td>All lessons (entire history)</td></tr><tr><td>Knowledge in code</td><td>Promoted rules (zero tokens)</td><td>None</td></tr><tr><td>Context pressure at scale</td><td>Low (lessons graduate to code)</td><td>High (all lessons stay in prompt)</td></tr><tr><td>Cost trajectory</td><td>Flattens as rules absorb patterns</td><td>Grows linearly with experience</td></tr></tbody></table>
+<p>In MAL, high-confidence lessons are <strong>promoted to deterministic code</strong>, removing them from the context window entirely. MAL’s context pressure <em>decreases</em> as the system matures, while prompt-recursive context pressure only grows.</p>
+<p><strong>Note:</strong> Cost values are estimates depending on provider pricing, tokenization, and exact prompts. Use as order-of-magnitude guidance, not guaranteed billing.</p>
+<h2 id="7-failure-modes">7. Failure Modes</h2>
+<h3 id="training-signals-for-recursive-control">Training Signals for Recursive Control</h3>
+<p>The experiment fixed recursion structure externally: 12 games per run, 3 runs per phase, one lesson per game. A full recursive system would need the model to control its own recursion — deciding <em>when</em> to recurse, <em>when</em> to consolidate, and <em>when</em> to stop. The data suggests three training signals:</p>
+<p><strong>Lesson similarity as a halt signal:</strong> By run 3, over 70% of lessons were restatements of “take opposite corners” and “block two-in-a-row.” A system measuring semantic similarity could detect saturation. Signal: <em>if the last K lessons have cosine similarity > 0.85 with existing lessons, stop recursing and synthesize.</em></p>
+<p><strong>Performance plateau as a depth signal:</strong> Phase B run 2 performed worse than run 1 despite twice the lessons. A system monitoring its own win/loss rate could detect regression. Signal: <em>if loss rate hasn’t decreased over N iterations, change the recursion strategy rather than continuing.</em></p>
+<p><strong>Contradiction detection as a consolidation trigger:</strong> Directly contradictory lessons accumulated: game 5 says “prioritize offense over defense,” game 6 says “block before pursuing threats.” Signal: <em>if lessons contain opposing directives for the same game state, recurse into consolidation before continuing play.</em></p>
+<p>These signals point toward a <strong>meta-recursive architecture</strong>: the outer loop generates experience, an inner loop monitors quality, and a control layer decides whether to continue, consolidate, or terminate. The Phase B run 2 performance regression demonstrates what happens without these mechanisms.</p>
+<h3 id="looping-hallucinations">Looping Hallucinations</h3>
+<p>Self-referential feedback loops create a failure mode traditional RL systems avoid: <strong>looping hallucinations</strong>, where the model’s incorrect outputs compound through iterations, creating degenerative spirals.</p>
+<p>A mild form appeared in the data. The learner generated contradictory lessons across games 5-6: one advocating offense, the other defense. In subsequent games the model oscillated between them, unable to determine which applies because lessons lack conditional specificity.</p>
+<p><strong>Degenerative loop:</strong> Model produces incorrect analysis -> incorrect analysis becomes a lesson -> lesson biases future reasoning -> biased reasoning produces more incorrect analysis -> each iteration reinforces the error. Unlike RL, where reward signals allow correction, prompt-recursive learning has <strong>no error-correction mechanism</strong>. A bad lesson persists in context indefinitely.</p>
+<p>In tic-tac-toe, this remained bounded. In open-ended domains (code generation, strategic planning, research synthesis), a looping hallucination could be catastrophic: the model confidently generates an incorrect pattern, encodes it as a lesson, and applies it to every subsequent task, each application generating new lessons that further reinforce the mistake.</p>
+<p><strong>Mitigations:</strong></p>
+<ul>
+<li><strong>External validation:</strong> Ground-truth checks on lesson accuracy before storage.</li>
+<li><strong>Lesson decay:</strong> Reduce weight of older lessons, allowing the system to “forget” early mistakes.</li>
+<li><strong>Adversarial self-critique:</strong> Ask the model to argue against each new lesson before acceptance.</li>
+<li><strong>Promotion to code (MAL’s approach):</strong> Code is verifiable in ways natural-language lessons are not.</li>
+</ul>
+<h2 id="8-threats-to-validity">8. Threats to Validity</h2>
+<ul>
+<li><strong>Model mismatch across phases:</strong> The prompt-recursive baseline used a stronger model (Sonnet) than MAL (Haiku). This makes the result conservative in MAL’s favor on reliability but complicates attributing differences solely to architecture.</li>
+<li><strong>Small sample size:</strong> 36 games per phase is enough to observe large effect sizes (like 0 vs non-zero losses), but not enough to precisely estimate variance or small differences.</li>
+<li><strong>Non-independence:</strong> Lessons accumulate across runs within a phase, so runs are not independent trials.</li>
+<li><strong>Opponent stochasticity:</strong> A 10% blunder rate adds variance; some wins/losses may reflect opponent noise rather than learner improvement.</li>
+<li><strong>Prior knowledge:</strong> LLMs likely have pretraining exposure to Tic-Tac-Toe optimal strategy. Measured improvements concern <em>execution consistency</em> given a prompt and scaffolding, not learning from scratch.</li>
+</ul>
+<h2 id="9-lessons-learned">9. Lessons Learned</h2>
+<p>This toy domain makes failure modes legible. The experiments suggest practical insights about “learning without weight updates” in LLM agents:</p>
+<ul>
+<li><strong>Natural-language advice is not a procedure.</strong> Agents often verbalize correct strategy while failing to execute corresponding scan-and-act routines. Reliability improves when strategy is compiled into explicit algorithms.</li>
+<li><strong>Memory helps until it becomes clutter.</strong> Accumulating lessons can improve behavior but can introduce redundancy, conflict, and prompt drift. Without deduplication and consolidation, longer lesson buffers are non-monotonic in performance.</li>
+<li><strong>Deterministic promotion yields monotonicity.</strong> Once a rule is expressed as code, it does not “forget” or regress, and it lowers variance from sampling.</li>
+<li><strong>Benchmarks must separate policy improvement from opponent randomness.</strong> A blunder-rate opponent reasonably avoids draw-only play, but injects variance. Reporting random seeds, realized blunders, and confidence intervals matters even in small domains.</li>
+<li><strong>Terminology needs to match current literature.</strong> “Recursive Language Models” has a specific meaning in recent long-context work. If the system is a lesson-injection loop rather than a full prompt-as-environment recursive decomposition framework, naming it explicitly prevents confusion.</li>
+</ul>
+<p><strong>Design pattern:</strong> Use the LLM to explore, hypothesize, and summarize. Use deterministic code to execute parts demanding perfect precision or exhaustive checks. Treat promotion-to-code as a reliability and cost optimization, not a retreat from learning.</p>
+<h2 id="10-whats-next">10. What’s Next</h2>
+<p>Current results are a useful mechanistic demonstration but not strong evidence about general learning dynamics. Valuable follow-ups fall into three buckets: tightening evaluation, strengthening the memory loop, and testing generality.</p>
+<h3 id="tighten-the-evaluation">Tighten the Evaluation</h3>
+<ol>
+<li><strong>Remove the model confound:</strong> Run both conditions on the same base model (ideally on at least two models) to isolate architecture from capability.</li>
+<li><strong>Add a true no-learning baseline:</strong> Same prompts and model, but with lessons disabled and no deterministic rules.</li>
+<li><strong>Increase sample size and control randomness:</strong> Run more games per condition, fix opponent seeds, and report confidence intervals for loss rates and key failure modes.</li>
+<li><strong>Measure tokens and latency:</strong> Replace estimated token counts with measured input-output token logs per call, per game, and per run.</li>
+</ol>
+<h3 id="strengthen-the-learning-loop">Strengthen the Learning Loop</h3>
+<ol>
+<li><strong>Lesson consolidation:</strong> Deduplicate and merge lessons into a small canonical set, with explicit conflict detection and versioning.</li>
+<li><strong>Verification gates:</strong> Before accepting a lesson, test it against a verifier or simulator. For Tic-Tac-Toe this can be exact: validate that a proposed rule never increases loss probability against minimax.</li>
+<li><strong>Structured lessons:</strong> Experiment with JSON schemas or checklists (for example, “scan all 8 lines, block if any has 2 opponent marks and 1 empty”). This tests whether failures stem from language ambiguity or attention/execution.</li>
+<li><strong>Full RLM-style scaffolding:</strong> Implement a prompt-as-environment REPL workflow and recursive sub-calls to align with modern RLM definitions in the literature.</li>
+</ol>
+<h3 id="test-generality-beyond-tic-tac-toe">Test Generality Beyond Tic-Tac-Toe</h3>
+<ol>
+<li><strong>Harder games:</strong> Small board games with larger state spaces and more tactical patterns (for example, Connect Four) stress both search and memory.</li>
+<li><strong>Long-context tasks:</strong> Apply the same MAL vs prompt-recursive baseline to long-document QA, codebase navigation, or deep-research benchmarks.</li>
+<li><strong>Agentic workflows:</strong> Evaluate whether promotion-to-code improves stability in multi-step tool-use tasks, where verbal plans often fail at execution details.</li>
+</ol>
+<h2 id="11-reproducibility-checklist">11. Reproducibility Checklist</h2>
+<p><strong>Code location:</strong> <a href="https://github.com/oldeucryptoboi/KarnEvil9">github.com/oldeucryptoboi/KarnEvil9</a></p>
+<p><strong>Experiment driver:</strong> <a href="https://github.com/oldeucryptoboi/KarnEvil9/blob/master/scripts/tic-tac-toe-swarm.ts">scripts/tic-tac-toe-swarm.ts</a></p>
+<ul>
+<li><strong>Models:</strong> Claude Haiku 4.5 (Phase A), Claude Sonnet 4.5 (Phase B).</li>
+<li><strong>Opponent policy:</strong> Deterministic minimax + 10% random blunder rate.</li>
+<li><strong>Runs:</strong> 3 runs per phase, 12 games per run.</li>
+<li><strong>Lesson persistence:</strong> Within-phase accumulation (0 -> 12 -> 24 lessons).</li>
+<li><strong>Key prompts:</strong> System prompt for the learner, and the post-game lesson extraction prompt.</li>
+<li><strong>Random seeds:</strong> Record and fix seeds for opponent blunders and any sampling.</li>
+<li><strong>Logging:</strong> Store full game transcripts and lessons per game.</li>
+</ul>
+<p>When publishing results, also include: exact model versions, temperature/top-p settings, max tokens, and a reproducible environment lockfile.</p>
+<h2 id="12-references">12. References</h2>
+<ol>
+<li>Zhang, A. L., Kraska, T., Khattab, O. (2025). <em>Recursive Language Models</em>. arXiv:2512.24601.</li>
+<li>Lewis, P. et al. (2020). <em>Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks</em>. arXiv:2005.11401.</li>
+<li>Khandelwal, U. et al. (2020). <em>Generalization through Memorization: Nearest Neighbor Language Models</em>. ICLR 2020. arXiv:1911.00172.</li>
+<li>Borgeaud, S. et al. (2022). <em>Improving Language Models by Retrieving from Trillions of Tokens</em>. ICML 2022. arXiv:2112.04426.</li>
+<li>Packer, C. et al. (2023). <em>MemGPT: Towards LLMs as Operating Systems</em>. arXiv:2310.08560.</li>
+<li>Shinn, N. et al. (2023). <em>Reflexion: Language Agents with Verbal Reinforcement Learning</em>. arXiv:2303.11366.</li>
+<li>Park, J. S. et al. (2023). <em>Generative Agents: Interactive Simulacra of Human Behavior</em>. arXiv:2304.03442.</li>
+<li>Yao, S. et al. (2022). <em>ReAct: Synergizing Reasoning and Acting in Language Models</em>. arXiv:2210.03629.</li>
+<li>Schick, T. et al. (2023). <em>Toolformer: Language Models Can Teach Themselves to Use Tools</em>. arXiv:2302.04761.</li>
+<li>Chroma Research (2025). <em>Context Rot: How Increasing Input Tokens Impacts LLM Performance</em>.</li>
+<li>Hsieh, C.-P. et al. (2024). <em>RULER: What’s the Real Context Size of Your Long-Context Language Models?</em> arXiv:2404.06654.</li>
+<li>Chen, H. et al. (2023). <em>Walking Down the Memory Maze: Beyond Context Limit through Interactive Reading</em>. arXiv:2310.05029.</li>
+</ol>  <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/skills-vs-karnevil9/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>Anthropic Just Validated What KarnEvil9 Has Been Building</span> </a> <a class="nav-link nav-next" href="/blog/tarkus-native-client/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Next</span> <span class="nav-title" data-astro-cid-bvzihdzo>Tarkus: a Native macOS Client for My AI Agent</span> </a> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
 &copy; 2026 oldeucryptoboi
 </div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

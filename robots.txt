@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://oldeucryptoboi.com/sitemap-index.xml

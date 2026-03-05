@@ -13,21 +13,21 @@ const posts = (await getCollection('blog'))
 const projects = [
 	{
 		name: 'KarnEvil9',
-		description: 'Deterministic AI agent runtime. Reference implementation of Google DeepMind\'s Intelligent AI Delegation framework — hash-chain journals, escrow bonds, futility monitoring, P2P delegation mesh.',
+		description: 'Deterministic AI agent runtime. Reference implementation of Google DeepMind\'s Intelligent AI Delegation framework.',
 		url: 'https://github.com/oldeucryptoboi/KarnEvil9',
-		tags: ['TypeScript', 'AI Agents', 'Delegation'],
+		status: 'ACTIVE',
 	},
 	{
 		name: 'Tarkus',
-		description: 'Personal PR agent. Publishes markdown to Substack, generates social media posts, cross-posts to X. The CLI that powers the content pipeline.',
+		description: 'Personal PR agent. Publishes markdown to Substack, generates social posts, cross-posts to X.',
 		url: 'https://github.com/oldeucryptoboi/md2substack',
-		tags: ['TypeScript', 'CLI', 'Automation'],
+		status: 'ACTIVE',
 	},
 	{
 		name: 'LAID',
-		description: 'LinkedIn AI Detector. Chrome extension that scores posts 0-100 using 14 heuristic signals backed by peer-reviewed research. Runs locally, no API key needed.',
+		description: 'LinkedIn AI Detector. Chrome extension — 14 heuristic signals, peer-reviewed research, optional LLM layer.',
 		url: 'https://github.com/oldeucryptoboi/linkedin-ai-detector',
-		tags: ['Chrome Extension', 'AI Detection', 'Heuristics'],
+		status: 'ACTIVE',
 	},
 ];
 ---
@@ -39,132 +39,162 @@ const projects = [
 		<style>
 			.hero {
 				text-align: center;
-				padding: 2em 0 3em;
+				padding: 3em 0 4em;
+				border-bottom: 1px solid var(--border);
+				margin-bottom: 3em;
 			}
 			.hero-banner {
-				max-width: 280px;
-				margin: 0 auto 1.5em;
+				max-width: 220px;
+				margin: 0 auto 2em;
 				display: block;
 				border-radius: 0;
+				opacity: 0.9;
 			}
 			.hero h1 {
-				font-size: 3.5em;
-				margin-bottom: 0.25em;
-				background: linear-gradient(135deg, var(--accent), #a78bfa);
-				-webkit-background-clip: text;
-				-webkit-text-fill-color: transparent;
-				background-clip: text;
+				font-size: 2.8em;
+				margin-bottom: 0.3em;
+				letter-spacing: 0.12em;
+				color: #e0e0e0;
 			}
 			.hero .tagline {
-				font-size: 1.25em;
-				color: var(--text-muted);
-				max-width: 600px;
+				font-size: 0.95em;
+				color: var(--text-dim);
+				max-width: 500px;
 				margin: 0 auto;
 				line-height: 1.6;
+				letter-spacing: 0.04em;
 			}
+
+			/* Sections */
 			.section-header {
 				display: flex;
 				justify-content: space-between;
-				align-items: baseline;
+				align-items: center;
 				margin-bottom: 1.5em;
+				padding-bottom: 0.75em;
 				border-bottom: 1px solid var(--border);
-				padding-bottom: 0.5em;
 			}
 			.section-header h2 {
-				font-size: 1.5em;
+				font-size: 0.85em;
 				margin: 0;
+				color: var(--hal-red);
+				letter-spacing: 0.1em;
 			}
 			.section-header a {
-				font-size: 0.9em;
+				font-size: 0.75em;
+				color: var(--text-dim);
 				text-decoration: none;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				font-family: "Atkinson", sans-serif;
+			}
+			.section-header a:hover {
+				color: var(--hal-red);
 			}
 			section {
-				margin-bottom: 3em;
+				margin-bottom: 3.5em;
 			}
 
 			/* Posts */
 			.posts {
 				display: flex;
 				flex-direction: column;
-				gap: 1.5em;
+				gap: 0;
 			}
 			.post-card {
 				display: block;
-				padding: 1.25em 1.5em;
-				background: var(--bg-card);
-				border: 1px solid var(--border);
-				border-radius: 8px;
+				padding: 1.25em 0;
+				border-bottom: 1px solid var(--border);
 				text-decoration: none;
-				transition: border-color 0.2s ease, box-shadow 0.2s ease;
+				transition: background 0.15s ease;
 			}
 			.post-card:hover {
-				border-color: var(--accent);
-				box-shadow: 0 0 20px var(--accent-glow);
+				background: var(--hal-red-subtle);
+			}
+			.post-card:hover h4 {
+				color: #fff;
+			}
+			.post-meta {
+				display: flex;
+				align-items: center;
+				gap: 0.75em;
+				margin-bottom: 0.3em;
+			}
+			.post-card .indicator {
+				width: 6px;
+				height: 6px;
+				border-radius: 50%;
+				background: var(--hal-red);
+				flex-shrink: 0;
 			}
 			.post-card h4 {
-				margin: 0 0 0.25em;
+				margin: 0;
 				color: var(--text);
-				font-size: 1.1em;
+				font-size: 1em;
+				font-family: "Atkinson", sans-serif;
+				text-transform: none;
+				letter-spacing: 0.02em;
+				transition: color 0.15s ease;
 			}
 			.post-card .date {
 				color: var(--text-dim);
-				font-size: 0.85em;
+				font-size: 0.75em;
+				letter-spacing: 0.04em;
 			}
 			.post-card .description {
 				color: var(--text-muted);
-				font-size: 0.9em;
-				margin-top: 0.5em;
+				font-size: 0.85em;
+				margin: 0.4em 0 0 0;
 				line-height: 1.5;
 			}
 
 			/* Projects */
 			.projects {
-				display: grid;
-				grid-template-columns: 1fr;
-				gap: 1.5em;
+				display: flex;
+				flex-direction: column;
+				gap: 0;
 			}
 			.project-card {
-				display: block;
-				padding: 1.5em;
-				background: var(--bg-card);
-				border: 1px solid var(--border);
-				border-radius: 8px;
+				display: flex;
+				align-items: baseline;
+				gap: 1.5em;
+				padding: 1em 0;
+				border-bottom: 1px solid var(--border);
 				text-decoration: none;
-				transition: border-color 0.2s ease, box-shadow 0.2s ease;
+				transition: background 0.15s ease;
 			}
 			.project-card:hover {
-				border-color: var(--accent);
-				box-shadow: 0 0 20px var(--accent-glow);
+				background: var(--hal-red-subtle);
 			}
-			.project-card h4 {
-				margin: 0 0 0.5em;
-				color: var(--accent);
-				font-size: 1.2em;
-			}
-			.project-card p {
-				color: var(--text-muted);
-				margin: 0 0 0.75em;
+			.project-name {
+				color: var(--hal-red);
+				font-family: "Atkinson", sans-serif;
+				font-weight: 700;
 				font-size: 0.9em;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				white-space: nowrap;
+				min-width: 120px;
+			}
+			.project-desc {
+				color: var(--text-muted);
+				font-size: 0.85em;
 				line-height: 1.5;
+				flex: 1;
 			}
-			.project-tags {
-				display: flex;
-				gap: 0.5em;
-				flex-wrap: wrap;
-			}
-			.project-tags span {
-				font-size: 0.75em;
-				padding: 0.2em 0.6em;
-				background: rgba(0, 212, 255, 0.1);
-				border: 1px solid rgba(0, 212, 255, 0.2);
-				border-radius: 4px;
-				color: var(--accent);
+			.project-status {
+				color: var(--text-dim);
+				font-size: 0.7em;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				font-family: "Atkinson", sans-serif;
+				white-space: nowrap;
 			}
 
 			@media (max-width: 720px) {
-				.hero h1 {
-					font-size: 2.5em;
-				}
+				.hero h1 { font-size: 2em; }
+				.project-card { flex-direction: column; gap: 0.3em; }
+				.project-status { display: none; }
 			}
 		</style>
 	</head>
@@ -172,7 +202,7 @@ const projects = [
 		<Header />
 		<main>
 			<div class="hero">
-				<img src="/banner.png" alt="Control console in a dome" class="hero-banner" />
+				<img src="/banner.png" alt="" class="hero-banner" />
 				<h1>oldcryptoboi</h1>
 				<p class="tagline">
 					AI agents, deterministic runtimes, and the code that runs them.
@@ -181,13 +211,16 @@ const projects = [
 
 			<section>
 				<div class="section-header">
-					<h2>Latest Posts</h2>
-					<a href="/blog">View all &rarr;</a>
+					<h2>Latest Transmissions</h2>
+					<a href="/blog">View all</a>
 				</div>
 				<div class="posts">
 					{posts.map((post) => (
 						<a class="post-card" href={`/blog/${post.id}/`}>
-							<h4>{post.data.title}</h4>
+							<div class="post-meta">
+								<span class="indicator"></span>
+								<h4>{post.data.title}</h4>
+							</div>
 							<span class="date"><FormattedDate date={post.data.pubDate} /></span>
 							<p class="description">{post.data.description}</p>
 						</a>
@@ -197,17 +230,15 @@ const projects = [
 
 			<section>
 				<div class="section-header">
-					<h2>Projects</h2>
-					<a href="/projects">View all &rarr;</a>
+					<h2>Systems</h2>
+					<a href="/projects">View all</a>
 				</div>
 				<div class="projects">
 					{projects.map((project) => (
 						<a class="project-card" href={project.url} target="_blank">
-							<h4>{project.name}</h4>
-							<p>{project.description}</p>
-							<div class="project-tags">
-								{project.tags.map((tag) => <span>{tag}</span>)}
-							</div>
+							<span class="project-name">{project.name}</span>
+							<span class="project-desc">{project.description}</span>
+							<span class="project-status">{project.status}</span>
 						</a>
 					))}
 				</div>

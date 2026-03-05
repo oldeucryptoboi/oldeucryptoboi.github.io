@@ -7,38 +7,38 @@ import { SITE_TITLE } from '../consts';
 const projects = [
 	{
 		name: 'KarnEvil9',
-		description: 'Deterministic AI agent runtime. The first public reference implementation of Google DeepMind\'s Intelligent AI Delegation framework (Tomasev, Franklin & Osindero, 2026). Hash-chain journals, escrow bonds, futility monitoring, Bayesian trust scoring, circuit breakers, P2P delegation mesh with 9 safety mechanisms.',
+		status: 'ACTIVE',
+		description: 'Deterministic AI agent runtime. The first public reference implementation of Google DeepMind\'s Intelligent AI Delegation framework. Hash-chain journals, escrow bonds, futility monitoring, Bayesian trust scoring, circuit breakers, P2P delegation mesh.',
 		url: 'https://github.com/oldeucryptoboi/KarnEvil9',
-		tags: ['TypeScript', 'AI Agents', 'Delegation', 'Deterministic Runtime'],
-		highlights: [
-			'SHA-256 hash-chain journal for tamper-evident audit trails',
-			'FutilityMonitor that catches runaway agentic loops',
-			'Graduated Authority with Bayesian trust scoring',
-			'Escrow bonds with SLO-based slashing',
+		specs: [
+			'SHA-256 hash-chain journal — tamper-evident audit trails',
+			'FutilityMonitor — catches runaway agentic loops',
+			'Graduated Authority — Bayesian trust scoring',
+			'Escrow bonds — SLO-based slashing',
 		],
 	},
 	{
 		name: 'Tarkus',
-		description: 'Personal PR agent. CLI tool that publishes markdown to Substack (with image upload), generates social media posts for X and LinkedIn, and cross-posts automatically. Powers the content pipeline for oldcryptoboi.',
+		status: 'ACTIVE',
+		description: 'Personal PR agent. Publishes markdown to Substack with image upload, generates social media posts for X and LinkedIn, cross-posts automatically. Powers the content pipeline.',
 		url: 'https://github.com/oldeucryptoboi/md2substack',
-		tags: ['TypeScript', 'CLI', 'Substack API', 'Automation'],
-		highlights: [
+		specs: [
 			'Markdown to Substack ProseMirror converter',
 			'Auto-generated tweets and LinkedIn posts',
 			'Direct posting to X via API',
-			'Image upload and CDN hosting',
+			'publish-web: deploy articles to this site',
 		],
 	},
 	{
 		name: 'LAID',
-		description: 'LinkedIn AI Detector. Open-source Chrome extension that scores every post in your feed 0-100 using 14 heuristic signals backed by peer-reviewed research. Runs entirely in-browser by default — no API key, no data leaving your machine. Optional LLM layer (Claude, OpenAI, Gemini) for nuanced analysis.',
+		status: 'ACTIVE',
+		description: 'LinkedIn AI Detector. Chrome extension — 14 heuristic signals backed by peer-reviewed research. Runs in-browser by default. Optional LLM layer for nuanced analysis.',
 		url: 'https://github.com/oldeucryptoboi/linkedin-ai-detector',
-		tags: ['Chrome Extension', 'AI Detection', 'Heuristics', 'NLP'],
-		highlights: [
-			'14 independent heuristic analyzers (lexical, structural, epistemic)',
-			'Contraction analysis, em dash frequency, personal specificity scoring',
-			'Optional LLM rubric with 8 detection categories',
-			'Zero-config local mode, no API key needed',
+		specs: [
+			'14 independent heuristic analyzers',
+			'Contraction, em dash, epistemic analysis',
+			'LLM rubric — 8 detection categories',
+			'Zero-config local mode',
 		],
 	},
 ];
@@ -50,87 +50,79 @@ const projects = [
 		<BaseHead title={`Projects | ${SITE_TITLE}`} description="Open-source projects: KarnEvil9, Tarkus, LAID" />
 		<style>
 			.page-header {
-				margin-bottom: 2em;
+				margin-bottom: 2.5em;
+				padding-bottom: 1em;
+				border-bottom: 1px solid var(--border);
 			}
 			.page-header h1 {
-				font-size: 2.5em;
-				margin-bottom: 0.25em;
+				font-size: 1em;
+				margin-bottom: 0.3em;
+				color: var(--hal-red);
+				letter-spacing: 0.1em;
 			}
 			.page-header p {
-				color: var(--text-muted);
-				font-size: 1.1em;
+				color: var(--text-dim);
+				font-size: 0.85em;
+				margin: 0;
 			}
 			.project {
-				padding: 2em;
-				background: var(--bg-card);
-				border: 1px solid var(--border);
-				border-radius: 8px;
-				margin-bottom: 2em;
-				transition: border-color 0.2s ease;
-			}
-			.project:hover {
-				border-color: var(--accent);
+				padding: 1.5em 0;
+				border-bottom: 1px solid var(--border);
 			}
 			.project-header {
 				display: flex;
 				justify-content: space-between;
-				align-items: baseline;
+				align-items: center;
 				margin-bottom: 0.75em;
 			}
 			.project-header h2 {
-				font-size: 1.5em;
+				font-size: 1em;
 				margin: 0;
 			}
 			.project-header h2 a {
-				color: var(--accent);
+				color: var(--hal-red);
 				text-decoration: none;
 			}
 			.project-header h2 a:hover {
-				text-decoration: underline;
+				color: #ff6666;
 			}
-			.github-link {
-				font-size: 0.85em;
+			.project-status {
+				font-size: 0.65em;
 				color: var(--text-dim);
-				text-decoration: none;
+				letter-spacing: 0.08em;
+				font-family: "Atkinson", sans-serif;
+				display: flex;
+				align-items: center;
+				gap: 0.5em;
 			}
-			.github-link:hover {
-				color: var(--accent);
+			.project-status .dot {
+				width: 5px;
+				height: 5px;
+				border-radius: 50%;
+				background: var(--hal-red);
+				box-shadow: 0 0 4px var(--hal-red);
 			}
 			.project p {
 				color: var(--text-muted);
-				font-size: 0.95em;
+				font-size: 0.85em;
 				line-height: 1.6;
+				margin: 0 0 1em;
 			}
-			.project-tags {
-				display: flex;
-				gap: 0.5em;
-				flex-wrap: wrap;
-				margin-bottom: 1em;
-			}
-			.project-tags span {
-				font-size: 0.75em;
-				padding: 0.2em 0.6em;
-				background: rgba(0, 212, 255, 0.1);
-				border: 1px solid rgba(0, 212, 255, 0.2);
-				border-radius: 4px;
-				color: var(--accent);
-			}
-			.highlights {
+			.specs {
 				list-style: none;
 				padding: 0;
-				margin: 1em 0 0;
+				margin: 0;
 			}
-			.highlights li {
-				padding: 0.3em 0;
-				color: var(--text-muted);
-				font-size: 0.9em;
+			.specs li {
+				padding: 0.25em 0;
+				color: var(--text-dim);
+				font-size: 0.8em;
 			}
-			.highlights li::before {
+			.specs li::before {
 				content: '>';
-				color: var(--accent);
+				color: var(--hal-red);
 				margin-right: 0.75em;
 				font-weight: 700;
-				font-family: monospace;
 			}
 		</style>
 	</head>
@@ -138,7 +130,7 @@ const projects = [
 		<Header />
 		<main>
 			<div class="page-header">
-				<h1>Projects</h1>
+				<h1>Systems</h1>
 				<p>Open-source tools for AI agents, content automation, and detection.</p>
 			</div>
 
@@ -146,14 +138,11 @@ const projects = [
 				<div class="project">
 					<div class="project-header">
 						<h2><a href={project.url} target="_blank">{project.name}</a></h2>
-						<a class="github-link" href={project.url} target="_blank">View on GitHub &rarr;</a>
-					</div>
-					<div class="project-tags">
-						{project.tags.map((tag) => <span>{tag}</span>)}
+						<span class="project-status"><span class="dot"></span> {project.status}</span>
 					</div>
 					<p>{project.description}</p>
-					<ul class="highlights">
-						{project.highlights.map((h) => <li>{h}</li>)}
+					<ul class="specs">
+						{project.specs.map((s) => <li>{s}</li>)}
 					</ul>
 				</div>
 			))}

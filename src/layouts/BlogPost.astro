@@ -20,43 +20,48 @@ const { title, description, pubDate, updatedDate, tags = [] } = Astro.props;
 				margin: 0;
 			}
 			.prose {
-				width: 720px;
+				width: 740px;
 				max-width: calc(100% - 2em);
 				margin: auto;
 				padding: 1em;
 				color: var(--text);
 			}
-			.title {
-				margin-bottom: 1em;
-				padding: 1em 0;
-				text-align: center;
-				line-height: 1;
+			.article-header {
+				margin-bottom: 2em;
+				padding: 2em 0;
+				border-bottom: 1px solid var(--border);
 			}
-			.title h1 {
-				margin: 0 0 0.5em 0;
-				color: #f1f5f9;
-			}
-			.date {
-				margin-bottom: 0.5em;
+			.article-header .date {
 				color: var(--text-dim);
+				font-size: 0.8em;
+				letter-spacing: 0.04em;
+				margin-bottom: 0.75em;
 			}
-			.last-updated-on {
+			.article-header .last-updated-on {
 				font-style: italic;
+			}
+			.article-header h1 {
+				margin: 0;
+				font-size: 2em;
+				color: #e0e0e0;
+				text-transform: none;
+				letter-spacing: 0.02em;
+				line-height: 1.25;
 			}
 			.tags {
 				display: flex;
 				gap: 0.5em;
-				justify-content: center;
 				flex-wrap: wrap;
 				margin-top: 1em;
 			}
 			.tags span {
-				font-size: 0.75em;
-				padding: 0.2em 0.6em;
-				background: rgba(0, 212, 255, 0.1);
-				border: 1px solid rgba(0, 212, 255, 0.2);
-				border-radius: 4px;
-				color: var(--accent);
+				font-size: 0.65em;
+				padding: 0.15em 0.5em;
+				border: 1px solid var(--border-light);
+				color: var(--text-dim);
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+				font-family: "Atkinson", sans-serif;
 			}
 		</style>
 	</head>
@@ -66,13 +71,13 @@ const { title, description, pubDate, updatedDate, tags = [] } = Astro.props;
 		<main>
 			<article>
 				<div class="prose">
-					<div class="title">
+					<div class="article-header">
 						<div class="date">
 							<FormattedDate date={pubDate} />
 							{
 								updatedDate && (
 									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
+										Updated <FormattedDate date={updatedDate} />
 									</div>
 								)
 							}
@@ -83,7 +88,6 @@ const { title, description, pubDate, updatedDate, tags = [] } = Astro.props;
 								{tags.map((tag: string) => <span>{tag}</span>)}
 							</div>
 						)}
-						<hr />
 					</div>
 					<slot />
 				</div>

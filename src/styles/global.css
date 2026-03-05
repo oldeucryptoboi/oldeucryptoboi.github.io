@@ -1,17 +1,17 @@
 :root {
-	--accent: #00d4ff;
-	--accent-dark: #0099cc;
-	--accent-glow: rgba(0, 212, 255, 0.15);
-	--bg: #0a0e17;
-	--bg-secondary: #111827;
-	--bg-card: #1a1f2e;
-	--text: #e2e8f0;
-	--text-muted: #94a3b8;
-	--text-dim: #64748b;
-	--border: #1e293b;
-	--box-shadow:
-		0 2px 6px rgba(0, 0, 0, 0.3),
-		0 8px 24px rgba(0, 0, 0, 0.4);
+	--hal-red: #ff3333;
+	--hal-red-dim: #cc2929;
+	--hal-red-glow: rgba(255, 51, 51, 0.15);
+	--hal-red-subtle: rgba(255, 51, 51, 0.08);
+	--bg: #000000;
+	--bg-panel: #0a0a0a;
+	--bg-card: #111111;
+	--text: #cccccc;
+	--text-muted: #888888;
+	--text-dim: #555555;
+	--border: #222222;
+	--border-light: #333333;
+	--box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 @font-face {
@@ -30,7 +30,7 @@
 }
 
 body {
-	font-family: "Atkinson", sans-serif;
+	font-family: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", "Courier New", monospace;
 	margin: 0;
 	padding: 0;
 	text-align: left;
@@ -38,12 +38,13 @@ body {
 	word-wrap: break-word;
 	overflow-wrap: break-word;
 	color: var(--text);
-	font-size: 20px;
+	font-size: 17px;
 	line-height: 1.7;
+	letter-spacing: 0.01em;
 }
 
 main {
-	width: 720px;
+	width: 740px;
 	max-width: calc(100% - 2em);
 	margin: auto;
 	padding: 3em 1em;
@@ -51,28 +52,34 @@ main {
 
 h1, h2, h3, h4, h5, h6 {
 	margin: 0 0 0.5rem 0;
-	color: #f1f5f9;
+	color: #e0e0e0;
 	line-height: 1.2;
+	font-family: "Atkinson", "Helvetica Neue", Arial, sans-serif;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
 }
 
-h1 { font-size: 3.052em; }
-h2 { font-size: 2.441em; }
-h3 { font-size: 1.953em; }
-h4 { font-size: 1.563em; }
-h5 { font-size: 1.25em; }
+h1 { font-size: 2.5em; letter-spacing: 0.08em; }
+h2 { font-size: 1.8em; }
+h3 { font-size: 1.4em; }
+h4 { font-size: 1.15em; }
+h5 { font-size: 1em; }
 
-strong, b { font-weight: 700; }
+strong, b { font-weight: 700; color: #ddd; }
 
 a {
-	color: var(--accent);
-	transition: color 0.2s ease;
+	color: var(--hal-red);
+	text-decoration: none;
+	transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 a:hover {
-	color: #33e0ff;
+	color: #ff6666;
+	text-shadow: 0 0 8px var(--hal-red-glow);
 }
 
 p { margin-bottom: 1em; }
-.prose p { margin-bottom: 2em; }
+.prose p { margin-bottom: 1.8em; }
 
 textarea { width: 100%; font-size: 16px; }
 input { font-size: 16px; }
@@ -80,41 +87,48 @@ input { font-size: 16px; }
 table {
 	width: 100%;
 	border-collapse: collapse;
+	font-size: 0.9em;
 }
 th, td {
-	padding: 0.5em 1em;
+	padding: 0.6em 1em;
 	border: 1px solid var(--border);
 	text-align: left;
 }
 th {
-	background: var(--bg-secondary);
-	color: var(--accent);
+	background: var(--bg-card);
+	color: var(--hal-red);
+	font-family: "Atkinson", sans-serif;
 	font-weight: 700;
+	text-transform: uppercase;
+	font-size: 0.85em;
+	letter-spacing: 0.06em;
 }
 tr:nth-child(even) {
-	background: rgba(255, 255, 255, 0.02);
+	background: rgba(255, 255, 255, 0.015);
 }
 
 img {
 	max-width: 100%;
 	height: auto;
-	border-radius: 8px;
+	border-radius: 2px;
 }
 
 code {
-	padding: 2px 5px;
-	background-color: var(--bg-secondary);
+	padding: 2px 6px;
+	background-color: var(--bg-card);
 	border: 1px solid var(--border);
-	border-radius: 4px;
-	color: var(--accent);
+	border-radius: 2px;
+	color: var(--hal-red);
 	font-size: 0.9em;
+	font-family: inherit;
 }
 
 pre {
 	padding: 1.5em;
-	border-radius: 8px;
-	background: var(--bg-secondary) !important;
+	border-radius: 2px;
+	background: var(--bg-panel) !important;
 	border: 1px solid var(--border);
+	border-left: 3px solid var(--hal-red);
 	overflow-x: auto;
 }
 pre > code {
@@ -122,21 +136,29 @@ pre > code {
 }
 
 blockquote {
-	border-left: 4px solid var(--accent);
+	border-left: 3px solid var(--hal-red);
 	padding: 0 0 0 20px;
 	margin: 0;
-	font-size: 1.333em;
+	font-size: 1.1em;
 	color: var(--text-muted);
+	font-style: italic;
 }
 
 hr {
 	border: none;
 	border-top: 1px solid var(--border);
+	margin: 2em 0;
+}
+
+::selection {
+	background: var(--hal-red);
+	color: #000;
 }
 
 @media (max-width: 720px) {
-	body { font-size: 18px; }
+	body { font-size: 15px; }
 	main { padding: 1em; }
+	h1 { font-size: 1.8em; }
 }
 
 .sr-only {

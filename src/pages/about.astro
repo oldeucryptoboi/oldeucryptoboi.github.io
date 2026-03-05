@@ -10,63 +10,83 @@ import { SITE_TITLE } from '../consts';
 	<head>
 		<BaseHead title={`About | ${SITE_TITLE}`} description="About oldcryptoboi — building AI agent infrastructure" />
 		<style>
-			.about {
-				max-width: 720px;
-				margin: 0 auto;
+			.page-header {
+				margin-bottom: 2.5em;
+				padding-bottom: 1em;
+				border-bottom: 1px solid var(--border);
 			}
-			.about h1 {
-				font-size: 2.5em;
-				margin-bottom: 1em;
+			.page-header h1 {
+				font-size: 1em;
+				margin-bottom: 0.3em;
+				color: var(--hal-red);
+				letter-spacing: 0.1em;
 			}
 			.about p {
 				color: var(--text-muted);
 				line-height: 1.8;
-				font-size: 1.05em;
+				font-size: 0.95em;
 			}
 			.about a {
-				color: var(--accent);
+				color: var(--hal-red);
 			}
 			.links {
-				margin-top: 2em;
-				padding-top: 2em;
+				margin-top: 2.5em;
+				padding-top: 1.5em;
 				border-top: 1px solid var(--border);
 			}
 			.links h2 {
-				font-size: 1.3em;
-				margin-bottom: 1em;
+				font-size: 0.85em;
+				margin-bottom: 1.25em;
+				color: var(--hal-red);
+				letter-spacing: 0.1em;
 			}
 			.links-grid {
 				display: grid;
 				grid-template-columns: 1fr 1fr;
-				gap: 1em;
+				gap: 0;
 			}
 			.link-card {
 				display: flex;
 				align-items: center;
 				gap: 0.75em;
-				padding: 1em 1.25em;
-				background: var(--bg-card);
-				border: 1px solid var(--border);
-				border-radius: 8px;
+				padding: 1em 0;
+				border-bottom: 1px solid var(--border);
 				text-decoration: none;
 				color: var(--text);
-				transition: border-color 0.2s ease;
+				transition: background 0.15s ease;
+			}
+			.link-card:nth-child(odd) {
+				border-right: 1px solid var(--border);
+				padding-right: 1.5em;
+			}
+			.link-card:nth-child(even) {
+				padding-left: 1.5em;
 			}
 			.link-card:hover {
-				border-color: var(--accent);
-				color: var(--text);
+				background: var(--hal-red-subtle);
 			}
 			.link-card .label {
+				font-family: "Atkinson", sans-serif;
 				font-weight: 700;
-				font-size: 0.95em;
+				font-size: 0.85em;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				color: var(--text);
 			}
 			.link-card .handle {
 				color: var(--text-dim);
-				font-size: 0.85em;
+				font-size: 0.8em;
 			}
 			@media (max-width: 720px) {
 				.links-grid {
 					grid-template-columns: 1fr;
+				}
+				.link-card:nth-child(odd) {
+					border-right: none;
+					padding-right: 0;
+				}
+				.link-card:nth-child(even) {
+					padding-left: 0;
 				}
 			}
 		</style>
@@ -75,7 +95,9 @@ import { SITE_TITLE } from '../consts';
 		<Header />
 		<main>
 			<div class="about">
-				<h1>About</h1>
+				<div class="page-header">
+					<h1>About</h1>
+				</div>
 
 				<p>
 					I build AI agent infrastructure. My main project is
@@ -95,7 +117,7 @@ import { SITE_TITLE } from '../consts';
 					I also built <a href="https://github.com/oldeucryptoboi/linkedin-ai-detector">LAID</a> (LinkedIn AI Detector),
 					an open-source Chrome extension that uses 14 peer-reviewed heuristic signals to detect AI-generated LinkedIn posts.
 					And <a href="https://github.com/oldeucryptoboi/md2substack">Tarkus</a>, the CLI tool that powers this site's
-					content pipeline — markdown to Substack, auto-generated social posts, direct posting to X.
+					content pipeline.
 				</p>
 
 				<p>
@@ -104,7 +126,7 @@ import { SITE_TITLE } from '../consts';
 				</p>
 
 				<div class="links">
-					<h2>Find me</h2>
+					<h2>Channels</h2>
 					<div class="links-grid">
 						<a class="link-card" href="https://x.com/oldeucryptoboi" target="_blank">
 							<div>

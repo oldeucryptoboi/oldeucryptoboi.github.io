@@ -3,42 +3,72 @@ const today = new Date();
 ---
 
 <footer>
-	&copy; {today.getFullYear()} oldcryptoboi. All rights reserved.
-	<div class="social-links">
-		<a href="https://x.com/oldeucryptoboi" target="_blank">
-			<span class="sr-only">Follow on X</span>
-			<svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
-		</a>
-		<a href="https://oldeucryptoboi.substack.com" target="_blank">
-			<span class="sr-only">Substack</span>
-			<svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"></path></svg>
-		</a>
-		<a href="https://github.com/oldeucryptoboi" target="_blank">
-			<span class="sr-only">GitHub</span>
-			<svg viewBox="0 0 16 16" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path></svg>
-		</a>
+	<div class="footer-inner">
+		<div class="status-line">
+			<span class="hal-dot"></span>
+			<span>OPERATIONAL</span>
+		</div>
+		<div class="copyright">
+			&copy; {today.getFullYear()} oldcryptoboi
+		</div>
+		<div class="social-links">
+			<a href="https://x.com/oldeucryptoboi" target="_blank">X</a>
+			<span class="sep">/</span>
+			<a href="https://oldeucryptoboi.substack.com" target="_blank">Substack</a>
+			<span class="sep">/</span>
+			<a href="https://github.com/oldeucryptoboi" target="_blank">GitHub</a>
+		</div>
 	</div>
 </footer>
 <style>
 	footer {
-		padding: 2em 1em 6em 1em;
-		background: var(--bg-secondary);
+		padding: 2em 1.5em 4em;
+		background: var(--bg);
 		border-top: 1px solid var(--border);
 		color: var(--text-dim);
-		text-align: center;
+		font-size: 0.8em;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		font-family: "Atkinson", sans-serif;
 	}
-	.social-links {
+	.footer-inner {
+		max-width: 740px;
+		margin: 0 auto;
 		display: flex;
-		justify-content: center;
-		gap: 1em;
-		margin-top: 1em;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.status-line {
+		display: flex;
+		align-items: center;
+		gap: 0.5em;
+		color: var(--text-dim);
+	}
+	.hal-dot {
+		display: inline-block;
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--hal-red);
+		box-shadow: 0 0 6px var(--hal-red);
 	}
 	.social-links a {
-		text-decoration: none;
 		color: var(--text-dim);
+		text-decoration: none;
 		transition: color 0.2s ease;
 	}
 	.social-links a:hover {
-		color: var(--accent);
+		color: var(--hal-red);
+	}
+	.sep {
+		color: var(--border-light);
+		margin: 0 0.3em;
+	}
+	@media (max-width: 720px) {
+		.footer-inner {
+			flex-direction: column;
+			gap: 1em;
+			text-align: center;
+		}
 	}
 </style>

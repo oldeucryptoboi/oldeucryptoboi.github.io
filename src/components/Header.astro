@@ -1,11 +1,13 @@
 ---
-import { SITE_TITLE } from '../consts';
 import HeaderLink from './HeaderLink.astro';
 ---
 
 <header>
 	<nav>
-		<h2><a href="/">{SITE_TITLE}</a></h2>
+		<a class="site-title" href="/">
+			<span class="hal-eye"></span>
+			<span>oldcryptoboi</span>
+		</a>
 		<div class="internal-links">
 			<HeaderLink href="/">Home</HeaderLink>
 			<HeaderLink href="/blog">Blog</HeaderLink>
@@ -13,17 +15,14 @@ import HeaderLink from './HeaderLink.astro';
 			<HeaderLink href="/about">About</HeaderLink>
 		</div>
 		<div class="social-links">
-			<a href="https://x.com/oldeucryptoboi" target="_blank">
-				<span class="sr-only">Follow on X</span>
-				<svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+			<a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X">
+				<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
 			</a>
-			<a href="https://oldeucryptoboi.substack.com" target="_blank">
-				<span class="sr-only">Read on Substack</span>
-				<svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"></path></svg>
+			<a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack">
+				<svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z"/></svg>
 			</a>
-			<a href="https://github.com/oldeucryptoboi" target="_blank">
-				<span class="sr-only">GitHub</span>
-				<svg viewBox="0 0 16 16" aria-hidden="true" width="24" height="24"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path></svg>
+			<a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub">
+				<svg viewBox="0 0 16 16" width="18" height="18"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
 			</a>
 		</div>
 	</nav>
@@ -31,55 +30,81 @@ import HeaderLink from './HeaderLink.astro';
 <style>
 	header {
 		margin: 0;
-		padding: 0 1em;
-		background: var(--bg-secondary);
+		padding: 0 1.5em;
+		background: var(--bg);
 		border-bottom: 1px solid var(--border);
-	}
-	h2 {
-		margin: 0;
-		font-size: 1em;
-	}
-	h2 a,
-	h2 a.active {
-		text-decoration: none;
-		color: var(--accent);
-		font-weight: 700;
 	}
 	nav {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		max-width: 740px;
+		margin: 0 auto;
+	}
+	.site-title {
+		display: flex;
+		align-items: center;
+		gap: 0.6em;
+		text-decoration: none;
+		color: #e0e0e0;
+		font-family: "Atkinson", sans-serif;
+		font-weight: 700;
+		font-size: 0.95em;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		padding: 1em 0;
+	}
+	.site-title:hover {
+		color: #fff;
+		text-shadow: none;
+	}
+	.hal-eye {
+		display: inline-block;
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: var(--hal-red);
+		box-shadow: 0 0 8px var(--hal-red), 0 0 20px var(--hal-red-glow);
+		flex-shrink: 0;
+	}
+	.internal-links {
+		display: flex;
+		gap: 0;
 	}
 	nav a {
-		padding: 1em 0.5em;
-		color: var(--text-muted);
-		border-bottom: 4px solid transparent;
+		padding: 1em 0.75em;
+		color: var(--text-dim);
 		text-decoration: none;
-		transition: color 0.2s ease, border-color 0.2s ease;
+		font-size: 0.8em;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		font-family: "Atkinson", sans-serif;
+		transition: color 0.2s ease;
+		border-bottom: 2px solid transparent;
 	}
 	nav a:hover {
 		color: var(--text);
+		text-shadow: none;
 	}
 	nav a.active {
-		text-decoration: none;
-		border-bottom-color: var(--accent);
-		color: var(--text);
+		color: var(--hal-red);
+		border-bottom-color: var(--hal-red);
 	}
-	.social-links,
-	.social-links a {
+	.social-links {
 		display: flex;
+		gap: 0.25em;
 	}
 	.social-links a {
-		padding: 1em 0.5em;
+		padding: 0.75em 0.5em;
 		color: var(--text-dim);
 		border-bottom: none;
 	}
 	.social-links a:hover {
-		color: var(--accent);
+		color: var(--hal-red);
+		text-shadow: none;
 	}
 	@media (max-width: 720px) {
-		.social-links {
-			display: none;
-		}
+		.social-links { display: none; }
+		nav a { padding: 1em 0.5em; font-size: 0.75em; }
 	}
 </style>

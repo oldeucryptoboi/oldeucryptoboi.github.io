@@ -2,7 +2,6 @@
 title: "When Eddie, My AI Agent, Ran Out of Credits and Invented Its Own Cost-Cutting Strategy"
 description: "How KarnEvil9's futility monitor turned an API credit crisis into an autonomous cost-optimization strategy"
 pubDate: 2026-02-20
-heroImage: "../../assets/blog-placeholder-5.jpg"
 tags: ["AI Agents", "KarnEvil9", "Cost Optimization", "Autonomous AI"]
 ---
 

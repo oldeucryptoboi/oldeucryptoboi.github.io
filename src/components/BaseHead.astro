@@ -115,11 +115,11 @@ const articleJsonLd = type === 'article' && pubDate ? {
 )}
 
 <!-- Twitter -->
-<meta property="twitter:card" content={image ? "summary_large_image" : "summary"} />
-<meta property="twitter:url" content={Astro.url} />
-<meta property="twitter:title" content={title} />
-<meta property="twitter:description" content={description} />
-{image && <meta property="twitter:image" content={new URL(image.src, Astro.url)} />}
+<meta name="twitter:card" content={image ? "summary_large_image" : "summary"} />
+<meta name="twitter:url" content={Astro.url} />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+{image && <meta name="twitter:image" content={new URL(image.src, Astro.url)} />}
 <meta name="twitter:site" content="@oldeucryptoboi" />
 <meta name="twitter:creator" content="@oldeucryptoboi" />
 

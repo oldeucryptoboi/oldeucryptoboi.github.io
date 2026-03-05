@@ -5,9 +5,12 @@ import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 
-type Props = CollectionEntry<'blog'>['data'];
+type Props = CollectionEntry<'blog'>['data'] & {
+	prev?: CollectionEntry<'blog'> | null;
+	next?: CollectionEntry<'blog'> | null;
+};
 
-const { title, description, pubDate, updatedDate, heroImage, tags = [] } = Astro.props;
+const { title, description, pubDate, updatedDate, heroImage, tags = [], prev, next } = Astro.props;
 ---
 
 <html lang="en">
@@ -63,6 +66,54 @@ const { title, description, pubDate, updatedDate, heroImage, tags = [] } = Astro
 				text-transform: uppercase;
 				font-family: "Atkinson", sans-serif;
 			}
+			.post-nav {
+				display: flex;
+				justify-content: space-between;
+				margin-top: 3em;
+				padding-top: 2em;
+				border-top: 1px solid var(--border);
+				gap: 2em;
+			}
+			.nav-link {
+				display: flex;
+				flex-direction: column;
+				gap: 0.3em;
+				text-decoration: none;
+				max-width: 45%;
+				transition: background 0.15s ease;
+			}
+			.nav-link:hover .nav-title {
+				color: var(--hal-red);
+			}
+			.nav-next {
+				text-align: right;
+				margin-left: auto;
+			}
+			.nav-label {
+				font-size: 0.7em;
+				color: var(--text-dim);
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				font-family: "Atkinson", sans-serif;
+			}
+			.nav-title {
+				color: var(--text);
+				font-size: 0.9em;
+				line-height: 1.4;
+				transition: color 0.15s ease;
+			}
+			@media (max-width: 720px) {
+				.post-nav {
+					flex-direction: column;
+					gap: 1.5em;
+				}
+				.nav-link {
+					max-width: 100%;
+				}
+				.nav-next {
+					text-align: left;
+				}
+			}
 		</style>
 	</head>
 
@@ -90,6 +141,22 @@ const { title, description, pubDate, updatedDate, heroImage, tags = [] } = Astro
 						)}
 					</div>
 					<slot />
+					{(prev || next) && (
+						<nav class="post-nav">
+							{prev ? (
+								<a class="nav-link nav-prev" href={`/blog/${prev.id}/`}>
+									<span class="nav-label">Previous</span>
+									<span class="nav-title">{prev.data.title}</span>
+								</a>
+							) : <span />}
+							{next ? (
+								<a class="nav-link nav-next" href={`/blog/${next.id}/`}>
+									<span class="nav-label">Next</span>
+									<span class="nav-title">{next.data.title}</span>
+								</a>
+							) : <span />}
+						</nav>
+					)}
 				</div>
 			</article>
 		</main>

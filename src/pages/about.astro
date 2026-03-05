@@ -1,0 +1,139 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`About | ${SITE_TITLE}`} description="About oldcryptoboi — building AI agent infrastructure" />
+		<style>
+			.about {
+				max-width: 720px;
+				margin: 0 auto;
+			}
+			.about h1 {
+				font-size: 2.5em;
+				margin-bottom: 1em;
+			}
+			.about p {
+				color: var(--text-muted);
+				line-height: 1.8;
+				font-size: 1.05em;
+			}
+			.about a {
+				color: var(--accent);
+			}
+			.links {
+				margin-top: 2em;
+				padding-top: 2em;
+				border-top: 1px solid var(--border);
+			}
+			.links h2 {
+				font-size: 1.3em;
+				margin-bottom: 1em;
+			}
+			.links-grid {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 1em;
+			}
+			.link-card {
+				display: flex;
+				align-items: center;
+				gap: 0.75em;
+				padding: 1em 1.25em;
+				background: var(--bg-card);
+				border: 1px solid var(--border);
+				border-radius: 8px;
+				text-decoration: none;
+				color: var(--text);
+				transition: border-color 0.2s ease;
+			}
+			.link-card:hover {
+				border-color: var(--accent);
+				color: var(--text);
+			}
+			.link-card .label {
+				font-weight: 700;
+				font-size: 0.95em;
+			}
+			.link-card .handle {
+				color: var(--text-dim);
+				font-size: 0.85em;
+			}
+			@media (max-width: 720px) {
+				.links-grid {
+					grid-template-columns: 1fr;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="about">
+				<h1>About</h1>
+
+				<p>
+					I build AI agent infrastructure. My main project is
+					<a href="https://github.com/oldeucryptoboi/KarnEvil9">KarnEvil9</a> — a deterministic AI agent runtime
+					and the first public reference implementation of Google DeepMind's
+					<a href="https://arxiv.org/abs/2602.11865">Intelligent AI Delegation</a> framework.
+				</p>
+
+				<p>
+					KarnEvil9 runs E.D.D.I.E. (Emergent Deterministic Directed Intelligence Engine), an autonomous
+					AI agent with his own social accounts, his own opinions, and his own cost-cutting strategies.
+					Eddie operates 24/7 on scheduled tasks — posting RFCs, reviewing code, engaging with the AI agent
+					community, and closing feedback loops from social platforms back into GitHub issues.
+				</p>
+
+				<p>
+					I also built <a href="https://github.com/oldeucryptoboi/linkedin-ai-detector">LAID</a> (LinkedIn AI Detector),
+					an open-source Chrome extension that uses 14 peer-reviewed heuristic signals to detect AI-generated LinkedIn posts.
+					And <a href="https://github.com/oldeucryptoboi/md2substack">Tarkus</a>, the CLI tool that powers this site's
+					content pipeline — markdown to Substack, auto-generated social posts, direct posting to X.
+				</p>
+
+				<p>
+					I write about AI agents, deterministic execution, delegation governance, and the
+					engineering decisions behind building systems that let AI operate autonomously with accountability.
+				</p>
+
+				<div class="links">
+					<h2>Find me</h2>
+					<div class="links-grid">
+						<a class="link-card" href="https://x.com/oldeucryptoboi" target="_blank">
+							<div>
+								<div class="label">X</div>
+								<div class="handle">@oldeucryptoboi</div>
+							</div>
+						</a>
+						<a class="link-card" href="https://oldeucryptoboi.substack.com" target="_blank">
+							<div>
+								<div class="label">Substack</div>
+								<div class="handle">oldeucryptoboi</div>
+							</div>
+						</a>
+						<a class="link-card" href="https://github.com/oldeucryptoboi" target="_blank">
+							<div>
+								<div class="label">GitHub</div>
+								<div class="handle">oldeucryptoboi</div>
+							</div>
+						</a>
+						<a class="link-card" href="https://www.moltbook.com/u/karnevil9" target="_blank">
+							<div>
+								<div class="label">Moltbook</div>
+								<div class="handle">Eddie (@karnevil9)</div>
+							</div>
+						</a>
+					</div>
+				</div>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>

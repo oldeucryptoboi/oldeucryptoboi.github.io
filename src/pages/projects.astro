@@ -1,0 +1,163 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+
+const projects = [
+	{
+		name: 'KarnEvil9',
+		description: 'Deterministic AI agent runtime. The first public reference implementation of Google DeepMind\'s Intelligent AI Delegation framework (Tomasev, Franklin & Osindero, 2026). Hash-chain journals, escrow bonds, futility monitoring, Bayesian trust scoring, circuit breakers, P2P delegation mesh with 9 safety mechanisms.',
+		url: 'https://github.com/oldeucryptoboi/KarnEvil9',
+		tags: ['TypeScript', 'AI Agents', 'Delegation', 'Deterministic Runtime'],
+		highlights: [
+			'SHA-256 hash-chain journal for tamper-evident audit trails',
+			'FutilityMonitor that catches runaway agentic loops',
+			'Graduated Authority with Bayesian trust scoring',
+			'Escrow bonds with SLO-based slashing',
+		],
+	},
+	{
+		name: 'Tarkus',
+		description: 'Personal PR agent. CLI tool that publishes markdown to Substack (with image upload), generates social media posts for X and LinkedIn, and cross-posts automatically. Powers the content pipeline for oldcryptoboi.',
+		url: 'https://github.com/oldeucryptoboi/md2substack',
+		tags: ['TypeScript', 'CLI', 'Substack API', 'Automation'],
+		highlights: [
+			'Markdown to Substack ProseMirror converter',
+			'Auto-generated tweets and LinkedIn posts',
+			'Direct posting to X via API',
+			'Image upload and CDN hosting',
+		],
+	},
+	{
+		name: 'LAID',
+		description: 'LinkedIn AI Detector. Open-source Chrome extension that scores every post in your feed 0-100 using 14 heuristic signals backed by peer-reviewed research. Runs entirely in-browser by default — no API key, no data leaving your machine. Optional LLM layer (Claude, OpenAI, Gemini) for nuanced analysis.',
+		url: 'https://github.com/oldeucryptoboi/linkedin-ai-detector',
+		tags: ['Chrome Extension', 'AI Detection', 'Heuristics', 'NLP'],
+		highlights: [
+			'14 independent heuristic analyzers (lexical, structural, epistemic)',
+			'Contraction analysis, em dash frequency, personal specificity scoring',
+			'Optional LLM rubric with 8 detection categories',
+			'Zero-config local mode, no API key needed',
+		],
+	},
+];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Projects | ${SITE_TITLE}`} description="Open-source projects: KarnEvil9, Tarkus, LAID" />
+		<style>
+			.page-header {
+				margin-bottom: 2em;
+			}
+			.page-header h1 {
+				font-size: 2.5em;
+				margin-bottom: 0.25em;
+			}
+			.page-header p {
+				color: var(--text-muted);
+				font-size: 1.1em;
+			}
+			.project {
+				padding: 2em;
+				background: var(--bg-card);
+				border: 1px solid var(--border);
+				border-radius: 8px;
+				margin-bottom: 2em;
+				transition: border-color 0.2s ease;
+			}
+			.project:hover {
+				border-color: var(--accent);
+			}
+			.project-header {
+				display: flex;
+				justify-content: space-between;
+				align-items: baseline;
+				margin-bottom: 0.75em;
+			}
+			.project-header h2 {
+				font-size: 1.5em;
+				margin: 0;
+			}
+			.project-header h2 a {
+				color: var(--accent);
+				text-decoration: none;
+			}
+			.project-header h2 a:hover {
+				text-decoration: underline;
+			}
+			.github-link {
+				font-size: 0.85em;
+				color: var(--text-dim);
+				text-decoration: none;
+			}
+			.github-link:hover {
+				color: var(--accent);
+			}
+			.project p {
+				color: var(--text-muted);
+				font-size: 0.95em;
+				line-height: 1.6;
+			}
+			.project-tags {
+				display: flex;
+				gap: 0.5em;
+				flex-wrap: wrap;
+				margin-bottom: 1em;
+			}
+			.project-tags span {
+				font-size: 0.75em;
+				padding: 0.2em 0.6em;
+				background: rgba(0, 212, 255, 0.1);
+				border: 1px solid rgba(0, 212, 255, 0.2);
+				border-radius: 4px;
+				color: var(--accent);
+			}
+			.highlights {
+				list-style: none;
+				padding: 0;
+				margin: 1em 0 0;
+			}
+			.highlights li {
+				padding: 0.3em 0;
+				color: var(--text-muted);
+				font-size: 0.9em;
+			}
+			.highlights li::before {
+				content: '>';
+				color: var(--accent);
+				margin-right: 0.75em;
+				font-weight: 700;
+				font-family: monospace;
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="page-header">
+				<h1>Projects</h1>
+				<p>Open-source tools for AI agents, content automation, and detection.</p>
+			</div>
+
+			{projects.map((project) => (
+				<div class="project">
+					<div class="project-header">
+						<h2><a href={project.url} target="_blank">{project.name}</a></h2>
+						<a class="github-link" href={project.url} target="_blank">View on GitHub &rarr;</a>
+					</div>
+					<div class="project-tags">
+						{project.tags.map((tag) => <span>{tag}</span>)}
+					</div>
+					<p>{project.description}</p>
+					<ul class="highlights">
+						{project.highlights.map((h) => <li>{h}</li>)}
+					</ul>
+				</div>
+			))}
+		</main>
+		<Footer />
+	</body>
+</html>

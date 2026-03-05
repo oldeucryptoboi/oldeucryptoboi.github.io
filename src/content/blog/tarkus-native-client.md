@@ -2,7 +2,6 @@
 title: "Tarkus: a Native macOS Client for My AI Agent"
 description: "Why I built a native macOS/iOS client for my autonomous AI agent instead of staring at terminal output"
 pubDate: 2026-03-05
-heroImage: "../../assets/blog-placeholder-2.jpg"
 tags: ["AI Agents", "KarnEvil9", "Tarkus", "Swift", "macOS", "Open Source"]
 ---
 

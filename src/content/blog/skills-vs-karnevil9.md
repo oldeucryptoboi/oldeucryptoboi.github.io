@@ -2,7 +2,6 @@
 title: "Anthropic Just Validated What KarnEvil9 Has Been Building"
 description: "Agent Skills are a step toward structured execution. KarnEvil9 is the full staircase."
 pubDate: 2026-02-27
-heroImage: "../../assets/blog-placeholder-3.jpg"
 tags: ["AI Agents", "KarnEvil9", "Anthropic", "Agent Skills"]
 ---
 

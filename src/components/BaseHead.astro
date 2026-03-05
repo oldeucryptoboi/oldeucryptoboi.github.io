@@ -23,7 +23,7 @@ const { title, description, image = FallbackImage, type = 'website', pubDate, up
 const siteJsonLd = {
 	"@context": "https://schema.org",
 	"@type": "Person",
-	"name": "oldcryptoboi",
+	"name": "oldeucryptoboi",
 	"url": "https://oldeucryptoboi.com",
 	"description": "AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Manticore, and LAID.",
 	"sameAs": [
@@ -53,12 +53,12 @@ const articleJsonLd = type === 'article' && pubDate ? {
 	...(updatedDate ? { "dateModified": updatedDate.toISOString() } : {}),
 	"author": {
 		"@type": "Person",
-		"name": "oldcryptoboi",
+		"name": "oldeucryptoboi",
 		"url": "https://oldeucryptoboi.com"
 	},
 	"publisher": {
 		"@type": "Person",
-		"name": "oldcryptoboi",
+		"name": "oldeucryptoboi",
 		"url": "https://oldeucryptoboi.com"
 	},
 	"keywords": tags.join(", "),
@@ -105,7 +105,7 @@ const articleJsonLd = type === 'article' && pubDate ? {
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:image" content={new URL(image.src, Astro.url)} />
-<meta property="og:site_name" content="oldcryptoboi" />
+<meta property="og:site_name" content="oldeucryptoboi" />
 {type === 'article' && pubDate && (
 	<>
 		<meta property="article:published_time" content={pubDate.toISOString()} />

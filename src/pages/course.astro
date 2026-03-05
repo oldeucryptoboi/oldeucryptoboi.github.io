@@ -1,0 +1,275 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+
+const modules = [
+	{
+		title: 'Deterministic Execution',
+		topics: [
+			'Why non-determinism kills agent reliability',
+			'Hash-chain journals and tamper-evident audit trails',
+			'Replay, debug, and prove what your agent did',
+		],
+	},
+	{
+		title: 'Delegation Governance',
+		topics: [
+			'Google DeepMind\'s Intelligent AI Delegation framework',
+			'Graduated Authority and Bayesian trust scoring',
+			'Escrow bonds, SLO slashing, and accountability primitives',
+		],
+	},
+	{
+		title: 'Safety & Circuit Breakers',
+		topics: [
+			'Futility monitoring — catching runaway agentic loops',
+			'Cost controls and autonomous budget management',
+			'When to halt, escalate, or delegate',
+		],
+	},
+	{
+		title: 'Multi-Agent Architecture',
+		topics: [
+			'P2P delegation mesh — agents coordinating agents',
+			'Trust propagation across agent networks',
+			'Building production-grade agent pipelines',
+		],
+	},
+];
+
+const audiences = [
+	'Engineers building autonomous AI agent systems',
+	'Technical leads evaluating agent frameworks',
+	'Teams deploying agents with compliance requirements',
+	'Researchers working on agent safety and governance',
+];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Course | ${SITE_TITLE}`} description="Building Deterministic AI Agent Systems — course and workshop by oldcryptoboi" />
+		<style>
+			.page-header {
+				margin-bottom: 2.5em;
+				padding-bottom: 1em;
+				border-bottom: 1px solid var(--border);
+			}
+			.page-header h1 {
+				font-size: 1em;
+				margin-bottom: 0.3em;
+				color: var(--hal-red);
+				letter-spacing: 0.1em;
+			}
+			.page-header p {
+				color: var(--text-dim);
+				font-size: 0.85em;
+				margin: 0;
+			}
+			.intro {
+				color: var(--text-muted);
+				font-size: 0.95em;
+				line-height: 1.8;
+				margin-bottom: 2.5em;
+			}
+			.section-title {
+				font-size: 0.85em;
+				color: var(--hal-red);
+				letter-spacing: 0.1em;
+				margin-bottom: 1.25em;
+				padding-bottom: 0.75em;
+				border-bottom: 1px solid var(--border);
+			}
+			.module {
+				padding: 1.5em 0;
+				border-bottom: 1px solid var(--border);
+			}
+			.module h3 {
+				font-size: 0.9em;
+				margin: 0 0 0.75em;
+				color: var(--text);
+				letter-spacing: 0.06em;
+			}
+			.module ul {
+				list-style: none;
+				padding: 0;
+				margin: 0;
+			}
+			.module li {
+				padding: 0.25em 0;
+				color: var(--text-dim);
+				font-size: 0.8em;
+			}
+			.module li::before {
+				content: '>';
+				color: var(--hal-red);
+				margin-right: 0.75em;
+				font-weight: 700;
+			}
+			.audience-section {
+				margin-top: 2.5em;
+			}
+			.audience-list {
+				list-style: none;
+				padding: 0;
+				margin: 0;
+			}
+			.audience-list li {
+				padding: 0.6em 0;
+				border-bottom: 1px solid var(--border);
+				color: var(--text-muted);
+				font-size: 0.85em;
+				display: flex;
+				align-items: center;
+				gap: 0.75em;
+			}
+			.audience-list .dot {
+				width: 5px;
+				height: 5px;
+				border-radius: 50%;
+				background: var(--hal-red);
+				box-shadow: 0 0 4px var(--hal-red);
+				flex-shrink: 0;
+			}
+			.formats {
+				margin-top: 2.5em;
+			}
+			.format-grid {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 0;
+			}
+			.format-card {
+				padding: 1.25em 0;
+				border-bottom: 1px solid var(--border);
+			}
+			.format-card:nth-child(odd) {
+				border-right: 1px solid var(--border);
+				padding-right: 1.5em;
+			}
+			.format-card:nth-child(even) {
+				padding-left: 1.5em;
+			}
+			.format-card h3 {
+				font-size: 0.85em;
+				margin: 0 0 0.4em;
+				color: var(--text);
+				letter-spacing: 0.06em;
+			}
+			.format-card p {
+				color: var(--text-dim);
+				font-size: 0.8em;
+				margin: 0;
+				line-height: 1.5;
+			}
+			.cta {
+				margin-top: 3em;
+				padding-top: 2em;
+				border-top: 1px solid var(--border);
+				text-align: center;
+			}
+			.cta p {
+				color: var(--text-muted);
+				font-size: 0.9em;
+				margin-bottom: 1.5em;
+			}
+			.cta-button {
+				display: inline-block;
+				padding: 0.75em 2em;
+				border: 1px solid var(--hal-red);
+				color: var(--hal-red);
+				text-decoration: none;
+				font-family: "Atkinson", sans-serif;
+				font-weight: 700;
+				font-size: 0.85em;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				transition: all 0.2s ease;
+			}
+			.cta-button:hover {
+				background: var(--hal-red);
+				color: var(--bg);
+				box-shadow: 0 0 20px rgba(255, 51, 51, 0.3);
+				text-shadow: none;
+			}
+			@media (max-width: 720px) {
+				.format-grid {
+					grid-template-columns: 1fr;
+				}
+				.format-card:nth-child(odd) {
+					border-right: none;
+					padding-right: 0;
+				}
+				.format-card:nth-child(even) {
+					padding-left: 0;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="page-header">
+				<h1>Course</h1>
+				<p>Building Deterministic AI Agent Systems</p>
+			</div>
+
+			<p class="intro">
+				Most AI agent frameworks treat execution as a black box. This course teaches you
+				to build agent systems that are auditable, accountable, and production-ready —
+				using the same patterns behind KarnEvil9 and Google DeepMind's Intelligent AI Delegation framework.
+			</p>
+
+			<h2 class="section-title">Curriculum</h2>
+			{modules.map((mod) => (
+				<div class="module">
+					<h3>{mod.title}</h3>
+					<ul>
+						{mod.topics.map((t) => <li>{t}</li>)}
+					</ul>
+				</div>
+			))}
+
+			<div class="audience-section">
+				<h2 class="section-title">Who It's For</h2>
+				<ul class="audience-list">
+					{audiences.map((a) => (
+						<li><span class="dot"></span> {a}</li>
+					))}
+				</ul>
+			</div>
+
+			<div class="formats">
+				<h2 class="section-title">Formats</h2>
+				<div class="format-grid">
+					<div class="format-card">
+						<h3>Workshop</h3>
+						<p>Half-day or full-day hands-on session. Build a deterministic agent from scratch.</p>
+					</div>
+					<div class="format-card">
+						<h3>Multi-Session Course</h3>
+						<p>4-week program covering the full curriculum with code reviews and exercises.</p>
+					</div>
+					<div class="format-card">
+						<h3>Conference Talk</h3>
+						<p>60-minute deep dive into deterministic agent architecture and delegation governance.</p>
+					</div>
+					<div class="format-card">
+						<h3>Private Training</h3>
+						<p>Custom curriculum tailored to your team's stack, use cases, and compliance needs.</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="cta">
+				<p>Interested in bringing this to your team or event?</p>
+				<a class="cta-button" href="mailto:oldeucryptoboi@proton.me?subject=Course%20Interest%20—%20Building%20Deterministic%20AI%20Agent%20Systems">
+					Register Interest
+				</a>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>

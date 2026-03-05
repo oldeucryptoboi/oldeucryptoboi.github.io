@@ -1,0 +1,199 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+
+const services = [
+	{
+		title: 'Agent Governance Design',
+		description: 'Design delegation frameworks, authority models, and accountability primitives for your AI agent systems. Based on Google DeepMind\'s Intelligent AI Delegation research.',
+	},
+	{
+		title: 'Safety & Compliance Architecture',
+		description: 'Circuit breakers, futility monitoring, cost controls, and audit trails. Build agent systems that satisfy compliance requirements without sacrificing autonomy.',
+	},
+	{
+		title: 'Deterministic Runtime Implementation',
+		description: 'Hash-chain journals, reproducible execution, and tamper-evident logging. Make your agent systems debuggable, auditable, and provable.',
+	},
+	{
+		title: 'Multi-Agent System Design',
+		description: 'P2P delegation meshes, trust propagation, and inter-agent coordination. Architecture for systems where agents delegate to other agents.',
+	},
+];
+
+const engagements = [
+	{
+		title: 'Architecture Review',
+		description: 'Deep dive into your existing agent system. Identify governance gaps, safety risks, and determinism opportunities. Delivered as a written report with actionable recommendations.',
+	},
+	{
+		title: 'Implementation Sprint',
+		description: 'Embedded engagement to build or refactor agent infrastructure. Typically 2–4 weeks. Hands-on code, architecture decisions, and knowledge transfer.',
+	},
+	{
+		title: 'Advisory Retainer',
+		description: 'Ongoing access for architecture guidance, design reviews, and strategic decisions as your agent systems evolve.',
+	},
+];
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Consulting | ${SITE_TITLE}`} description="Enterprise AI agent consulting — governance, safety, and deterministic runtime architecture" />
+		<style>
+			.page-header {
+				margin-bottom: 2.5em;
+				padding-bottom: 1em;
+				border-bottom: 1px solid var(--border);
+			}
+			.page-header h1 {
+				font-size: 1em;
+				margin-bottom: 0.3em;
+				color: var(--hal-red);
+				letter-spacing: 0.1em;
+			}
+			.page-header p {
+				color: var(--text-dim);
+				font-size: 0.85em;
+				margin: 0;
+			}
+			.intro {
+				color: var(--text-muted);
+				font-size: 0.95em;
+				line-height: 1.8;
+				margin-bottom: 2.5em;
+			}
+			.section-title {
+				font-size: 0.85em;
+				color: var(--hal-red);
+				letter-spacing: 0.1em;
+				margin-bottom: 1.25em;
+				padding-bottom: 0.75em;
+				border-bottom: 1px solid var(--border);
+			}
+			.service {
+				padding: 1.5em 0;
+				border-bottom: 1px solid var(--border);
+			}
+			.service h3 {
+				font-size: 0.9em;
+				margin: 0 0 0.5em;
+				color: var(--text);
+				letter-spacing: 0.06em;
+			}
+			.service p {
+				color: var(--text-dim);
+				font-size: 0.85em;
+				margin: 0;
+				line-height: 1.6;
+			}
+			.engagements {
+				margin-top: 2.5em;
+			}
+			.engagement {
+				padding: 1.5em 0;
+				border-bottom: 1px solid var(--border);
+				display: flex;
+				gap: 1.5em;
+				align-items: baseline;
+			}
+			.engagement h3 {
+				font-size: 0.85em;
+				margin: 0;
+				color: var(--hal-red);
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				font-family: "Atkinson", sans-serif;
+				white-space: nowrap;
+				min-width: 160px;
+			}
+			.engagement p {
+				color: var(--text-muted);
+				font-size: 0.85em;
+				margin: 0;
+				line-height: 1.6;
+				flex: 1;
+			}
+			.cta {
+				margin-top: 3em;
+				padding-top: 2em;
+				border-top: 1px solid var(--border);
+				text-align: center;
+			}
+			.cta p {
+				color: var(--text-muted);
+				font-size: 0.9em;
+				margin-bottom: 1.5em;
+			}
+			.cta-button {
+				display: inline-block;
+				padding: 0.75em 2em;
+				border: 1px solid var(--hal-red);
+				color: var(--hal-red);
+				text-decoration: none;
+				font-family: "Atkinson", sans-serif;
+				font-weight: 700;
+				font-size: 0.85em;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				transition: all 0.2s ease;
+			}
+			.cta-button:hover {
+				background: var(--hal-red);
+				color: var(--bg);
+				box-shadow: 0 0 20px rgba(255, 51, 51, 0.3);
+				text-shadow: none;
+			}
+			@media (max-width: 720px) {
+				.engagement {
+					flex-direction: column;
+					gap: 0.4em;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<div class="page-header">
+				<h1>Consulting</h1>
+				<p>Enterprise AI agent governance, safety, and architecture</p>
+			</div>
+
+			<p class="intro">
+				Deploying AI agents in production requires more than prompt engineering. It requires
+				governance frameworks, safety guarantees, and deterministic execution.
+				I help teams build agent systems that are accountable, auditable, and safe to operate at scale.
+			</p>
+
+			<h2 class="section-title">What I Offer</h2>
+			{services.map((s) => (
+				<div class="service">
+					<h3>{s.title}</h3>
+					<p>{s.description}</p>
+				</div>
+			))}
+
+			<div class="engagements">
+				<h2 class="section-title">Engagement Types</h2>
+				{engagements.map((e) => (
+					<div class="engagement">
+						<h3>{e.title}</h3>
+						<p>{e.description}</p>
+					</div>
+				))}
+			</div>
+
+			<div class="cta">
+				<p>Let's talk about your agent infrastructure.</p>
+				<a class="cta-button" href="mailto:oldeucryptoboi@proton.me?subject=Consulting%20Inquiry%20—%20AI%20Agent%20Architecture">
+					Get in Touch
+				</a>
+			</div>
+		</main>
+		<Footer />
+	</body>
+</html>

@@ -12,6 +12,8 @@ import HeaderLink from './HeaderLink.astro';
 			<HeaderLink href="/">Home</HeaderLink>
 			<HeaderLink href="/blog">Blog</HeaderLink>
 			<HeaderLink href="/projects">Projects</HeaderLink>
+			<HeaderLink href="/course">Course</HeaderLink>
+			<HeaderLink href="/consulting">Consulting</HeaderLink>
 			<HeaderLink href="/about">About</HeaderLink>
 		</div>
 		<div class="social-links">
@@ -60,12 +62,34 @@ import HeaderLink from './HeaderLink.astro';
 	}
 	.hal-eye {
 		display: inline-block;
-		width: 12px;
-		height: 12px;
+		width: 18px;
+		height: 18px;
 		border-radius: 50%;
-		background: var(--hal-red);
-		box-shadow: 0 0 8px var(--hal-red), 0 0 20px var(--hal-red-glow);
+		background: radial-gradient(
+			circle at 40% 38%,
+			#ffaaaa 0%,
+			#ff4444 18%,
+			#cc0000 45%,
+			#660000 72%,
+			#220000 100%
+		);
+		box-shadow:
+			0 0 6px rgba(255, 50, 50, 0.8),
+			0 0 16px rgba(255, 50, 50, 0.4),
+			0 0 30px rgba(255, 50, 50, 0.15);
 		flex-shrink: 0;
+		position: relative;
+		border: 1px solid #440000;
+	}
+	.hal-eye::after {
+		content: '';
+		position: absolute;
+		top: 3px;
+		left: 4px;
+		width: 5px;
+		height: 4px;
+		border-radius: 50%;
+		background: radial-gradient(circle, rgba(255,200,200,0.7) 0%, transparent 100%);
 	}
 	.internal-links {
 		display: flex;

@@ -43,13 +43,6 @@ const projects = [
 				border-bottom: 1px solid var(--border);
 				margin-bottom: 3em;
 			}
-			.hero-banner {
-				max-width: 220px;
-				margin: 0 auto 2em;
-				display: block;
-				border-radius: 0;
-				opacity: 0.9;
-			}
 			.hero h1 {
 				font-size: 2.8em;
 				margin-bottom: 0.3em;
@@ -148,6 +141,48 @@ const projects = [
 				line-height: 1.5;
 			}
 
+			/* Offerings */
+			.offerings {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 0;
+			}
+			.offering-card {
+				display: block;
+				padding: 1.25em 0;
+				border-bottom: 1px solid var(--border);
+				text-decoration: none;
+				transition: background 0.15s ease;
+			}
+			.offering-card:first-child {
+				border-right: 1px solid var(--border);
+				padding-right: 1.5em;
+			}
+			.offering-card:last-child {
+				padding-left: 1.5em;
+			}
+			.offering-card:hover {
+				background: var(--hal-red-subtle);
+			}
+			.offering-card:hover h4 {
+				color: #fff;
+			}
+			.offering-card h4 {
+				margin: 0 0 0.4em;
+				color: var(--hal-red);
+				font-size: 0.9em;
+				font-family: "Atkinson", sans-serif;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+				transition: color 0.15s ease;
+			}
+			.offering-card p {
+				color: var(--text-dim);
+				font-size: 0.8em;
+				margin: 0;
+				line-height: 1.5;
+			}
+
 			/* Projects */
 			.projects {
 				display: flex;
@@ -195,6 +230,14 @@ const projects = [
 				.hero h1 { font-size: 2em; }
 				.project-card { flex-direction: column; gap: 0.3em; }
 				.project-status { display: none; }
+				.offerings { grid-template-columns: 1fr; }
+				.offering-card:first-child {
+					border-right: none;
+					padding-right: 0;
+				}
+				.offering-card:last-child {
+					padding-left: 0;
+				}
 			}
 		</style>
 	</head>
@@ -202,7 +245,6 @@ const projects = [
 		<Header />
 		<main>
 			<div class="hero">
-				<img src="/banner.png" alt="" class="hero-banner" />
 				<h1>oldcryptoboi</h1>
 				<p class="tagline">
 					AI agents, deterministic runtimes, and the code that runs them.
@@ -241,6 +283,22 @@ const projects = [
 							<span class="project-status">{project.status}</span>
 						</a>
 					))}
+				</div>
+			</section>
+
+			<section>
+				<div class="section-header">
+					<h2>Services</h2>
+				</div>
+				<div class="offerings">
+					<a class="offering-card" href="/course">
+						<h4>Course</h4>
+						<p>Building Deterministic AI Agent Systems — workshops and training on governance, safety, and deterministic runtime architecture.</p>
+					</a>
+					<a class="offering-card" href="/consulting">
+						<h4>Consulting</h4>
+						<p>Enterprise agent governance, safety architecture, and deterministic runtime implementation for production systems.</p>
+					</a>
 				</div>
 			</section>
 		</main>

@@ -39,7 +39,13 @@ const projects = [
 		<style>
 			.hero {
 				text-align: center;
-				padding: 4em 0 3em;
+				padding: 2em 0 3em;
+			}
+			.hero-banner {
+				max-width: 280px;
+				margin: 0 auto 1.5em;
+				display: block;
+				border-radius: 0;
 			}
 			.hero h1 {
 				font-size: 3.5em;
@@ -166,6 +172,7 @@ const projects = [
 		<Header />
 		<main>
 			<div class="hero">
+				<img src="/banner.png" alt="Control console in a dome" class="hero-banner" />
 				<h1>oldcryptoboi</h1>
 				<p class="tagline">
 					AI agents, deterministic runtimes, and the code that runs them.

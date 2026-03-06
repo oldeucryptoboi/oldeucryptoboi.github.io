@@ -10,6 +10,7 @@
 <p>On LinkedIn, posts live in predictable containers. On X, tweets live inside <code>article[data-testid="tweet"]</code> elements, with the actual text buried in <code>[data-testid="tweetText"]</code>. Platform detection happens by hostname — <code>x.com</code> and <code>twitter.com</code> route through the same pipeline with different selectors.</p>
 <p>The bigger design decision was the minimum text threshold. LinkedIn posts tend to be long — 100 characters is a reasonable floor. Tweets are short by nature. Setting the same threshold would skip half the feed. So tweets get a 50-character minimum. It’s a trade-off: shorter text means less signal for the heuristics, but ignoring most tweets defeats the purpose.</p>
 <p>The LLM prompt also adapts. When analyzing a tweet, it says “tweet” instead of “LinkedIn post” — small detail, but it changes how the model weighs platform-specific conventions.</p>
+<p><img alt="X/LAID detecting AI on LinkedIn — dog-ear badges scoring posts in a live feed" loading="lazy" decoding="async" fetchpriority="auto" width="1616" height="1776" src="/_astro/xlaid-linkedin.UL2CgOQF_1rWoly.webp" ></p>
 <hr>
 <h3 id="linkedin-comments-too">LinkedIn comments, too</h3>
 <p>While I was mapping DOM selectors, I added comment detection on LinkedIn. Comments load dynamically as you scroll, so the existing <code>MutationObserver</code> already catches them. I just needed the selectors (<code>.comments-comment-item</code>, <code>.comments-comment-entity</code>) and the same 50-character minimum threshold used for tweets.</p>
@@ -19,6 +20,7 @@
 <p>The original LAID badge was a circle overlaid on the post. It worked conceptually but kept colliding with Follow buttons, ”…” menus, and other UI elements. Every platform update risked breaking the positioning.</p>
 <p>The fix: a corner-fold triangle at the top-right of each post, using <code>clip-path: polygon</code>. It looks like a turned-down page corner — hence “dog-ear.” It sits in dead space that no platform uses for interactive elements, so there’s nothing to collide with.</p>
 <p>The hover animation scales from the corner (<code>transform-origin: top right</code>), and the loading spinner sits inside the triangle while analysis runs. Small touch, but it eliminated the entire class of overlap bugs.</p>
+<p><img alt="X/LAID running on X/Twitter — dog-ear badges on tweets" loading="lazy" decoding="async" fetchpriority="auto" width="2050" height="1760" src="/_astro/xlaid-twitter.Cm2Ccdw1_1Rd3NE.webp" ></p>
 <hr>
 <h3 id="sensitivity-done-right">Sensitivity done right</h3>
 <p>The original sensitivity slider was a linear bias: ±15% on top of the raw score. It sort of worked, but the mapping was unintuitive. What does “+10% sensitivity” actually mean?</p>

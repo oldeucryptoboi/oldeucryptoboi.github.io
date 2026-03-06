@@ -25,6 +25,8 @@ The bigger design decision was the minimum text threshold. LinkedIn posts tend t
 
 The LLM prompt also adapts. When analyzing a tweet, it says "tweet" instead of "LinkedIn post" — small detail, but it changes how the model weighs platform-specific conventions.
 
+![X/LAID detecting AI on LinkedIn — dog-ear badges scoring posts in a live feed](../../assets/xlaid-linkedin.jpg)
+
 ---
 
 ### LinkedIn comments, too
@@ -42,6 +44,8 @@ The original LAID badge was a circle overlaid on the post. It worked conceptuall
 The fix: a corner-fold triangle at the top-right of each post, using `clip-path: polygon`. It looks like a turned-down page corner — hence "dog-ear." It sits in dead space that no platform uses for interactive elements, so there's nothing to collide with.
 
 The hover animation scales from the corner (`transform-origin: top right`), and the loading spinner sits inside the triangle while analysis runs. Small touch, but it eliminated the entire class of overlap bugs.
+
+![X/LAID running on X/Twitter — dog-ear badges on tweets](../../assets/xlaid-twitter.jpg)
 
 ---
 

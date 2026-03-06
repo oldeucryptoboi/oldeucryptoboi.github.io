@@ -32,6 +32,21 @@ const posts = (await getCollection('blog')).sort(
 				font-size: 0.85em;
 				margin: 0;
 			}
+			.subscribe-line {
+				margin-top: 0.6em !important;
+			}
+			.subscribe-line a {
+				color: var(--hal-red);
+				font-size: 0.8em;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				font-family: "Atkinson", sans-serif;
+				text-decoration: none;
+				transition: color 0.15s ease;
+			}
+			.subscribe-line a:hover {
+				color: #fff;
+			}
 			.posts {
 				list-style: none;
 				margin: 0;
@@ -107,6 +122,7 @@ const posts = (await getCollection('blog')).sort(
 			<div class="page-header">
 				<h1>Transmissions</h1>
 				<p>AI agents, deterministic execution, building in public.</p>
+				<p class="subscribe-line"><a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener">Subscribe on Substack →</a></p>
 			</div>
 			<ul class="posts">
 				{posts.map((post) => (

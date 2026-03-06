@@ -1,8 +1,8 @@
 :root {
-	--hal-red: #ff3333;
-	--hal-red-dim: #cc2929;
-	--hal-red-glow: rgba(255, 51, 51, 0.15);
-	--hal-red-subtle: rgba(255, 51, 51, 0.08);
+	--hal-red: #ff3300;
+	--hal-red-dim: #cc2900;
+	--hal-red-glow: rgba(255, 51, 0, 0.15);
+	--hal-red-subtle: rgba(255, 51, 0, 0.08);
 	--bg: #000000;
 	--bg-panel: #0a0a0a;
 	--bg-card: #111111;

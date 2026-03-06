@@ -102,6 +102,30 @@ const { title, description, pubDate, updatedDate, heroImage, tags = [], prev, ne
 				line-height: 1.4;
 				transition: color 0.15s ease;
 			}
+			.subscribe-cta {
+				margin-top: 3em;
+				padding: 1.5em;
+				border: 1px solid var(--border);
+				text-align: center;
+			}
+			.subscribe-cta p {
+				margin: 0 0 0.75em;
+				color: var(--text-dim);
+				font-size: 0.85em;
+				letter-spacing: 0.04em;
+			}
+			.subscribe-cta a {
+				color: var(--hal-red);
+				font-size: 0.8em;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				font-family: "Atkinson", sans-serif;
+				text-decoration: none;
+				transition: color 0.15s ease;
+			}
+			.subscribe-cta a:hover {
+				color: #fff;
+			}
 			@media (max-width: 720px) {
 				.post-nav {
 					flex-direction: column;
@@ -141,6 +165,10 @@ const { title, description, pubDate, updatedDate, heroImage, tags = [], prev, ne
 						)}
 					</div>
 					<slot />
+					<div class="subscribe-cta">
+						<p>Get new posts delivered to your inbox</p>
+						<a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener">Subscribe on Substack →</a>
+					</div>
 					{(prev || next) && (
 						<nav class="post-nav">
 							{prev ? (

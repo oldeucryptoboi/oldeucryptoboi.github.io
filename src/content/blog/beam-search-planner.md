@@ -1,6 +1,6 @@
 ---
 title: "Beam Search for Agentic Planning: What Happens When You Give an AI Agent a Second Opinion"
-description: "LLM planners are one-shot thinkers. Inspired by ProbDreamer (ICLR 2026), we built an adaptive beam search that generates contrastive plan alternatives. K=2 is all you need."
+description: "LLM planners produce a single trajectory — even reasoning models. Inspired by ProbDreamer (ICLR 2026), we built an adaptive beam search that surfaces contrastive alternatives and scores them against runtime context. K=2 is all you need."
 pubDate: 2026-03-12
 tags: ["AI Agents", "KarnEvil9", "Planning", "Beam Search", "Research"]
 ---
@@ -9,9 +9,11 @@ tags: ["AI Agents", "KarnEvil9", "Planning", "Beam Search", "Research"]
 
 ---
 
-LLM planners have a dirty secret: they're one-shot thinkers. Ask an LLM to generate a plan for a complex task and it picks a single strategy — usually the safest, most obvious one. It never considers whether a fundamentally different approach might be better. It's like asking someone for directions and they always say "take the highway" without ever considering that the backroads might be faster.
+LLM planners produce a single trajectory. Even reasoning models — Claude with extended thinking, o1/o3, Gemini thinking — that internally explore multiple strategies still collapse to one output. The alternatives the model considered are invisible to the system: they can't be scored, they can't be evaluated against execution history, and there's no guarantee the model even considered a *structurally* different approach versus minor variations of the same idea.
 
-We fixed this by giving our planner a second opinion.
+It's like asking someone for directions. They might briefly consider the backroads, but they'll tell you "take the highway" — and you'll never know the backroads existed.
+
+We fixed this by making the exploration explicit.
 
 ## The Inspiration: Probabilistic Dreaming
 
@@ -19,7 +21,7 @@ A paper caught our eye at ICLR 2026 — [Probabilistic Dreaming for World Models
 
 The agent literally freezes when faced with two valid strategies, because its single representation can't hold both.
 
-We realized our LLM planner has the exact same problem.
+The analogy to LLM planning isn't about whether the model *thinks* about alternatives — it does. It's about whether those alternatives are *surfaced, scored, and selected* using signals the model doesn't have: tool success rates from previous executions, structural quality heuristics, and runtime context. A reasoning model's internal deliberation is rich but opaque. Beam search makes it transparent.
 
 ## The Problem: Mode Collapse in Planning
 
@@ -135,7 +137,7 @@ We considered three approaches before landing on contrastive generation:
 - **Option B: Single-call dual output** — Ask the LLM to generate two alternatives in one call. This produces "me too" alternatives that look different but follow the same logic. The second plan is always a minor variation of the first.
 - **Option C: Contrastive generation** — Generate a primary plan, then explicitly prompt for "a fundamentally different approach that doesn't use these tools in this order." This forces genuine strategic divergence.
 
-Option C won decisively. The key is that the contrastive prompt provides *negative examples* — "here's what NOT to do" — which LLMs are surprisingly good at responding to.
+Option C won decisively. The key is that the contrastive prompt provides *negative examples* — "here's what NOT to do" — which forces the model to move beyond the strategy its internal reasoning already converged on. Even a reasoning model that "considered" alternatives during chain-of-thought will default to the same modal output on a second call with the same prompt. The contrastive prompt breaks that attractor.
 
 ## Implementation
 

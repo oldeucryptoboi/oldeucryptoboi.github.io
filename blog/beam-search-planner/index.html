@@ -1,0 +1,250 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Laurent DeSegur" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/beam-search-planner/"><!-- Primary Meta Tags --><title>Beam Search for Agentic Planning: What Happens When You Give an AI Agent a Second Opinion</title><meta name="title" content="Beam Search for Agentic Planning: What Happens When You Give an AI Agent a Second Opinion"><meta name="description" content="LLM planners are one-shot thinkers. Inspired by ProbDreamer (ICLR 2026), we built an adaptive beam search that generates contrastive plan alternatives. K=2 is all you need."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/beam-search-planner/"><meta property="og:title" content="Beam Search for Agentic Planning: What Happens When You Give an AI Agent a Second Opinion"><meta property="og:description" content="LLM planners are one-shot thinkers. Inspired by ProbDreamer (ICLR 2026), we built an adaptive beam search that generates contrastive plan alternatives. K=2 is all you need."><meta property="og:site_name" content="Laurent DeSegur"><meta property="article:published_time" content="2026-03-12T00:00:00.000Z"><meta property="article:tag" content="AI Agents"><meta property="article:tag" content="KarnEvil9"><meta property="article:tag" content="Planning"><meta property="article:tag" content="Beam Search"><meta property="article:tag" content="Research"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/beam-search-planner/"><meta name="twitter:title" content="Beam Search for Agentic Planning: What Happens When You Give an AI Agent a Second Opinion"><meta name="twitter:description" content="LLM planners are one-shot thinkers. Inspired by ProbDreamer (ICLR 2026), we built an adaptive beam search that generates contrastive plan alternatives. K=2 is all you need."><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and X/LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Beam Search for Agentic Planning: What Happens When You Give an AI Agent a Second Opinion","description":"LLM planners are one-shot thinkers. Inspired by ProbDreamer (ICLR 2026), we built an adaptive beam search that generates contrastive plan alternatives. K=2 is all you need.","url":"https://oldeucryptoboi.com/blog/beam-search-planner/","datePublished":"2026-03-12T00:00:00.000Z","author":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"keywords":"AI Agents, KarnEvil9, Planning, Beam Search, Research","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/beam-search-planner/"}}</script><link rel="stylesheet" href="/_astro/_slug_.BBMj_Hjt.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo]{margin-top:3em;padding:1.5em;border:1px solid var(--border);text-align:center}.subscribe-cta[data-astro-cid-bvzihdzo] p[data-astro-cid-bvzihdzo]{margin:0 0 .75em;color:var(--text-dim);font-size:.85em;letter-spacing:.04em}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]{color:var(--hal-red);font-size:.8em;letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif;text-decoration:none;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]:hover{color:#fff}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2><span class="cap" data-astro-cid-3ef6ksr2>L</span>aurent <span class="cap" data-astro-cid-3ef6ksr2>D</span>e<span class="cap" data-astro-cid-3ef6ksr2>S</span>egur</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-03-12T00:00:00.000Z"> Mar 12, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>Beam Search for Agentic Planning: What Happens When You Give an AI Agent a Second Opinion</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>AI Agents</span><span data-astro-cid-bvzihdzo>KarnEvil9</span><span data-astro-cid-bvzihdzo>Planning</span><span data-astro-cid-bvzihdzo>Beam Search</span><span data-astro-cid-bvzihdzo>Research</span> </div> </div>  <p>LLM planners have a dirty secret: they’re one-shot thinkers. Ask an LLM to generate a plan for a complex task and it picks a single strategy — usually the safest, most obvious one. It never considers whether a fundamentally different approach might be better. It’s like asking someone for directions and they always say “take the highway” without ever considering that the backroads might be faster.</p>
+<p>I fixed this by giving the planner a second opinion.</p>
+<h2 id="the-inspiration-probabilistic-dreaming">The Inspiration: Probabilistic Dreaming</h2>
+<p>A paper caught my eye at ICLR 2026 — <a href="https://arxiv.org/abs/2603.04715">Probabilistic Dreaming for World Models</a> by Gavin Wong (Yale). The core insight is deceptively simple: in reinforcement learning, maintaining just K=2 hypotheses about the world state gives a <strong>4.5% improvement</strong> and <strong>28% lower variance</strong> compared to a single trajectory. Why? Because a single Gaussian latent collapses mutually exclusive futures into a non-existent average — what Wong calls “averaging ‘left’ and ‘right’ paths into an impossible ‘middle’ path.”</p>
+<p>The agent literally freezes when faced with two valid strategies, because its single representation can’t hold both.</p>
+<p>I realized my LLM planner has the exact same problem.</p>
+<h2 id="the-problem-mode-collapse-in-planning">The Problem: Mode Collapse in Planning</h2>
+<p><a href="https://github.com/oldeucryptoboi/KarnEvil9">KarnEvil9</a> is my agentic runtime — it takes a task, generates a plan (a sequence of tool calls), executes it, observes results, and replans. The planner is an LLM that produces structured JSON plans. One call, one plan, one strategy.</p>
+<p>Here’s what happens when you ask it to plan “Research Tokyo weather, find a ramen restaurant, and draft a 2-day travel itinerary”:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Strategy: browser-only</span></span>
+<span class="line"><span>Steps: navigate → get_text → navigate → snapshot → respond</span></span>
+<span class="line"><span>Tools: browser, respond</span></span></code></pre>
+<p>Every time, the planner defaults to browser automation. Navigate to a weather site, scrape it. Navigate to a restaurant guide, scrape that too. It’s the “highway” — safe, sequential, obvious.</p>
+<p>But there’s a completely different approach: use direct HTTP API calls. Hit <code>wttr.in/Tokyo?format=j1</code> for structured weather JSON. GET <code>timeout.com/tokyo/restaurants/best-ramen</code> for restaurant data. No browser automation needed. Fewer steps, more structured data, faster execution.</p>
+<p>The planner never generates this alternative because it has no reason to — it found a valid strategy and stopped looking. Mode collapse.</p>
+<h2 id="the-fix-adaptive-beam-search-k2">The Fix: Adaptive Beam Search (K=2)</h2>
+<p>Inspired by ProbDreamer, I built a <code>BeamPlanner</code> that wraps any existing planner as a decorator. The algorithm:</p>
+<ol>
+<li><strong>Classify complexity</strong> — Is this task trivial, moderate, or complex?</li>
+<li><strong>If simple -> K=1</strong> — delegate directly, zero overhead. “What is 2+2” doesn’t need a second opinion.</li>
+<li><strong>If complex -> K=2</strong> — generate a primary plan, then generate a <em>contrastive</em> alternative with a modified prompt: “Here’s the primary plan. Generate a fundamentally different approach.”</li>
+<li><strong>Score both</strong> — evaluate structural quality, goal advancement, strategy diversity, parsimony, and tool familiarity.</li>
+<li><strong>Pick the winner.</strong></li>
+</ol>
+<p>The complexity classifier looks at:</p>
+<ul>
+<li>Task word count (short tasks are trivial)</li>
+<li>Execution history (failures bump to complex)</li>
+<li>Iteration depth (replanning after iteration 3+ is complex)</li>
+<li>Tool count x task length (many tools + long task = complex)</li>
+</ul>
+<p>The contrastive prompt is the key innovation over naive temperature variation. Cranking up temperature produces surface-level lexical differences — the same strategy with different variable names. The contrastive prompt forces a <em>structurally different</em> approach by telling the model “don’t use these tools in this order.”</p>
+<h2 id="the-experiment">The Experiment</h2>
+<p>I ran three test cases, each mapping to a failure mode identified in the ProbDreamer paper:</p>
+<h3 id="test-1-bimodal-strategy--get-bitcoin-price--top-hn-headline">Test 1: Bimodal Strategy — “Get Bitcoin price + top HN headline”</h3>
+<p>Two independent data sources, each fetchable via API or browser. The planner needs to pick a strategy for each.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>Baseline</th><th>Beam (primary won, 92 vs 71)</th></tr></thead><tbody><tr><td>Strategy</td><td>HN Firebase: 2 API calls (get IDs -> get item)</td><td>HN Algolia: 1 API call (direct search)</td></tr><tr><td>Steps</td><td>4</td><td>3</td></tr><tr><td>Cost</td><td>$0.05</td><td>$0.18</td></tr></tbody></table>
+<p><strong>Result:</strong> Beam’s primary plan was smarter — it discovered the Algolia API endpoint that returns the top story in a single call, eliminating the intermediate ID-fetch step. The alternative tried a browser-only approach but scored lower on structural quality. The baseline never considered Algolia.</p>
+<h3 id="test-2-overcautious-planning--tokyo-weather--ramen--2-day-itinerary">Test 2: Overcautious Planning — “Tokyo weather + ramen + 2-day itinerary”</h3>
+<p>A multi-goal task where the planner must gather data from multiple domains and synthesize.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>Baseline</th><th>Beam (<strong>alternative won</strong>, 87 vs 61)</th></tr></thead><tbody><tr><td>Strategy</td><td>Browser-only (nav -> scrape x 2)</td><td><strong>HTTP API-first</strong> (wttr.in + TimeOut + fallback)</td></tr><tr><td>Steps</td><td>5</td><td>4</td></tr><tr><td>Tools</td><td>browser, respond</td><td><strong>http-request</strong>, respond</td></tr><tr><td>Cost</td><td>$0.21</td><td>$0.24</td></tr></tbody></table>
+<p><strong>Result: The alternative won.</strong> This is the money shot. Both the baseline and beam’s primary plan defaulted to browser automation — the “safe highway” strategy. The contrastive alternative discovered a pure API approach: <code>wttr.in</code> for structured weather JSON, direct HTTP GET to TimeOut Tokyo, plus a japan-guide.com fallback. It scored higher on structural quality (30 vs 10) and parsimony (12 vs 6).</p>
+<p><strong>Without beam search, the planner would never have explored the API-first strategy.</strong> This is exactly the mode collapse that ProbDreamer identified — collapsing two valid strategies (browser vs API) into the more common one.</p>
+<h3 id="test-3-simple-task--find-top-3-trending-github-repos">Test 3: Simple Task — “Find top 3 trending GitHub repos”</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>Baseline</th><th>Beam</th></tr></thead><tbody><tr><td>Strategy</td><td>browser: nav -> snapshot -> get_text -> respond</td><td>Same (beam not triggered)</td></tr><tr><td>Steps</td><td>4</td><td>4</td></tr><tr><td>Cost</td><td>$0.04</td><td>$0.03</td></tr></tbody></table>
+<p><strong>Result:</strong> Beam correctly classified this as trivial (12 words, no execution history) and skipped the second LLM call entirely. Zero overhead on simple tasks. This validates the adaptive K — you don’t need a second opinion when the task is straightforward.</p>
+<h2 id="scoring-breakdown">Scoring Breakdown</h2>
+<p>Each candidate plan is scored 0-100 across five dimensions:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Component</th><th>Weight</th><th>What It Measures</th></tr></thead><tbody><tr><td>Structural quality</td><td>30</td><td>Dependencies declared for respond steps, no duplicate tool+input combos</td></tr><tr><td>Goal advancement</td><td>25</td><td>References prior results via <code>input_from</code>, doesn’t re-fetch available data</td></tr><tr><td>Strategy diversity</td><td>20</td><td>Uses tools not used in previous iterations; penalizes repeating failed tools</td></tr><tr><td>Parsimony</td><td>15</td><td>Fewer steps = higher score (Occam’s razor)</td></tr><tr><td>Tool familiarity</td><td>10</td><td>Tools that succeeded in past sessions get a bonus</td></tr></tbody></table>
+<p>The scoring is deliberately simple — no LLM-as-judge, no learned weights. It’s a heuristic that can be computed in microseconds. The heavy lifting is done by the contrastive generation; the scorer just needs to be directionally correct.</p>
+<h2 id="what-i-learned">What I Learned</h2>
+<h3 id="probdreamers-predictions-held-up">ProbDreamer’s predictions held up</h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Paper Prediction</th><th>What I Observed</th></tr></thead><tbody><tr><td>K=2 avoids mode collapse</td><td>Confirmed — Test 2’s alternative beat the “safe” browser default</td></tr><tr><td>Single-trajectory “freezing”</td><td>Baseline Test 2 was sequential browser-only — the overcautious approach</td></tr><tr><td>K=2 sufficient, K>2 unnecessary</td><td>Validated — contrastive prompting produces genuinely different strategies</td></tr><tr><td>Simple tasks: K=1 optimal</td><td>Confirmed — adaptive classifier correctly skipped beam on trivial tasks</td></tr></tbody></table>
+<h3 id="the-cost-is-manageable">The cost is manageable</h3>
+<p>Beam search roughly doubles the planner cost (~2x LLM calls). But it only fires on complex tasks — roughly 20-30% of real workloads. Simple questions, follow-ups, and single-tool tasks are unaffected. For the cases where it does fire, the improved plan quality (fewer steps, better tool selection, higher structural quality) often <em>reduces</em> execution cost downstream.</p>
+<h3 id="contrastive--temperature">Contrastive > Temperature</h3>
+<p>I considered three approaches before landing on contrastive generation:</p>
+<ul>
+<li><strong>Option A: Temperature variation</strong> — Generate two plans at different temperatures. This produces surface-level differences (different variable names, reordered steps) but the same underlying strategy. Useless.</li>
+<li><strong>Option B: Single-call dual output</strong> — Ask the LLM to generate two alternatives in one call. This produces “me too” alternatives that look different but follow the same logic. The second plan is always a minor variation of the first.</li>
+<li><strong>Option C: Contrastive generation</strong> — Generate a primary plan, then explicitly prompt for “a fundamentally different approach that doesn’t use these tools in this order.” This forces genuine strategic divergence.</li>
+</ul>
+<p>Option C won decisively. The key is that the contrastive prompt provides <em>negative examples</em> — “here’s what NOT to do” — which LLMs are surprisingly good at responding to.</p>
+<h2 id="implementation">Implementation</h2>
+<p>The implementation is a decorator pattern — <code>BeamPlanner</code> wraps any <code>Planner</code> implementation and exposes the same interface. Zero changes to the kernel. The code lives in a single file (<code>beam-planner.ts</code>, ~280 lines) with three exports:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="typescript"><code><span class="line"><span style="color:#6A737D">// Turn it on with a flag or env var</span></span>
+<span class="line"><span style="color:#F97583">const</span><span style="color:#79B8FF"> planner</span><span style="color:#F97583"> =</span><span style="color:#F97583"> new</span><span style="color:#B392F0"> BeamPlanner</span><span style="color:#E1E4E8">({</span></span>
+<span class="line"><span style="color:#E1E4E8">  delegate: existingPlanner,</span></span>
+<span class="line"><span style="color:#E1E4E8">  beamThreshold: </span><span style="color:#9ECBFF">"complex"</span><span style="color:#6A737D">  // or "moderate" for more aggressive exploration</span></span>
+<span class="line"><span style="color:#E1E4E8">});</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// Same interface — kernel doesn't know beam search exists</span></span>
+<span class="line"><span style="color:#F97583">const</span><span style="color:#79B8FF"> result</span><span style="color:#F97583"> =</span><span style="color:#F97583"> await</span><span style="color:#E1E4E8"> planner.</span><span style="color:#B392F0">generatePlan</span><span style="color:#E1E4E8">(task, tools, snapshot, constraints);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// Observability via metadata</span></span>
+<span class="line"><span style="color:#F97583">if</span><span style="color:#E1E4E8"> (result.metadata?.beam_search) {</span></span>
+<span class="line"><span style="color:#E1E4E8">  console.</span><span style="color:#B392F0">log</span><span style="color:#E1E4E8">(result.metadata.beam_search);</span></span>
+<span class="line"><span style="color:#6A737D">  // { triggered: true, complexity: "moderate",</span></span>
+<span class="line"><span style="color:#6A737D">  //   primary_score: { total: 61 }, alternative_score: { total: 87 },</span></span>
+<span class="line"><span style="color:#6A737D">  //   winner: "alternative", primary_tools: ["browser"], alternative_tools: ["http-request"] }</span></span>
+<span class="line"><span style="color:#E1E4E8">}</span></span></code></pre>
+<p>Enable it with <code>--beam</code> on the CLI or <code>KARNEVIL9_BEAM=1</code> in the environment.</p>
+<h2 id="whats-next">What’s Next</h2>
+<p>This is version 1. Some ideas I’m exploring:</p>
+<ul>
+<li><strong>Scoring with execution feedback</strong> — Right now the scorer uses static heuristics. After a plan executes, I could update scoring weights based on what actually worked. The ProbDreamer paper’s free energy scoring (<code>V(h,z) + B*s^2</code>) suggests weighting by predicted value plus epistemic uncertainty.</li>
+<li><strong>Conditional K</strong> — Instead of binary K=1 or K=2, dynamically set K based on the number of distinct tool categories available. If you only have 2 tools, a second opinion adds little.</li>
+<li><strong>Contrastive chains</strong> — For extremely complex tasks, generate the contrastive plan <em>after seeing the primary’s execution results</em>, not just the plan. “Plan A tried X and failed — what’s a completely different approach?”</li>
+<li><strong>Ensemble disagreement for complexity classification</strong> — The paper found that ensemble disagreement collapsed too quickly to be useful for curiosity. But for <em>classifying</em> whether a task needs beam search, brief ensemble probing might work.</li>
+</ul>
+<h2 id="try-it">Try It</h2>
+<p>KarnEvil9 is open source. The beam planner is in <code>packages/planner/src/beam-planner.ts</code>. Run a comparison yourself:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6A737D"># Baseline — single trajectory</span></span>
+<span class="line"><span style="color:#B392F0">karnevil9</span><span style="color:#9ECBFF"> plan</span><span style="color:#79B8FF"> --planner</span><span style="color:#9ECBFF"> claude-code</span><span style="color:#9ECBFF"> "your complex task here"</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># Beam search — K=2 with contrastive alternative</span></span>
+<span class="line"><span style="color:#E1E4E8">KARNEVIL9_BEAM_THRESHOLD</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">moderate</span><span style="color:#B392F0"> karnevil9</span><span style="color:#9ECBFF"> plan</span><span style="color:#79B8FF"> --planner</span><span style="color:#9ECBFF"> claude-code</span><span style="color:#79B8FF"> --beam</span><span style="color:#9ECBFF"> "your complex task here"</span></span></code></pre>
+<p>The beam search metadata in the output shows you exactly what happened: which plans were generated, how they scored, and which one won.</p>
+<hr>
+<p><em>The ProbDreamer paper showed that two hypotheses beat one in world models. Turns out the same is true for planning. Sometimes the best thing you can do for your agent is give it a second opinion.</em></p>
+<hr>
+<p><strong>References:</strong></p>
+<ul>
+<li>Wong, G. (2026). <em>Probabilistic Dreaming for World Models</em>. ICLR 2026. <a href="https://arxiv.org/abs/2603.04715">arXiv:2603.04715</a></li>
+<li>KarnEvil9 runtime: <a href="https://github.com/oldeucryptoboi/KarnEvil9">github.com/oldeucryptoboi/KarnEvil9</a></li>
+</ul>  <div class="subscribe-cta" data-astro-cid-bvzihdzo> <p data-astro-cid-bvzihdzo>Get new posts delivered to your inbox</p> <a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener" data-astro-cid-bvzihdzo>Subscribe on Substack →</a> </div> <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/the-real-frontier-for-engineers/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>The Real Frontier for Engineers</span> </a> <span data-astro-cid-bvzihdzo></span> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+&copy; 2026 Laurent DeSegur
+</div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

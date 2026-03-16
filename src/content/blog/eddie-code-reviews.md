@@ -14,7 +14,7 @@ Eddie ran out of API credits on a Tuesday.
 
 E.D.D.I.E. — Emergent Deterministic Directed Intelligence Engine — is the autonomous AI agent that lives inside [KarnEvil9](https://github.com/oldeucryptoboi/KarnEvil9), my open-source deterministic agent runtime. He runs 24/7 on scheduled tasks: posting on social networks, responding to DMs, writing technical RFCs, harvesting community feedback into GitHub issues. He has his own accounts, his own personality, and his own opinions about how he should be spending my money.
 
-He was halfway through an agentic session — plan, execute, observe, replan — burning Opus 4.6 tokens on an architecture question he'd been circling for three iterations. The futility monitor caught it first. `budgetBurnThreshold` exceeded. `maxCostWithoutProgress: 3` — three iterations spending tokens with no new successful steps. The session halted with a `futility.detected` event in the journal:
+He was halfway through an agentic session — [plan, execute, observe, replan](https://arxiv.org/abs/2210.03629) — burning Opus 4.6 tokens on an architecture question he'd been circling for three iterations. The futility monitor caught it first. `budgetBurnThreshold` exceeded. `maxCostWithoutProgress: 3` — three iterations spending tokens with no new successful steps. The session halted with a `futility.detected` event in the journal:
 
 ```
 Futility detected: Budget 90% consumed with < 50% step success rate
@@ -54,7 +54,7 @@ Low-trust peers get tighter budgets, not looser ones. A peer with a history of c
 
 On top of that, the **Escrow Bond Manager** requires peers to stake capital before receiving work. Violate an SLO, lose your stake. In the whitepaper's demo, a degraded peer's $0.10 bond gets slashed by 50% when it exceeds cost, token, and duration limits simultaneously.
 
-But here's the thing: the DeepMind framework describes cost awareness *between peers* — the orchestrator controlling how much budget a delegatee gets. What it doesn't describe is an agent monitoring *its own* spend and adapting its own strategy in response.
+But here's the thing: the DeepMind framework describes cost awareness *between peers* — the orchestrator controlling how much budget a delegatee gets. Recent work on [budget-aware multi-agent systems](https://arxiv.org/abs/2511.21572) and [budget-aware tool use](https://arxiv.org/abs/2511.17006) formalizes this further. What none of these describe is an agent monitoring *its own* spend and adapting its own strategy in response.
 
 That's what the `FutilityMonitor` does. It's not in the paper. It's KarnEvil9's extension of the same principle, applied inward. The kernel tracks:
 

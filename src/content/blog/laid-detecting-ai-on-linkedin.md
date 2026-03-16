@@ -68,7 +68,7 @@ The model sees the quantitative signals and can either agree with them or overri
 
 ### What I learned building this
 
-**The vocabulary signal is absurdly strong.** "Delve" alone is practically a fingerprint. Before ChatGPT, it appeared in roughly 0.002% of English text. Now it appears in 10-20% of AI-assisted academic writing. The Juzek & Ward paper at [COLING 2025](https://arxiv.org/abs/2412.11385) traced this partly to RLHF — the hypothesis being that annotators in regions where "delve" is common in business English (notably Nigeria) reinforced the word during fine-tuning.
+**The vocabulary signal is absurdly strong.** "Delve" alone is practically a fingerprint. Before ChatGPT, it appeared in roughly 0.002% of English text. Now it appears in 10-20% of AI-assisted academic writing. The Juzek & Ward paper at [COLING 2025](https://arxiv.org/abs/2412.11385) traced this partly to RLHF — the hypothesis being that annotators in regions where "delve" is common in business English (notably Nigeria) reinforced the word during [RLHF fine-tuning](https://arxiv.org/abs/2203.02155).
 
 **Contractions matter more than I expected.** In casual LinkedIn posts, a contraction rate below 30% is a strong AI signal. Humans don't write "I have found that it is not sufficient" on LinkedIn. They write "I've found it's not enough."
 

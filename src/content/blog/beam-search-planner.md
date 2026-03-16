@@ -9,7 +9,7 @@ tags: ["AI Agents", "KarnEvil9", "Planning", "Beam Search", "Research"]
 
 ---
 
-LLM planners produce a single trajectory. Even reasoning models — Claude with extended thinking, o1/o3, Gemini thinking — that internally explore multiple strategies still collapse to one output. The alternatives the model considered are invisible to the system: they can't be scored, they can't be evaluated against execution history, and there's no guarantee the model even considered a *structurally* different approach versus minor variations of the same idea.
+LLM planners produce a single trajectory. Even reasoning models — Claude with extended thinking, o1/o3, Gemini thinking — that internally explore multiple strategies still collapse to one output — a phenomenon well-documented as [mode collapse in language models](https://arxiv.org/abs/2402.04477). The alternatives the model considered are invisible to the system: they can't be scored, they can't be evaluated against execution history, and there's no guarantee the model even considered a *structurally* different approach versus minor variations of the same idea.
 
 It's like asking someone for directions. They might briefly consider the backroads, but they'll tell you "take the highway" — and you'll never know the backroads existed.
 
@@ -43,7 +43,7 @@ The planner never generates this alternative because it has no reason to — it 
 
 ## The Fix: Adaptive Beam Search (K=2)
 
-Inspired by ProbDreamer, we built a `BeamPlanner` that wraps any existing planner as a decorator. The algorithm:
+Inspired by ProbDreamer — and drawing on [Diverse Beam Search](https://arxiv.org/abs/1610.02424) (Vijayakumar et al., AAAI 2018) and [Contrastive Decoding](https://arxiv.org/abs/2210.15097) (Li et al., ACL 2023) — we built a `BeamPlanner` that wraps any existing planner as a decorator. The algorithm:
 
 1. **Classify complexity** — Is this task trivial, moderate, or complex?
 2. **If simple → K=1** — delegate directly, zero overhead. "What is 2+2" doesn't need a second opinion.
@@ -112,7 +112,7 @@ Each candidate plan is scored 0–100 across five dimensions:
 | Parsimony | 15 | Fewer steps = higher score (Occam's razor) |
 | Tool familiarity | 10 | Tools that succeeded in past sessions get a bonus |
 
-The scoring is deliberately simple — no LLM-as-judge, no learned weights. It's a heuristic that can be computed in microseconds. The heavy lifting is done by the contrastive generation; the scorer just needs to be directionally correct.
+The scoring is deliberately simple — no [LLM-as-judge](https://arxiv.org/abs/2306.05685), no learned weights. It's a heuristic that can be computed in microseconds. The heavy lifting is done by the contrastive generation; the scorer just needs to be directionally correct.
 
 ## What We Learned
 
@@ -196,4 +196,8 @@ The beam search metadata in the output shows you exactly what happened: which pl
 **References:**
 
 - Wong, G. (2026). *Probabilistic Dreaming for World Models*. ICLR 2026. [arXiv:2603.04715](https://arxiv.org/abs/2603.04715)
+- Vijayakumar, A. K. et al. (2018). *Diverse Beam Search: Decoding Diverse Solutions from Neural Sequence Models*. AAAI 2018. [arXiv:1610.02424](https://arxiv.org/abs/1610.02424)
+- Li, X. L. et al. (2023). *Contrastive Decoding: Open-ended Text Generation as Optimization*. ACL 2023. [arXiv:2210.15097](https://arxiv.org/abs/2210.15097)
+- Hamilton, S. (2024). *Detecting Mode Collapse in Language Models via Narration*. [arXiv:2402.04477](https://arxiv.org/abs/2402.04477)
+- Zheng, L. et al. (2023). *Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena*. NeurIPS 2023. [arXiv:2306.05685](https://arxiv.org/abs/2306.05685)
 - KarnEvil9 runtime: [github.com/oldeucryptoboi/KarnEvil9](https://github.com/oldeucryptoboi/KarnEvil9)

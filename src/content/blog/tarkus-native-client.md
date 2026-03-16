@@ -28,11 +28,11 @@ But it's not just a chat wrapper. The interesting parts are the things you can't
 
 **Approvals are interactive.** This is the one that made me build the whole thing. KarnEvil9's permission system means EDDIE regularly needs approval to use certain tools. In the terminal, that's a blocking prompt. In Tarkus, an approval card slides into the chat with the tool name, what it wants to do, and the input parameters. You tap Grant or Deny. You can grant temporarily or permanently. The agent continues.
 
-**Bonjour discovery.** KarnEvil9 servers advertise themselves as `_karnevil9._tcp.` services. Tarkus finds them automatically on your local network. No typing IP addresses, no config files. Open the app, your server shows up, connect.
+**[Bonjour](https://developer.apple.com/bonjour/) discovery.** KarnEvil9 servers advertise themselves as `_karnevil9._tcp.` services. Tarkus finds them automatically on your local network. No typing IP addresses, no config files. Open the app, your server shows up, connect.
 
 ## The parts I didn't expect to matter
 
-I spent way too long on markdown rendering. EDDIE's responses are full of code blocks, tables, links, lists. The first version used a SwiftUI markdown library and it was... fine. Then I rewrote it with cmark-gfm and Highlightr for syntax highlighting and suddenly the responses felt like reading actual documentation instead of a wall of monospace text.
+I spent way too long on markdown rendering. EDDIE's responses are full of code blocks, tables, links, lists. The first version used a SwiftUI markdown library and it was... fine. Then I rewrote it with [cmark-gfm](https://github.com/github/cmark-gfm) and Highlightr for syntax highlighting and suddenly the responses felt like reading actual documentation instead of a wall of monospace text.
 
 The session history turned out to be more useful than I thought. I originally added it as a "nice to have" — a list of past sessions you can browse. But now I use it constantly to go back and check what EDDIE did on a scheduled task three days ago. Each session has its full journal, so you can replay the entire execution sequence: what was planned, what ran, what got approved, what failed.
 
@@ -40,7 +40,7 @@ Notifications changed how I work with EDDIE too. When an approval request comes 
 
 ## How it connects
 
-Under the hood, Tarkus talks to KarnEvil9's REST API and WebSocket endpoint. The WebSocket handles real-time events — session created, step started, step completed, approval requested, session done. If the WebSocket drops, it falls back to Server-Sent Events. There's auto-reconnection with exponential backoff so it doesn't hammer the server.
+Under the hood, Tarkus talks to KarnEvil9's REST API and [WebSocket](https://datatracker.ietf.org/doc/html/rfc6455) endpoint. The WebSocket handles real-time events — session created, step started, step completed, approval requested, session done. If the WebSocket drops, it falls back to [Server-Sent Events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events). There's auto-reconnection with exponential backoff so it doesn't hammer the server.
 
 The data model maps directly to KarnEvil9's event types. A `step.started` event creates a step card in the chat. A `step.completed` event updates that card with results. An `approval.requested` event adds an interactive approval card. A `session.completed` event marks the conversation as done.
 

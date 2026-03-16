@@ -15,9 +15,9 @@ At first I assumed the answer was straightforward. Build bigger systems, ship mo
 
 ### First principles over known patterns
 
-Those are the situations where you have to slow down and think from first principles. You experiment, try ideas that fail, step back, and try again. Sometimes progress is messy and uncertain, but that process is exactly what makes engineering interesting in the first place. You're not just implementing a known pattern. You're figuring something out.
+Those are the situations where you have to slow down and think from [first principles](https://en.wikipedia.org/wiki/First_principle). You experiment, try ideas that fail, step back, and try again. Sometimes progress is messy and uncertain, but that process is exactly what makes engineering interesting in the first place. You're not just implementing a known pattern. You're figuring something out.
 
-This is also why I find the conversation about AI replacing developers a bit incomplete. Large language models are incredibly powerful tools, and I use them regularly. They can generate code, speed up development, and help solve problems that already have established patterns. But that strength comes from recombining knowledge that already exists. When a problem has been solved many times before, AI can often produce a solution faster than we can.
+This is also why I find the conversation about AI replacing developers a bit incomplete. Large language models are incredibly powerful tools, and I use them regularly. They can generate code, [speed up development](https://arxiv.org/abs/2302.06590), and help solve problems that already have established patterns. But that strength comes from recombining knowledge that already exists. When a problem has been solved many times before, AI can often produce a solution faster than we can.
 
 ---
 
@@ -33,6 +33,12 @@ AI can help generate solutions based on what it has seen before. Humans can imag
 
 ### Curiosity as a competitive advantage
 
-Tools will continue to improve, and AI will undoubtedly become a bigger part of how we build software. But curiosity, creativity, and first-principles thinking remain at the core of engineering. If anything, those qualities become more valuable as tools handle more of the routine work.
+Tools will continue to improve, and AI will undoubtedly become a bigger part of how we build software. But curiosity, creativity, and [first-principles thinking](https://fs.blog/first-principles/) remain at the core of engineering. If anything, those qualities become more valuable as tools handle more of the routine work.
 
 That's the kind of work that excites me the most today. The problems where the answer isn't obvious yet, and where figuring it out requires thinking beyond the patterns that already exist.
+
+---
+
+*References: Peng et al. (2023), [The Impact of AI on Developer Productivity: Evidence from GitHub Copilot](https://arxiv.org/abs/2302.06590). Google (2025), [Achieving Productivity Gains with AI-based IDE Features](https://arxiv.org/abs/2601.19964).*
+
+*Read more on [oldeucryptoboi.com](https://oldeucryptoboi.com/blog/the-real-frontier-for-engineers/)*

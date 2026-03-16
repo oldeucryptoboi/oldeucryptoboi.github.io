@@ -19,7 +19,7 @@ Even though you just ran `claude login` and it said "Login successful." Here's w
 
 ### The problem
 
-Claude Code stores OAuth tokens in the macOS Keychain. Keychain entries have access control lists (ACLs) that, by default, require user interaction — a GUI prompt — to read the password field. In a terminal session (with a desktop), this works transparently. Over SSH, there's no GUI context, so Keychain returns `errSecInteractionNotAllowed` (exit code 36), and Claude Code sees no credentials.
+Claude Code stores OAuth tokens in the macOS [Keychain](https://developer.apple.com/documentation/security/keychain-services). Keychain entries have [access control lists](https://developer.apple.com/documentation/security/access-control-lists) (ACLs) that, by default, require user interaction — a GUI prompt — to read the password field. In a terminal session (with a desktop), this works transparently. Over SSH, there's no GUI context, so Keychain returns [`errSecInteractionNotAllowed`](https://developer.apple.com/documentation/security/errsecinteractionnotallowed) (exit code 36), and Claude Code sees no credentials.
 
 You can verify this yourself:
 
@@ -37,7 +37,7 @@ security find-generic-password -a $USER -s "Claude Code-credentials" -w
 
 ### The fix
 
-Claude Code has a built-in file-based credential fallback. If `~/.claude/.credentials.json` exists, it reads credentials from there instead of Keychain. The file uses the exact same JSON format.
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) has a built-in file-based credential fallback. If `~/.claude/.credentials.json` exists, it reads credentials from there instead of Keychain. The file uses the exact same JSON format.
 
 After logging in from a GUI terminal, sync the token to the file:
 
@@ -87,4 +87,8 @@ If you have two Claude Code installs (npm/homebrew and the native standalone), b
 
 If you're using Claude Code for automation — CI/CD pipelines, background agents, cron jobs, or process managers like pm2 on macOS — this is a prerequisite. The Keychain-only approach simply doesn't work outside a GUI session.
 
-The `.credentials.json` fallback is a first-class feature of Claude Code, not a hack. It's the same mechanism used on Linux, where there's no Keychain equivalent. On macOS, it's just not the default path.
+The `.credentials.json` fallback is a first-class feature of [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview), not a hack. It's the same mechanism used on Linux, where there's no Keychain equivalent. On macOS, it's just not the default path.
+
+---
+
+*Read more on [oldeucryptoboi.com](https://oldeucryptoboi.com/blog/claude-code-ssh-keychain-fix/)*

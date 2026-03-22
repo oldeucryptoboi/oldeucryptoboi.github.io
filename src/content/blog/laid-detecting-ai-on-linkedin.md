@@ -3,6 +3,7 @@ title: "I Built a Chrome Extension That Detects AI-Generated LinkedIn Posts"
 description: "14 heuristic signals, peer-reviewed research, and an LLM rubric walk into your feed"
 pubDate: 2026-02-10
 heroImage: "../../assets/hero-laid.png"
+heroAlt: "X/LAID Chrome extension detecting AI-generated content on LinkedIn"
 tags: ["LAID", "AI Detection", "Chrome Extension", "NLP"]
 ---
 

@@ -108,6 +108,4 @@ That's the part that matters. Not what Claude Code can do — but how much thoug
 
 ---
 
-*The full architecture document is available in the [Claude Code repository](https://github.com/anthropics/claude-code).*
-
 *Follow me on [X](https://x.com/oldeucryptoboi) — I post as @oldeucryptoboi.*

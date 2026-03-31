@@ -1,7 +1,9 @@
 ---
 title: "Inside Claude Code's Architecture: The Agentic Loop That Codes For You"
-description: "How Anthropic built a terminal AI that reads, writes, executes, asks permission, and loops until the job is done"
+description: "A deep-dive into Claude Code's agentic loop, tool system, layered permission model, and hook architecture. How Anthropic built a terminal AI that codes for you."
 pubDate: 2026-03-31
+heroImage: "../../assets/hero-claude-code-architecture.png"
+heroAlt: "Claude Code agentic loop diagram showing User Input, Claude API, Tool Execution, and Permission Check nodes connected by glowing red arrows in a HAL-9000 style terminal"
 tags: ["Claude Code", "Anthropic", "AI Agents", "Developer Tools", "Architecture"]
 ---
 

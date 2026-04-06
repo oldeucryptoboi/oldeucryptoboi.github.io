@@ -1,0 +1,142 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Laurent DeSegur" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/bash-command-safety-analysis/"><!-- Primary Meta Tags --><title>How Bash Command Safety Analysis Works in AI Systems</title><meta name="title" content="How Bash Command Safety Analysis Works in AI Systems"><meta name="description" content="A clean-room reconstruction of how AI systems evaluate bash command safety before execution — eight defensive layers from pre-parse validation to policy enforcement, and why uncertainty should never default to execution."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/bash-command-safety-analysis/"><meta property="og:title" content="How Bash Command Safety Analysis Works in AI Systems"><meta property="og:description" content="A clean-room reconstruction of how AI systems evaluate bash command safety before execution — eight defensive layers from pre-parse validation to policy enforcement, and why uncertainty should never default to execution."><meta property="og:site_name" content="Laurent DeSegur"><meta property="article:published_time" content="2026-04-06T00:00:00.000Z"><meta property="article:tag" content="AI Agents"><meta property="article:tag" content="Security"><meta property="article:tag" content="Developer Tools"><meta property="article:tag" content="Shell"><meta property="article:tag" content="Claude Code"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/bash-command-safety-analysis/"><meta name="twitter:title" content="How Bash Command Safety Analysis Works in AI Systems"><meta name="twitter:description" content="A clean-room reconstruction of how AI systems evaluate bash command safety before execution — eight defensive layers from pre-parse validation to policy enforcement, and why uncertainty should never default to execution."><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and X/LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"How Bash Command Safety Analysis Works in AI Systems","description":"A clean-room reconstruction of how AI systems evaluate bash command safety before execution — eight defensive layers from pre-parse validation to policy enforcement, and why uncertainty should never default to execution.","url":"https://oldeucryptoboi.com/blog/bash-command-safety-analysis/","datePublished":"2026-04-06T00:00:00.000Z","author":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"keywords":"AI Agents, Security, Developer Tools, Shell, Claude Code","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/bash-command-safety-analysis/"}}</script><link rel="stylesheet" href="/_astro/_slug_.WqGW7rbB.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo]{margin-top:3em;padding:1.5em;border:1px solid var(--border);text-align:center}.subscribe-cta[data-astro-cid-bvzihdzo] p[data-astro-cid-bvzihdzo]{margin:0 0 .75em;color:var(--text-dim);font-size:.85em;letter-spacing:.04em}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]{color:var(--hal-red);font-size:.8em;letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif;text-decoration:none;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]:hover{color:#fff}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2><span class="cap" data-astro-cid-3ef6ksr2>L</span>aurent <span class="cap" data-astro-cid-3ef6ksr2>D</span>e<span class="cap" data-astro-cid-3ef6ksr2>S</span>egur</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-04-06T00:00:00.000Z"> Apr 6, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>How Bash Command Safety Analysis Works in AI Systems</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>AI Agents</span><span data-astro-cid-bvzihdzo>Security</span><span data-astro-cid-bvzihdzo>Developer Tools</span><span data-astro-cid-bvzihdzo>Shell</span><span data-astro-cid-bvzihdzo>Claude Code</span> </div> </div>  <h2 id="most-people-think-validating-shell-commands-is-simple-scan-for-rm-block-eval-done-its-not-even-close">Most people think validating shell commands is simple. Scan for <code>rm</code>, block <code>eval</code>, done. It’s not even close.</h2>
+<hr>
+<p>This is a clean-room technical reconstruction of how an AI-assisted system can evaluate the safety of bash commands before execution. Everything here is based on externally observable behavior, publicly available technical patterns, and general shell semantics. No proprietary source code or internal materials were accessed.</p>
+<p>All mechanisms described are conceptual reconstructions — how such a system <em>can</em> be designed, not documentation of any specific implementation.</p>
+<h2 id="the-core-problem">The core problem</h2>
+<p>At first glance, validating shell commands appears simple. Scan for dangerous patterns — <code>rm</code>, <code>eval</code>, <code>;</code>, pipes, redirects — and block them.</p>
+<p>This approach fails immediately.</p>
+<p>Consider:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#79B8FF">echo</span><span style="color:#9ECBFF"> "safe"</span><span style="color:#E1E4E8"> ; </span><span style="color:#B392F0">rm</span><span style="color:#79B8FF"> -rf</span><span style="color:#9ECBFF"> /</span></span></code></pre>
+<p>Versus:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#79B8FF">echo</span><span style="color:#9ECBFF"> "safe ; rm -rf /"</span></span></code></pre>
+<p>A superficial parser cannot distinguish whether <code>;</code> is a command separator or part of a quoted string.</p>
+<p>Shell syntax includes quoting rules, variable expansion, command substitution, arithmetic evaluation, brace expansion, and process substitution. Any of these can transform harmless-looking text into dangerous execution.</p>
+<p>A reliable system must understand the <em>structure</em> of commands, not just their text.</p>
+<h2 id="design-principle-fail-closed">Design principle: fail closed</h2>
+<p>A robust analyzer follows a strict rule: if a command cannot be fully understood, it must not be automatically approved.</p>
+<p>This leads to an allowlist-based design. Only known-safe constructs are accepted. Everything else is treated as “too complex” and requires user confirmation.</p>
+<p>This avoids the fundamental weakness of blocklists — where every new attack vector is an automatic bypass. With an allowlist, every new construct triggers a prompt instead.</p>
+<h2 id="the-multi-layer-pipeline">The multi-layer pipeline</h2>
+<p>A well-designed system runs commands through a pipeline of defensive layers, each addressing a different class of failure:</p>
+<ol>
+<li>Pre-parse validation</li>
+<li>Structured parsing (AST)</li>
+<li>Allowlist-based traversal</li>
+<li>Variable scope tracking</li>
+<li>Controlled placeholder system</li>
+<li>Semantic validation</li>
+<li>Path and filesystem checks</li>
+<li>Policy enforcement</li>
+</ol>
+<p>Let’s walk through each one.</p>
+<h2 id="layer-1-pre-parse-validation">Layer 1: pre-parse validation</h2>
+<p>Before parsing, the raw command string is inspected for patterns that create ambiguity between what a parser sees and what the shell executes.</p>
+<p><strong>Control characters.</strong> Hidden bytes can alter how text is interpreted. A null byte, a backspace sequence, or an ANSI escape code can make a command look different in a terminal than it does to a parser.</p>
+<p><strong>Invisible Unicode.</strong> Characters like zero-width space can visually disguise commands. What looks like <code>ls</code> might actually contain invisible characters that change execution.</p>
+<p><strong>Backslash line continuation.</strong> This is subtle:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">tr\</span></span>
+<span class="line"><span style="color:#E1E4E8">aceroute</span></span></code></pre>
+<p>Appears as two tokens but executes as <code>traceroute</code>. A parser that doesn’t handle continuation will see something different from the shell.</p>
+<p><strong>Shell-specific extensions.</strong> Features from zsh may not match bash parsing rules. If the analyzer assumes bash semantics, zsh-specific syntax creates ambiguity.</p>
+<p><strong>Brace obfuscation.</strong> Complex quoting inside <code>{}</code> can mislead simple parsers.</p>
+<p>The goal of this layer: eliminate inputs where different interpreters would disagree on what the command means.</p>
+<h2 id="layer-2-structured-parsing">Layer 2: structured parsing</h2>
+<p>Instead of regex, the system builds a syntax tree — an AST.</p>
+<p>This lets it separate commands, identify arguments, and track structure without execution. But parsing alone isn’t sufficient. The parser must never execute the command it’s analyzing.</p>
+<p>Resource limits matter here too. Maximum input size, maximum parse complexity, strict time limits. If any are exceeded, the command is marked as too complex. This prevents adversarial inputs designed to hang the parser.</p>
+<h2 id="layer-3-allowlist-ast-traversal">Layer 3: allowlist AST traversal</h2>
+<p>After parsing, the system walks the syntax tree. The critical rule: only explicitly supported node types are allowed.</p>
+<p>Supported constructs include simple commands, pipelines, conditionals, and variable assignments. Anything the walker doesn’t recognize — any unknown node type — is immediately classified as too complex.</p>
+<p>This is the most important design decision in the entire pipeline. It means the system doesn’t need to enumerate every dangerous pattern. It only needs to enumerate safe ones.</p>
+<h2 id="layer-4-variable-scope-tracking">Layer 4: variable scope tracking</h2>
+<p>Shell behavior depends heavily on execution order, and this is where naive analyzers break.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#79B8FF">true</span><span style="color:#F97583"> ||</span><span style="color:#E1E4E8"> FLAG</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">--safe</span><span style="color:#E1E4E8"> &#x26;&#x26; </span><span style="color:#B392F0">cmd</span><span style="color:#E1E4E8"> $FLAG</span></span></code></pre>
+<p>A naive system might assume <code>$FLAG</code> is always set. In reality, <code>FLAG</code> may never be assigned depending on how <code>||</code> and <code>&#x26;&#x26;</code> chain.</p>
+<p>The analyzer models branching (<code>&#x26;&#x26;</code>, <code>||</code>), subshells (<code>()</code>), and pipelines. Variables are tracked with correct execution semantics — if a variable might not be defined in all branches, it’s treated as unknown.</p>
+<h2 id="layer-5-the-placeholder-system">Layer 5: the placeholder system</h2>
+<p>Some constructs can’t be resolved statically.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#79B8FF">echo</span><span style="color:#9ECBFF"> "commit $(</span><span style="color:#B392F0">git</span><span style="color:#9ECBFF"> rev-parse HEAD)"</span></span></code></pre>
+<p>Instead of rejecting the entire command, the outer command is preserved and the inner command is extracted and analyzed separately.</p>
+<p>Placeholders like <code>__CMDSUB_OUTPUT__</code> (for command substitutions) and <code>__TRACKED_VAR__</code> (for unknown variables) let the analyzer reason about the structure of a command without needing to know the runtime values.</p>
+<p>But there’s a critical constraint — bare variable risk:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#E1E4E8">VAR</span><span style="color:#F97583">=</span><span style="color:#9ECBFF">"-rf /"</span></span>
+<span class="line"><span style="color:#B392F0">rm</span><span style="color:#E1E4E8"> $VAR</span></span></code></pre>
+<p>Shell expands this into <code>rm -rf /</code>. To prevent this, variables containing whitespace or glob patterns are rejected unless quoted. The quoting distinction between <code>$VAR</code> and <code>"$VAR"</code> is load-bearing.</p>
+<h2 id="layer-6-semantic-validation">Layer 6: semantic validation</h2>
+<p>Even syntactically valid, structurally understood commands can be dangerous.</p>
+<p><strong>Eval-like behavior.</strong> Commands that execute strings as code — <code>eval</code>, <code>source</code>, <code>exec</code> — are inherently unsafe because their behavior depends on runtime values the analyzer can’t see.</p>
+<p><strong>Indirect execution.</strong> Traps, dynamic loading, and subshell triggers can execute code as a side effect of seemingly safe operations.</p>
+<p><strong>Embedded execution in tools.</strong> This is the sneaky one:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">jq</span><span style="color:#9ECBFF"> 'system("rm -rf /")'</span></span></code></pre>
+<p>The outer command is <code>jq</code>. The inner payload is arbitrary shell execution. Any tool with its own expression language — <code>awk</code>, <code>perl</code>, <code>jq</code>, <code>find -exec</code> — can be a vector.</p>
+<p><strong>Subscript evaluation.</strong> Some shell expressions trigger execution during evaluation:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#79B8FF">test</span><span style="color:#79B8FF"> -v</span><span style="color:#9ECBFF"> 'a[$(cmd)]'</span></span></code></pre>
+<p>The array subscript gets evaluated, which runs <code>cmd</code>. This is a real bash behavior that most people don’t know about.</p>
+<h2 id="layer-7-filesystem-and-path-safety">Layer 7: filesystem and path safety</h2>
+<p>Commands are categorized by their filesystem impact: read, write, or destructive.</p>
+<p>Certain paths are always sensitive — <code>/etc</code>, <code>/usr</code>, <code>/bin</code>, <code>/proc</code> — and require explicit approval regardless of the command.</p>
+<p>Special cases matter here. The <code>--</code> delimiter (<code>rm -- -file</code>) must not be misinterpreted as flags. Process substitution (<code>>(command)</code>) can hide side effects. Directory changes followed by writes (<code>cd dir &#x26;&#x26; write file</code>) create ambiguity without execution tracking.</p>
+<h2 id="layer-8-policy-enforcement">Layer 8: policy enforcement</h2>
+<p>After all analysis, commands are evaluated against configurable rules with three possible outcomes:</p>
+<ul>
+<li><strong>Allow</strong> — safe and fully understood</li>
+<li><strong>Ask</strong> — unclear, complex, or borderline</li>
+<li><strong>Deny</strong> — explicitly forbidden</li>
+</ul>
+<p>Rules can match exactly, by prefix, or by pattern. The system also strips wrappers like <code>timeout</code> and <code>env</code> to analyze the underlying command, detects compound commands, and performs cross-segment analysis — because even if <code>cd dir</code> and <code>git status</code> are individually safe, their combination may not be.</p>
+<h2 id="the-key-insight">The key insight</h2>
+<p>This system doesn’t attempt to prove commands are safe. It answers a narrower question:</p>
+<blockquote>
+<p>“Can we fully understand this command with high confidence?”</p>
+</blockquote>
+<p>If the answer is no, it asks the user.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Layer</th><th>Purpose</th></tr></thead><tbody><tr><td>Pre-checks</td><td>Remove ambiguity</td></tr><tr><td>Parsing</td><td>Understand structure</td></tr><tr><td>AST allowlist</td><td>Reject unknown constructs</td></tr><tr><td>Scope tracking</td><td>Preserve execution semantics</td></tr><tr><td>Placeholders</td><td>Handle dynamic behavior</td></tr><tr><td>Semantics</td><td>Detect dangerous intent</td></tr><tr><td>Path validation</td><td>Protect filesystem</td></tr><tr><td>Rules</td><td>Enforce policy</td></tr></tbody></table>
+<p>Eight layers. Each one catches things the others miss. The design isn’t clever — it’s thorough. And the default answer to uncertainty is always the same: don’t execute. Ask.</p>
+<p>That’s a broader principle worth remembering. Uncertainty should never default to execution.</p>
+<hr>
+<p><em>Follow me on <a href="https://x.com/oldeucryptoboi">X</a> — I post as @oldeucryptoboi.</em></p>  <div class="subscribe-cta" data-astro-cid-bvzihdzo> <p data-astro-cid-bvzihdzo>Get new posts delivered to your inbox</p> <a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener" data-astro-cid-bvzihdzo>Subscribe on Substack →</a> </div> <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/claude-code-leak/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>The Claude Code Leak: What Anthropic Accidentally Revealed About the Future of AI</span> </a> <span data-astro-cid-bvzihdzo></span> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+&copy; 2026 Laurent DeSegur
+</div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Laurent DeSegur" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/context-compaction-deep-dive/"><!-- Primary Meta Tags --><title>How Claude Code Manages Infinite Conversations in a Finite Context Window</title><meta name="title" content="How Claude Code Manages Infinite Conversations in a Finite Context Window"><meta name="description" content="A source-level deep dive into Claude Code's three-tier context compaction system — microcompact, full compact, and session memory compact — and how it preserves critical context while staying within token limits."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/context-compaction-deep-dive/"><meta property="og:title" content="How Claude Code Manages Infinite Conversations in a Finite Context Window"><meta property="og:description" content="A source-level deep dive into Claude Code's three-tier context compaction system — microcompact, full compact, and session memory compact — and how it preserves critical context while staying within token limits."><meta property="og:site_name" content="Laurent DeSegur"><meta property="article:published_time" content="2026-04-07T00:00:00.000Z"><meta property="article:tag" content="Claude Code"><meta property="article:tag" content="Anthropic"><meta property="article:tag" content="AI Agents"><meta property="article:tag" content="Context Window"><meta property="article:tag" content="Architecture"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/context-compaction-deep-dive/"><meta name="twitter:title" content="How Claude Code Manages Infinite Conversations in a Finite Context Window"><meta name="twitter:description" content="A source-level deep dive into Claude Code's three-tier context compaction system — microcompact, full compact, and session memory compact — and how it preserves critical context while staying within token limits."><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and X/LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"How Claude Code Manages Infinite Conversations in a Finite Context Window","description":"A source-level deep dive into Claude Code's three-tier context compaction system — microcompact, full compact, and session memory compact — and how it preserves critical context while staying within token limits.","url":"https://oldeucryptoboi.com/blog/context-compaction-deep-dive/","datePublished":"2026-04-07T00:00:00.000Z","author":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"keywords":"Claude Code, Anthropic, AI Agents, Context Window, Architecture","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/context-compaction-deep-dive/"}}</script><link rel="stylesheet" href="/_astro/_slug_.WqGW7rbB.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo]{margin-top:3em;padding:1.5em;border:1px solid var(--border);text-align:center}.subscribe-cta[data-astro-cid-bvzihdzo] p[data-astro-cid-bvzihdzo]{margin:0 0 .75em;color:var(--text-dim);font-size:.85em;letter-spacing:.04em}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]{color:var(--hal-red);font-size:.8em;letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif;text-decoration:none;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]:hover{color:#fff}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2><span class="cap" data-astro-cid-3ef6ksr2>L</span>aurent <span class="cap" data-astro-cid-3ef6ksr2>D</span>e<span class="cap" data-astro-cid-3ef6ksr2>S</span>egur</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-04-07T00:00:00.000Z"> Apr 7, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>How Claude Code Manages Infinite Conversations in a Finite Context Window</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>Claude Code</span><span data-astro-cid-bvzihdzo>Anthropic</span><span data-astro-cid-bvzihdzo>AI Agents</span><span data-astro-cid-bvzihdzo>Context Window</span><span data-astro-cid-bvzihdzo>Architecture</span> </div> </div>  <p>Claude Code conversations have no turn limit. You can work for hours — reading files, running tests, debugging, iterating — and the conversation just keeps going. But the model has a fixed context window. At some point, the accumulated messages exceed what the model can process in a single API call.</p>
+<p>The system needs to compress the conversation without losing critical context. Here’s how it works, from the source code.</p>
+<h2 id="the-problem">The Problem</h2>
+<p>The naive approach is truncation: drop old messages when the window fills up. This fails immediately. A conversation about building an authentication system might reference a design decision from 50 turns ago. Truncate those turns and the model forgets the decision, re-asks the question, or contradicts what it said earlier.</p>
+<p>A better approach: summarize. Replace the old messages with a summary that preserves the essential information. But summarization introduces its own problems:</p>
+<ul>
+<li><strong>What to preserve?</strong> File paths, code snippets, user preferences, error resolutions, pending tasks — all matter. A generic “summarize this conversation” prompt loses critical details.</li>
+<li><strong>When to trigger?</strong> Too early wastes context window. Too late risks hitting the hard limit and failing the API call.</li>
+<li><strong>What about the cache?</strong> Anthropic’s API caches the prompt prefix. Compaction replaces all messages, invalidating the cache. Every token in the new prompt is a cache miss — expensive.</li>
+<li><strong>What if the summary itself is too long?</strong> If the conversation is so large that even the compaction request exceeds the context window, you need a fallback.</li>
+</ul>
+<p>Claude Code solves these with a three-tier system. Microcompact clears stale tool results without calling the model. Full compact summarizes the entire conversation with a dedicated model call. Session memory compact uses pre-extracted notes to skip the summarization call entirely. Each tier is progressively more aggressive and more expensive.</p>
+<h2 id="when-to-compact">When to Compact</h2>
+<h3 id="the-threshold">The Threshold</h3>
+<p>Auto-compact fires when the conversation’s token count exceeds a threshold. The threshold is calculated as:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>effectiveWindow = contextWindow - max(maxOutputTokens, 20_000)</span></span>
+<span class="line"><span>autoCompactThreshold = effectiveWindow - 13_000</span></span></code></pre>
+<p>For a 200K context window model, this works out to roughly 167K tokens. The 20K reserve ensures the model has room to generate the summary. The 13K buffer provides headroom — the system checks BEFORE each API call, so the actual token count may grow by a full model response between checks.</p>
+<p>The threshold can be overridden via environment variables for testing. A percentage-based override lets you trigger compaction earlier (useful for observing the system’s behavior on shorter conversations).</p>
+<h3 id="token-counting">Token Counting</h3>
+<p>The canonical function for context size is <code>tokenCountWithEstimation</code>. It works in two parts:</p>
+<ol>
+<li>
+<p><strong>Find the last API response</strong>: Walk backward through messages to find the most recent assistant message that has a <code>usage</code> field (reported by the API). This gives the exact token count at that point in the conversation.</p>
+</li>
+<li>
+<p><strong>Estimate new messages</strong>: For any messages added AFTER the last API response, estimate their token count. Text blocks use a rough <code>length / 4</code> heuristic (one token per ~4 characters). Images and documents get a flat 2,000-token estimate. Tool use blocks count the tool name plus JSON-serialized input. The total estimate is padded by 4/3 (33% conservative buffer). Add this to the API-reported count.</p>
+</li>
+</ol>
+<p>A subtlety: when the model makes multiple parallel tool calls, each becomes a separate assistant message interleaved with tool results. The messages look like: <code>[..., assistant(id=A), toolResult, assistant(id=A), toolResult, ...]</code>. All of these share the same message ID because they came from one API response. The token counter must walk back to the FIRST message with matching ID to anchor correctly — stopping at the last one would miss the interleaved tool results and undercount.</p>
+<p>The total context count includes input tokens, cache creation tokens, cache read tokens, and output tokens. This represents the actual context window consumption, which is what matters for threshold comparison. Using only <code>input_tokens</code> would undercount because cached tokens still occupy the window.</p>
+<h3 id="the-circuit-breaker">The Circuit Breaker</h3>
+<p>If compaction fails three times consecutively, auto-compact stops trying. This circuit breaker prevents runaway API costs. Before the breaker, telemetry showed 1,279 sessions with 50+ consecutive failures, wasting approximately 250,000 API calls per day. The breaker resets on any successful compaction.</p>
+<h3 id="recursion-guards">Recursion Guards</h3>
+<p>Auto-compact skips triggering when the query source is <code>compact</code> (would deadlock — compaction triggering compaction) or <code>session_memory</code> (would deadlock — memory extraction happens in a forked subagent that shares the token counter).</p>
+<h2 id="tier-1-microcompact">Tier 1: Microcompact</h2>
+<p>Microcompact is the cheapest intervention. No model call. No summarization. It just clears old tool results that the model no longer needs, reclaiming tokens.</p>
+<h3 id="time-based-clearing">Time-Based Clearing</h3>
+<p>The API prompt cache has a TTL of roughly one hour. When the user returns after an idle period, the entire cached prefix is gone — every token will be re-processed anyway. This is the ideal time to clear stale tool results, because there’s no cache to preserve.</p>
+<p>The trigger:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>gap = (now - lastAssistantMessage.timestamp) / 60_000</span></span>
+<span class="line"><span>if gap > gapThresholdMinutes (default: 60):</span></span>
+<span class="line"><span>  clear old tool results</span></span></code></pre>
+<p>“Clear” means replacing the content of <code>tool_result</code> blocks for compactable tools (file reads, shell output, grep results, glob results, web fetches, web searches, edits, writes) with the text <code>[Old tool result content cleared]</code>. The system keeps the N most recent results (default: 5) and clears the rest.</p>
+<p>This is a mutation of the message array. The cleared results are gone. But since the cache was already expired, there’s no cost — the full conversation will be re-tokenized regardless.</p>
+<h3 id="cached-microcompact">Cached Microcompact</h3>
+<p>When the prompt cache is still warm, mutating messages would invalidate the cached prefix. Instead, the system uses the API’s <code>cache_edits</code> feature to delete tool results server-side. The local message array stays unchanged, but the API receives a <code>cache_edits</code> block that instructs the server to remove specific tool results by their cache reference IDs.</p>
+<p>The state machine tracks three things:</p>
+<ul>
+<li><strong>registeredTools</strong>: Set of all tool_use IDs seen (deduplicated)</li>
+<li><strong>toolOrder</strong>: List of tool_use IDs in encounter order (FIFO for deletion priority)</li>
+<li><strong>deletedRefs</strong>: Set of IDs already deleted (prevents re-deletion)</li>
+</ul>
+<p>The logic:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>activeTools = toolOrder filtered by NOT in deletedRefs</span></span>
+<span class="line"><span>if activeTools.length &#x3C; triggerThreshold (default: 12):</span></span>
+<span class="line"><span>  return (not enough tools to justify clearing)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>toDelete = activeTools[0 .. activeTools.length - keepRecent]</span></span>
+<span class="line"><span>for each id in toDelete:</span></span>
+<span class="line"><span>  add to deletedRefs</span></span>
+<span class="line"><span>  create cache_edit { type: "delete", cache_reference: id }</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>queue as pendingCacheEdits (applied at API layer)</span></span></code></pre>
+<p>The cache edits are “pinned” — once queued, they’re re-sent on every subsequent API call for as long as the cache hit persists. This is necessary because cache edits are relative to the cached prefix, not absolute. If the server cache is hit, the pinned edits tell it which blocks to skip.</p>
+<p>If the cache expires (detected by a drop in <code>cache_read_input_tokens</code>), the pinned edits become stale. The system falls through to time-based clearing on the next idle gap. The pinned edits are also cleared during full compaction’s post-compact cleanup.</p>
+<p>The system also captures the baseline <code>cache_deleted_input_tokens</code> from the last assistant message. This baseline is needed by the cache break detection system — without it, the token drop from cached edits would trigger a false “cache break” warning.</p>
+<h3 id="compactable-tools">Compactable Tools</h3>
+<p>Not all tool results are safe to clear. The system maintains an allowlist:</p>
+<ul>
+<li><strong>File reads</strong> — the file can be re-read</li>
+<li><strong>Shell output</strong> — the output is ephemeral</li>
+<li><strong>Grep/glob results</strong> — search results can be re-run</li>
+<li><strong>Web fetch/search</strong> — fetched content can be re-fetched</li>
+<li><strong>File edits/writes</strong> — the confirmation output is disposable</li>
+</ul>
+<p>Tool results from other tools (like user questions, notebook edits, or task management) are NOT cleared — their content may be unreproducible.</p>
+<h3 id="api-native-context-management">API-Native Context Management</h3>
+<p>Beyond local microcompact, the system can also request that the API itself manage context. This uses the <code>context_management</code> field in API requests to specify edit strategies:</p>
+<p><strong>Tool result clearing</strong>: When input tokens exceed a trigger threshold (default: 180K), the API clears tool results from specific tools (file reads, shell output, grep, glob, web fetches, web searches), keeping the most recent results up to a target token budget (default: 40K). The <code>clear_at_least</code> parameter ensures a minimum number of tokens are freed — clearing one small tool result when the context is at 180K wouldn’t help.</p>
+<p><strong>Tool use clearing</strong>: A separate strategy for edit/write tools. Rather than clearing their inputs, it excludes their entire tool_use blocks. The distinction matters: for read-like tools, the large output (file content, shell output) is the waste. For write-like tools, the large input (new file content) is the waste.</p>
+<p><strong>Thinking clearing</strong>: For models with extended thinking, old thinking blocks are the largest tokens-per-message contributor. When the user has been idle for over an hour (cache expired anyway), only the last thinking turn is kept. During active use, all thinking turns are preserved.</p>
+<p>These strategies compose — multiple edit strategies can be active simultaneously, each targeting a different category of clearable content.</p>
+<h2 id="tier-2-full-compact">Tier 2: Full Compact</h2>
+<p>When microcompact isn’t enough — the conversation has genuinely grown past the threshold — the system performs a full compaction. This calls the model to summarize the entire conversation history.</p>
+<h3 id="pre-processing">Pre-Processing</h3>
+<p>Before the conversation is sent for summarization, two pre-processing steps run:</p>
+<p><strong>Image stripping</strong>: All image and document blocks are removed from user messages, replaced with an <code>[image]</code> text marker. Images are large (potentially thousands of tokens each) and not useful for text summarization. The stripping also handles images nested inside tool_result content arrays — a tool might return screenshots that are irrelevant to the summary.</p>
+<p><strong>Attachment stripping</strong>: Skill discovery and skill listing attachments are removed before summarization. These are re-injected post-compact anyway, so including them in the summarization input wastes tokens — the model would summarize content that’s about to be restored verbatim.</p>
+<h3 id="the-summarization-prompt">The Summarization Prompt</h3>
+<p>The prompt is the most interesting part. It demands a specific structure:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>CRITICAL: Respond with TEXT ONLY. Do NOT call any tools.</span></span>
+<span class="line"><span>- Do NOT use Read, Bash, Grep, Glob, Edit, Write, or ANY other tool.</span></span>
+<span class="line"><span>- Tool calls will be REJECTED and will waste your only turn — you will fail the task.</span></span>
+<span class="line"><span>- Your entire response must be plain text: an &#x3C;analysis> block followed by a &#x3C;summary> block.</span></span></code></pre>
+<p>This preamble appears at both the START and END of the prompt (dual-instruction pattern). Why? Models with adaptive thinking sometimes attempt tool calls during summarization despite single instructions. The duplication makes non-compliance less likely.</p>
+<p>The prompt then requires nine specific sections in the summary:</p>
+<ol>
+<li><strong>Primary Request and Intent</strong> — All explicit user requests and intents, in detail.</li>
+<li><strong>Key Technical Concepts</strong> — Important technologies, frameworks, and architectural decisions.</li>
+<li><strong>Files and Code Sections</strong> — Every file examined, modified, or created, with full code snippets and rationale.</li>
+<li><strong>Errors and Fixes</strong> — Every error encountered and how it was resolved.</li>
+<li><strong>Problem Solving</strong> — Problems solved and ongoing troubleshooting approaches.</li>
+<li><strong>All User Messages</strong> — ALL non-tool-result user messages. Critical for understanding feedback and corrections.</li>
+<li><strong>Pending Tasks</strong> — Explicitly requested tasks that haven’t been completed.</li>
+<li><strong>Current Work</strong> — Precise detail of work immediately before summarization, with filenames and code snippets.</li>
+<li><strong>Optional Next Step</strong> — The next step in line with recent requests, with direct quotes showing task status.</li>
+</ol>
+<p>Section 6 (“All user messages”) is the most unusual. Summarization typically abstracts away individual messages. But user messages contain corrections (“no, I meant X”), preferences (“always use bun”), and implicit context that a summary might smooth over. Preserving them verbatim prevents the model from drifting away from what the user actually said.</p>
+<p>Section 9 requires “direct quotes” from the conversation to justify the suggested next step. This prevents task drift — without quotes, the model might hallucinate a next step that wasn’t actually in progress.</p>
+<h3 id="the-analysis-scratchpad">The Analysis Scratchpad</h3>
+<p>The prompt asks for TWO blocks: <code>&#x3C;analysis></code> then <code>&#x3C;summary></code>. The analysis block is a drafting scratchpad — the model walks through the conversation chronologically, identifying requests, decisions, code changes, and errors. This structured thinking improves the quality of the summary that follows.</p>
+<p>But the analysis block is stripped before delivery. <code>formatCompactSummary</code> removes everything between <code>&#x3C;analysis></code> tags, extracts the <code>&#x3C;summary></code> content, and replaces the tags with a “Summary:” header. The user never sees the scratchpad. It exists purely to improve the summary via chain-of-thought reasoning.</p>
+<h3 id="prompt-cache-sharing">Prompt Cache Sharing</h3>
+<p>The summarization call sends the entire conversation as context. Normally this means re-tokenizing everything — expensive. But the main conversation’s prompt prefix (system prompt, tools, early messages) is already cached from the most recent API call.</p>
+<p>The system uses a “forked agent” to reuse this cache. The fork inherits the main conversation’s cached parameters (system prompt, tool definitions, user context) and sends them as identical cache-key parameters, so the summarization call gets a cache hit on the shared prefix. The remaining messages (the ones being summarized) are the only new tokens.</p>
+<p>A critical constraint: the fork must NOT set <code>maxOutputTokens</code>. Setting it would clamp the thinking budget via a formula in the API client, creating a thinking config mismatch that invalidates the cache key. The forked agent uses the model’s default output limit. Since compaction is capped at one turn (<code>maxTurns: 1</code>), the output naturally stays within bounds.</p>
+<p>The fork also skips writing to the prompt cache (<code>skipCacheWrite: true</code>) — its response is ephemeral and caching it would waste cache creation tokens. The fork’s tool permissions are locked to deny-all (<code>createCompactCanUseTool</code>), ensuring the model produces only text, never tool calls.</p>
+<p>If the fork fails, the system falls back to a direct streaming call with the compact-specific output cap (20K tokens). Telemetry tracks the cache hit rate to monitor effectiveness — a 98% miss rate in the fork path would cost ~0.76% of fleet-wide cache creation, concentrated in ephemeral environments with cold caches.</p>
+<p>During the summarization call, the system sends keep-alive signals every 30 seconds — a session activity signal plus a “compacting” status update. This prevents WebSocket timeouts in IDE integrations where the compaction call might take 30-60 seconds for large conversations.</p>
+<h3 id="hooks">Hooks</h3>
+<p>The compaction system fires four hook events that users can subscribe to:</p>
+<ul>
+<li><strong>PreCompact</strong> — runs before summarization. Returns optional custom instructions that are merged with the user’s instructions. User instructions come first, hook instructions appended.</li>
+<li><strong>PostCompact</strong> — runs after compaction completes.</li>
+<li><strong>SessionStart</strong> — runs after compaction to re-trigger initialization logic (CLAUDE.md reload, etc.).</li>
+</ul>
+<p>These hooks allow plugins and IDE integrations to inject context, clear their own caches, or perform cleanup. Hook results are included in the post-compact message array as <code>hookResults</code>.</p>
+<h3 id="three-prompt-variants">Three Prompt Variants</h3>
+<p>The system has three compaction modes:</p>
+<ul>
+<li><strong>Full compact</strong>: Summarize the entire conversation. Used by auto-compact and <code>/compact</code>.</li>
+<li><strong>Partial compact (“from”)</strong>: Summarize only messages after a selected point, preserving earlier messages. Preserves the prompt cache (early messages stay).</li>
+<li><strong>Partial compact (“up_to”)</strong>: Summarize messages before a selected point, keeping later messages. Invalidates the prompt cache (the kept messages move to the end).</li>
+</ul>
+<p>The “from” variant adds: “Earlier retained messages are NOT re-summarized.” The “up_to” variant changes section 8 from “Current Work” to “Work Completed” and adds “Context for Continuing Work” — since newer messages follow the summary, the summary needs to set up context rather than continue work.</p>
+<h2 id="the-prompt-too-long-retry-loop">The Prompt-Too-Long Retry Loop</h2>
+<p>Sometimes the conversation is so large that the compaction request itself exceeds the context window. The system handles this with a retry loop:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>for attempt in 1..MAX_PTL_RETRIES (3):</span></span>
+<span class="line"><span>  try:</span></span>
+<span class="line"><span>    stream summary</span></span>
+<span class="line"><span>    return result</span></span>
+<span class="line"><span>  catch PromptTooLong:</span></span>
+<span class="line"><span>    messages = truncateHeadForPTLRetry(messages, errorResponse)</span></span>
+<span class="line"><span>    if messages is null:</span></span>
+<span class="line"><span>      throw "Conversation too long. Press esc twice to go up a few messages and try again."</span></span></code></pre>
+<p><code>truncateHeadForPTLRetry</code> groups messages by API round (one group per model response with its tool results). It calculates how many tokens to drop based on the error response’s token gap. If the gap is unparseable (some Vertex/Bedrock error formats), it falls back to dropping 20% of groups. It drops the oldest groups first.</p>
+<p>A subtle self-referential bug was fixed: the function strips its own synthetic marker from a previous retry before grouping. Otherwise the marker becomes its own group at index 0, and the 20% fallback stalls — it drops only the marker, re-adds it on the next retry, and makes zero progress. The fix checks if the first message is the marker (by content match and <code>isMeta</code> flag) and strips it before grouping.</p>
+<p>If the truncated messages would start with an assistant message (violating the API’s alternation requirement), a synthetic user message is prepended: <code>[earlier conversation truncated for compaction retry]</code>.</p>
+<p>If ALL groups would need to be dropped (nothing left to summarize), the function returns null and the user sees an error message suggesting they press Escape to go back a few messages.</p>
+<h2 id="post-compact-what-survives-the-boundary">Post-Compact: What Survives the Boundary</h2>
+<p>After summarization, the old messages are replaced wholesale. The new message array is:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>[</span></span>
+<span class="line"><span>  boundaryMarker,        // System message marking the compaction point</span></span>
+<span class="line"><span>  ...summaryMessages,    // The formatted summary as a user message</span></span>
+<span class="line"><span>  ...messagesToKeep,     // Preserved messages (partial compact only)</span></span>
+<span class="line"><span>  ...attachments,        // Re-injected context</span></span>
+<span class="line"><span>  ...hookResults,        // User hook output</span></span>
+<span class="line"><span>]</span></span></code></pre>
+<h3 id="the-boundary-marker">The Boundary Marker</h3>
+<p>A system message that records metadata about the compaction:</p>
+<ul>
+<li><strong>trigger</strong>: “manual” (user ran <code>/compact</code>) or “auto” (threshold exceeded)</li>
+<li><strong>preTokens</strong>: token count before compaction (for analytics)</li>
+<li><strong>messagesSummarized</strong>: how many messages were replaced</li>
+<li><strong>logicalParentUuid</strong>: UUID of the last pre-compact message (enables fork/rewind to find the original conversation)</li>
+<li><strong>preCompactDiscoveredTools</strong>: tool names seen before compaction (for re-announcing)</li>
+<li><strong>preservedSegment</strong>: head/anchor/tail UUIDs (for partial compact message relinking)</li>
+</ul>
+<p>The boundary is the anchor point. Everything before it is gone (replaced by the summary). Everything after it is the new conversation.</p>
+<h3 id="cache-break-detection">Cache Break Detection</h3>
+<p>After compaction, the prompt cache baseline is stale. The token count drops legitimately — old messages were replaced with a shorter summary. Without intervention, the cache break detection system would see the drop in <code>cache_read_input_tokens</code> and flag a “cache break” warning.</p>
+<p>The fix: <code>notifyCompaction()</code> resets the previous cache read baseline to null. The next API call establishes a fresh baseline. The detection system compares subsequent calls against this new baseline, ignoring the compaction-induced drop.</p>
+<p>The cache break detector itself uses dual thresholds: a drop must be both >5% of the previous cache read AND >2,000 tokens to be flagged. Small fluctuations from server-side cache management are ignored.</p>
+<h3 id="re-injected-attachments">Re-Injected Attachments</h3>
+<p>The system generates attachments in parallel to restore context that the summary might have compressed too aggressively:</p>
+<p><strong>Recently-read files</strong> — The 5 most recently accessed files are re-read with fresh content (not cached — the file may have changed since it was first read). Each file is capped at 5,000 tokens, with a total budget of 50,000 tokens. Plan files and memory files (CLAUDE.md) are excluded — they have their own injection paths via the system prompt.</p>
+<p>The file selection uses recency ordering from the file read state tracker. Files already present in preserved messages (partial compact) are skipped to avoid duplication. The deduplication scans preserved messages for Read tool_use blocks and collects their file paths. It also skips files that had the “FILE_UNCHANGED” stub (a deduplication marker that points at an earlier full read of the same file).</p>
+<p>Each file is re-read via the actual File Read tool at restoration time. This means the restored content reflects the file’s CURRENT state, not its state when it was first read. If the model edited a file 30 turns ago and the file was later modified by other tools, the post-compact restoration shows the latest version.</p>
+<p><strong>Active skills</strong> — Skills invoked during the session are preserved, sorted most-recent-first. Each skill is capped at 5,000 tokens (truncated with a marker telling the model it can re-read the full content). Total budget: 25,000 tokens.</p>
+<p><strong>Plan file</strong> — If a plan exists for the current session, it’s re-injected as an attachment.</p>
+<p><strong>Plan mode</strong> — If the user is currently in plan mode, an attachment ensures the model continues in plan mode after compaction.</p>
+<p><strong>Async agent status</strong> — Background agents that are still running or recently finished get status attachments. This prevents the model from spawning duplicate agents after losing the original creation context.</p>
+<p><strong>Tool deltas</strong> — The full tool set is re-announced. After compaction, the model needs to know what tools are available — the original tool announcements from earlier in the conversation are gone.</p>
+<p><strong>MCP instructions</strong> — Model Context Protocol tool instructions are re-injected for any MCP servers with deferred tool loading.</p>
+<h3 id="post-compact-cleanup">Post-Compact Cleanup</h3>
+<p>After compaction, 10+ caches are cleared because their contents reference pre-compact state:</p>
+<ul>
+<li>Microcompact tracking state (tool IDs no longer valid)</li>
+<li>User context cache (forces CLAUDE.md reload and InstructionsLoaded hook)</li>
+<li>Memory file cache (allows fresh memory file detection)</li>
+<li>System prompt sections (may reference pre-compact state)</li>
+<li>Classifier approvals (permissions may have changed)</li>
+<li>Bash permission speculative checks (stale command analysis)</li>
+<li>Session messages cache (old messages gone)</li>
+<li>Beta tracing state</li>
+<li>File content cache (for commit attribution)</li>
+</ul>
+<p>The cleanup is careful about main-thread vs. subagent scope. Subagents run in the same process and share module-level state with the main thread. Clearing state during a subagent compaction would corrupt the main thread. The cleanup checks the query source prefix (<code>repl_main_thread</code> or <code>sdk</code>) before resetting shared state.</p>
+<p>One deliberate non-clear: the set of sent skill names. Re-injecting the full skill listing post-compact costs ~4,000 tokens of pure cache creation. The model still has the skill tool in its schema, and the invoked_skills attachment preserves content for used skills. Skipping re-injection saves tokens on every compaction.</p>
+<h2 id="auto-compact-orchestration">Auto-Compact Orchestration</h2>
+<p>The auto-compact flow ties everything together:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function autoCompactIfNeeded(messages):</span></span>
+<span class="line"><span>  if consecutiveFailures >= 3 → return (circuit breaker)</span></span>
+<span class="line"><span>  if not shouldAutoCompact(messages) → return</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  // Try session memory compaction first (cheap, no model call)</span></span>
+<span class="line"><span>  result = trySessionMemoryCompaction(messages)</span></span>
+<span class="line"><span>  if result:</span></span>
+<span class="line"><span>    cleanup, return success</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  // Fall back to full compaction (expensive, model call)</span></span>
+<span class="line"><span>  result = compactConversation(messages,</span></span>
+<span class="line"><span>    suppressFollowUpQuestions = true,</span></span>
+<span class="line"><span>    isAutoCompact = true)</span></span>
+<span class="line"><span>  if result:</span></span>
+<span class="line"><span>    cleanup, reset failures to 0, return success</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  // Failure: increment circuit breaker</span></span>
+<span class="line"><span>  consecutiveFailures++</span></span>
+<span class="line"><span>  if consecutiveFailures >= 3:</span></span>
+<span class="line"><span>    log "circuit breaker tripped"</span></span></code></pre>
+<p>When auto-compact triggers, it suppresses follow-up questions. The model receives: “Continue without asking user further questions. Resume directly — do not acknowledge summary, do not recap, do not preface. Pick up last task as if break never happened.” This prevents the jarring experience of the model suddenly asking “Would you like me to continue?” mid-task.</p>
+<p>In autonomous/proactive mode, the continuation message is even stronger: “You are running in autonomous mode. This is NOT first wake-up. Continue work loop — pick up where you left off. Do not greet or ask what to work on.”</p>
+<p>For manual <code>/compact</code>, the user can provide custom instructions (e.g., “focus on the authentication work”) that are appended to the summarization prompt.</p>
+<h3 id="recompaction-tracking">Recompaction Tracking</h3>
+<p>The system tracks compaction chains — situations where auto-compact fires, the conversation grows past the threshold again, and auto-compact fires a second time. Each compaction records:</p>
+<ul>
+<li>Whether this is a recompaction in a chain</li>
+<li>Turns since the previous compaction</li>
+<li>The previous compaction’s turn ID</li>
+<li>The auto-compact threshold that triggered it</li>
+<li>The query source that was active when triggered</li>
+</ul>
+<p>This metadata feeds into telemetry for monitoring compaction quality. If compaction produces summaries that are too verbose (consuming too many tokens), the conversation will recompact quickly — a signal that the summarization prompt needs tuning.</p>
+<h2 id="tier-3-session-memory-compact">Tier 3: Session Memory Compact</h2>
+<p>Full compaction is expensive — it sends the entire conversation to the model and waits for a summary. Session memory compaction is an experimental alternative that skips the model call entirely.</p>
+<h3 id="how-session-memory-works">How Session Memory Works</h3>
+<p>Throughout the conversation, a background process periodically extracts “session memory” — a structured markdown file with sections like Current State, Task Specification, Files and Functions, Errors &#x26; Corrections, and a Worklog.</p>
+<p>The extraction triggers based on two conditions:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>trigger = (tokenGrowth >= minimumTokensBetweenUpdate)</span></span>
+<span class="line"><span>          AND (toolCalls >= toolCallsBetweenUpdates OR noToolCallsInLastTurn)</span></span></code></pre>
+<p>The extraction runs in a forked subagent — isolated from the main conversation, using the API’s cache-safe parameters to avoid polluting the main prompt cache. The forked agent can ONLY use the file edit tool, and only on the session memory file. It reads the current notes, the recent conversation, and updates the file.</p>
+<p>Section sizes are enforced: 2,000 tokens per section, 12,000 tokens total. If a section exceeds its limit, the extraction prompt includes a reminder to condense. This prevents the session memory file from growing without bound.</p>
+<h3 id="using-session-memory-for-compaction">Using Session Memory for Compaction</h3>
+<p>When auto-compact triggers, it tries session memory compaction first:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function trySessionMemoryCompaction(messages):</span></span>
+<span class="line"><span>  if feature disabled → null</span></span>
+<span class="line"><span>  if no session memory file → null</span></span>
+<span class="line"><span>  if session memory is empty template → null</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  wait for any in-progress extraction to complete</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  calculate which messages to keep (most recent, meeting minimum thresholds)</span></span>
+<span class="line"><span>  adjust keep-index to preserve API invariants (tool_use/result pairs, thinking blocks)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  create compaction result using session memory as the summary</span></span>
+<span class="line"><span>  estimate post-compact token count</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  if postCompactTokens >= autoCompactThreshold → null  // Would immediately re-trigger</span></span>
+<span class="line"><span>  return result</span></span></code></pre>
+<p>The “messages to keep” calculation balances recency against token budget:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>start from first unsummarized message</span></span>
+<span class="line"><span>if already at maxTokens (40K): stop</span></span>
+<span class="line"><span>if already meeting minTokens (10K) AND minTextBlockMessages (5): stop</span></span>
+<span class="line"><span>otherwise: expand backward until one of above conditions met</span></span>
+<span class="line"><span>floor: most recent compact boundary (can't go before it)</span></span></code></pre>
+<p>The API invariant adjustment ensures the keep boundary doesn’t split tool_use/tool_result pairs or thinking blocks that share the same message ID. It walks backward to include any orphaned pairs.</p>
+<p>The token count estimate guards against a pathological loop: if the post-compact token count would already exceed the auto-compact threshold, the system rejects the result and returns null. Without this guard, session memory compaction would succeed, the next turn would trigger auto-compact again (because the kept messages are too large), triggering another session memory compact, and so on.</p>
+<p>Session memory compaction is significantly cheaper — no model call, no 20K output token generation. But it depends on the quality of the pre-extracted notes, which may miss nuances that a dedicated summarization call would capture.</p>
+<h3 id="the-session-memory-file-format">The Session Memory File Format</h3>
+<p>The extraction prompt defines a structured markdown template with ten sections:</p>
+<ul>
+<li><strong>Session Title</strong> — 5-10 word title</li>
+<li><strong>Current State</strong> — pending tasks, next steps</li>
+<li><strong>Task Specification</strong> — what the user asked, design decisions</li>
+<li><strong>Files and Functions</strong> — important files and why they’re relevant</li>
+<li><strong>Workflow</strong> — bash commands, execution order, interpreting output</li>
+<li><strong>Errors &#x26; Corrections</strong> — encountered errors and their fixes</li>
+<li><strong>Codebase and System Documentation</strong> — important components, how they fit together</li>
+<li><strong>Learnings</strong> — what worked, what to avoid</li>
+<li><strong>Key Results</strong> — exact user-requested output</li>
+<li><strong>Worklog</strong> — step-by-step summary of work done</li>
+</ul>
+<p>Each section is capped at 2,000 tokens. The total file is capped at 12,000 tokens. When a section grows past its limit, the extraction prompt includes a reminder: “section must be condensed.” When the total exceeds 12,000: “CRITICAL: file exceeds max, aggressively shorten.”</p>
+<p>Before including session memory in a compaction result, the content is further truncated via <code>truncateSessionMemoryForCompact</code>. This truncates each section to ~2,000 tokens (8,000 characters), preserving section headers and italic descriptions. An overflow marker tells the model it can read the full file if needed.</p>
+<h3 id="the-fallback-chain">The Fallback Chain</h3>
+<p>The full compaction fallback chain is:</p>
+<ol>
+<li><strong>Session memory compact</strong> — cheapest, fastest, depends on extraction quality</li>
+<li><strong>Full compact with prompt cache sharing</strong> — expensive but thorough, reuses cached prefix</li>
+<li><strong>Full compact streaming</strong> — fallback if cache sharing fails</li>
+<li><strong>PTL retry with head truncation</strong> — if compact itself exceeds context window</li>
+<li><strong>User error message</strong> — “Press esc twice to go up a few messages and try again”</li>
+</ol>
+<p>Each tier is tried only when the previous one fails or is unavailable.</p>
+<h2 id="the-cost-model">The Cost Model</h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Stage</th><th>Input Tokens</th><th>Output Tokens</th><th>Latency</th></tr></thead><tbody><tr><td>Microcompact (cached)</td><td>0</td><td>0</td><td>~0</td></tr><tr><td>Microcompact (time-gap)</td><td>0</td><td>0</td><td>~0</td></tr><tr><td>Session memory compact</td><td>0</td><td>0</td><td>~0</td></tr><tr><td>Full compact</td><td>~167K</td><td>up to 20K</td><td>1 model turn</td></tr></tbody></table>
+<p>For full compact at the 200K threshold: 167K tokens of old history become ~20K tokens of summary plus rehydrated attachments. Net savings: ~147K tokens. The cost is one model turn’s latency plus the input/output token charges for the summarization call.</p>
+<p>Microcompact and session memory compact are essentially free — no model call, no token charges. They exist to defer the expensive full compact as long as possible.</p>
+<h2 id="the-full-round-trip">The Full Round-Trip</h2>
+<p>To understand how the pieces fit together, trace one complete auto-compact cycle through the system:</p>
+<p><strong>1. The REPL starts the query loop.</strong> When the user sends a message, <code>REPL.tsx</code> calls the <code>query()</code> generator, which yields messages as they arrive. The REPL consumes them via <code>for await (event of query(...))</code> and appends each to the UI.</p>
+<p><strong>2. Microcompact runs first.</strong> Before anything else in the query loop, <code>microcompactMessages</code> checks whether tool results should be cleared. If the cache is warm, it queues cache edits. If the user was idle for an hour, it mutates the message array directly.</p>
+<p><strong>3. Auto-compact checks the threshold.</strong> <code>autoCompactIfNeeded</code> is called with the current messages, the tool use context, cache-safe parameters, and the tracking state. The tracking state is a persistent object threaded through the query loop — it carries the circuit breaker count, the turn counter, and the previous compact’s turn ID across iterations.</p>
+<p><strong>4. The compaction runs.</strong> If the threshold is exceeded, the system tries session memory first, then falls back to full compact. The full compact spawns a forked agent with the summarization prompt, streams the response, handles PTL retries if needed, and builds the post-compact message array.</p>
+<p><strong>5. Post-compact messages are yielded.</strong> The query generator yields the boundary marker, summary messages, attachments, and hook results one at a time. Each <code>yield</code> sends the message back to the REPL.</p>
+<p><strong>6. The REPL detects the boundary.</strong> When <code>onQueryEvent</code> receives a compact boundary message, it handles it specially: in fullscreen mode, it keeps pre-compact messages for scrollback. In normal mode, it replaces the entire message array with just the boundary. It bumps the conversation ID (a random UUID), which forces React to remount all message rows — ensuring stale UI state doesn’t persist.</p>
+<p><strong>7. The query loop continues.</strong> After yielding post-compact messages, the query loop replaces its internal <code>messagesForQuery</code> with the compacted set and continues to the API call. The model sees only the summary, attachments, and the new user message. The tracking state is reset: turn counter to 0, turn ID to a fresh UUID, consecutive failures to 0.</p>
+<p><strong>8. If the API call fails with prompt-too-long</strong>, reactive compaction (when enabled) catches it. Reactive compact is the mirror of proactive auto-compact — instead of preventing the PTL error, it recovers from one. The error is “withheld” (not yielded to the REPL) while recovery is attempted. If recovery succeeds, the query loop continues with the compacted messages. If it fails, the withheld error is yielded and the session returns to the user.</p>
+<p>This round-trip — REPL → query generator → microcompact → auto-compact → forked agent → stream → boundary → yield → REPL — is the complete execution path. Every compaction, whether manual or auto, follows this flow.</p>
+<h2 id="closing">Closing</h2>
+<p>Every Claude Code conversation manages its context window through this pipeline:</p>
+<ol>
+<li><strong>Token monitoring</strong> — canonical context size measurement, parallel tool call handling, threshold comparison with 13K buffer</li>
+<li><strong>Circuit breaker</strong> — max 3 consecutive failures before stopping auto-compact attempts</li>
+<li><strong>Microcompact</strong> — clear stale tool results (time-based mutation or cached server-side edits) without a model call</li>
+<li><strong>Full compact</strong> — 9-section summarization prompt, analysis scratchpad, NO_TOOLS dual-instruction, PTL retry with head truncation</li>
+<li><strong>Prompt cache sharing</strong> — forked agent reuses the main conversation’s cached prefix for the summarization call</li>
+<li><strong>Post-compact rehydration</strong> — 5 recent files (50K budget), active skills (25K budget), plan files, async agent status, tool deltas, MCP instructions</li>
+<li><strong>Post-compact cleanup</strong> — 10+ caches cleared, main-thread/subagent scope isolation, deliberate non-clears for cost savings</li>
+<li><strong>Session memory compact</strong> — pre-extracted markdown notes as a cheap alternative to model-based summarization</li>
+</ol>
+<p>The system is designed to be invisible. The user keeps working. The conversation keeps going. Behind the scenes, context is compressed, caches are managed, and critical information is preserved. The only visible sign is a brief “Compacted…” message — and even that can be expanded to see the full original transcript.</p>
+<p>The fail-closed principle applies here too, but differently than in security. When compaction fails, the system doesn’t silently drop messages. It retries with progressively more aggressive truncation, circuit-breaks after repeated failures, and ultimately asks the user to intervene. The alternative — silently losing context — would be worse than any interruption.</p>
+<p>The design reflects a hierarchy of priorities: correctness (never lose context silently) over cost (minimize API calls) over latency (minimize user-visible delay). Microcompact optimizes for cost and latency. Full compact prioritizes correctness. Session memory compact tries to get all three. The fallback chain ensures that even in adversarial conditions — massive conversations, API errors, extraction failures — the system degrades gracefully rather than catastrophically.</p>
+<hr>
+<p><em>Follow me on <a href="https://x.com/oldeucryptoboi">X</a> — I post as @oldeucryptoboi.</em></p>  <div class="subscribe-cta" data-astro-cid-bvzihdzo> <p data-astro-cid-bvzihdzo>Get new posts delivered to your inbox</p> <a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener" data-astro-cid-bvzihdzo>Subscribe on Substack →</a> </div> <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/bash-command-safety-analysis/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>How Bash Command Safety Analysis Works in AI Systems</span> </a> <span data-astro-cid-bvzihdzo></span> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+&copy; 2026 Laurent DeSegur
+</div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

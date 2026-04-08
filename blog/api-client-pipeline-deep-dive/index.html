@@ -1,0 +1,280 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Laurent DeSegur" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/api-client-pipeline-deep-dive/"><!-- Primary Meta Tags --><title>What Happens When Claude Code Calls the API</title><meta name="title" content="What Happens When Claude Code Calls the API"><meta name="description" content="The full client-side pipeline behind every Claude Code API call — request construction, prompt caching, retry strategies, streaming, error recovery, cost tracking, and rate limit management. Defense in depth from source code."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/api-client-pipeline-deep-dive/"><meta property="og:title" content="What Happens When Claude Code Calls the API"><meta property="og:description" content="The full client-side pipeline behind every Claude Code API call — request construction, prompt caching, retry strategies, streaming, error recovery, cost tracking, and rate limit management. Defense in depth from source code."><meta property="og:site_name" content="Laurent DeSegur"><meta property="article:published_time" content="2026-04-07T00:00:00.000Z"><meta property="article:tag" content="Claude Code"><meta property="article:tag" content="Anthropic"><meta property="article:tag" content="API"><meta property="article:tag" content="Architecture"><meta property="article:tag" content="Developer Tools"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/api-client-pipeline-deep-dive/"><meta name="twitter:title" content="What Happens When Claude Code Calls the API"><meta name="twitter:description" content="The full client-side pipeline behind every Claude Code API call — request construction, prompt caching, retry strategies, streaming, error recovery, cost tracking, and rate limit management. Defense in depth from source code."><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and X/LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"What Happens When Claude Code Calls the API","description":"The full client-side pipeline behind every Claude Code API call — request construction, prompt caching, retry strategies, streaming, error recovery, cost tracking, and rate limit management. Defense in depth from source code.","url":"https://oldeucryptoboi.com/blog/api-client-pipeline-deep-dive/","datePublished":"2026-04-07T00:00:00.000Z","author":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"keywords":"Claude Code, Anthropic, API, Architecture, Developer Tools","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/api-client-pipeline-deep-dive/"}}</script><link rel="stylesheet" href="/_astro/_slug_.WqGW7rbB.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo]{margin-top:3em;padding:1.5em;border:1px solid var(--border);text-align:center}.subscribe-cta[data-astro-cid-bvzihdzo] p[data-astro-cid-bvzihdzo]{margin:0 0 .75em;color:var(--text-dim);font-size:.85em;letter-spacing:.04em}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]{color:var(--hal-red);font-size:.8em;letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif;text-decoration:none;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]:hover{color:#fff}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2><span class="cap" data-astro-cid-3ef6ksr2>L</span>aurent <span class="cap" data-astro-cid-3ef6ksr2>D</span>e<span class="cap" data-astro-cid-3ef6ksr2>S</span>egur</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-04-07T00:00:00.000Z"> Apr 7, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>What Happens When Claude Code Calls the API</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>Claude Code</span><span data-astro-cid-bvzihdzo>Anthropic</span><span data-astro-cid-bvzihdzo>API</span><span data-astro-cid-bvzihdzo>Architecture</span><span data-astro-cid-bvzihdzo>Developer Tools</span> </div> </div>  <h2 id="the-problem">The Problem</h2>
+<p>You type a message. The model needs to see it, along with every previous message, the system prompt, tool schemas, and various configuration. That context gets serialized into an HTTP request, sent to a remote server, and a response streams back as server-sent events. Simple enough — until you consider everything that can go wrong.</p>
+<p>The server can be overloaded (529). Your credentials can expire mid-session. The response can be too long for the context window. The connection can go stale. The server can tell you to back off for five minutes, or five hours. The model can try to call a tool that failed three turns ago. Your cache — the thing saving you 90% on input costs — can silently break because a tool schema changed.</p>
+<p>The naive approach is: send request, get response, show to user. One function, maybe a try/catch. This fails because a single API call in an agentic loop is not a one-shot operation. It’s the inner loop of a system that runs for hours, making hundreds of calls, where each call builds on the state of every previous call. A retry strategy that works for a one-shot chatbot (wait and retry) causes cascading amplification in a capacity crisis. A token counter that’s off by 5% will eventually overflow the context window. A cache break you don’t detect silently triples your costs.</p>
+<p>The design principle is <strong>defense in depth with fail-visible defaults</strong>. Every failure should either be recovered automatically or surfaced to the user with a specific recovery action. Silent failures — where the system degrades without anyone noticing — are the enemy. Cache breaks get detected and logged. Token counts get cross-checked against API-reported usage. Retry decisions consider not just “can we retry” but “should we, given what everyone else is doing right now.”</p>
+<p>This article traces the full client-side pipeline: request construction, caching, retries, streaming, error recovery, cost tracking, and rate limit management. Everything here is verifiable from the source code. The server side — tokenization, routing, inference, post-processing — is invisible to the client and won’t be covered.</p>
+<h2 id="building-the-request">Building the Request</h2>
+<h3 id="the-system-prompt">The System Prompt</h3>
+<p>Consider what the model needs to know before it sees your message. Its identity, its behavioral rules, what tools it has, how to use them, what tone to take, what language to write in, what project it’s working on, what it remembered from previous sessions, what MCP servers are connected. This is the system prompt — a multi-kilobyte payload assembled from ~15 separate section generators.</p>
+<p>The prompt has a deliberate physical layout. Everything that stays constant across turns — identity, coding guidelines, tool instructions, style rules — sits at the top. Everything that changes per turn — memory, language preferences, environment info, MCP instructions — sits at the bottom, after an internal boundary marker.</p>
+<p>Why this split? The API caches the prompt prefix. On turn 2, the server recognizes the cached prefix and reads it cheaply. If a dynamic section (say, updated memory) sat in the middle, it would invalidate everything after it. By putting all dynamic content at the end, the stable prefix stays cached and only the changing tail incurs write costs.</p>
+<p>The system prompt also has a priority hierarchy. An override replaces everything (used by the API parameter). Otherwise: agent-specific prompts (for subagents) > custom prompts (user-specified) > default prompt. An append prompt (from settings like CLAUDE.md) is always added at the end, regardless of which base prompt was selected. This means your CLAUDE.md instructions survive even when the system switches to a subagent prompt.</p>
+<h3 id="messages">Messages</h3>
+<p>The internal conversation history is a rich format with UUIDs, timestamps, tool metadata, and attachment links. The API expects a simpler format: alternating user/assistant messages with typed content blocks.</p>
+<p>Two conversion functions transform the internal format. Both clone their content arrays before modification — a defensive pattern that prevents the API serialization layer from accidentally mutating the in-memory conversation state. This matters because the same message objects get reused across retry attempts and displayed in the UI.</p>
+<p>Before conversion, messages pass through a compression pipeline that runs on every API call:</p>
+<ol>
+<li><strong>Tool result budgeting</strong> — Caps the total size of tool results per message. A tool that returned 50KB of output gets truncated.</li>
+<li><strong>History snipping</strong> — Removes the oldest messages when the conversation exceeds a threshold.</li>
+<li><strong>Microcompaction</strong> — Clears stale tool results (file reads, shell output, search results) when the prompt cache has expired and they’ll be re-tokenized anyway.</li>
+<li><strong>Context collapse</strong> — Applies staged summarization to older conversation segments.</li>
+<li><strong>Autocompaction</strong> — Full model-based conversation summary when approaching the context limit.</li>
+</ol>
+<p>After conversion, additional cleanup runs:</p>
+<ul>
+<li><strong>Tool result pairing</strong> — Every <code>tool_use</code> block from the model must have a matching <code>tool_result</code>. Orphaned tool uses (from aborts, fallbacks, or compaction) get synthetic placeholder results. The API rejects unpaired blocks, and this failure mode is subtle enough that it has dedicated diagnostic logging.</li>
+<li><strong>Media stripping</strong> — Caps total media items (images, PDFs) at 100 per request. Earlier items are stripped first. This prevents conversations that accumulate many screenshots from exceeding payload limits.</li>
+</ul>
+<h3 id="prompt-caching">Prompt Caching</h3>
+<p>Caching is the most financially significant optimization. On a long session, 90%+ of input tokens may be cache reads. The difference: on a $5/Mtok model, cache reads cost $0.50/Mtok — a 90% discount.</p>
+<p>The client places cache markers (<code>cache_control</code> directives) at two levels:</p>
+<ul>
+<li><strong>System prompt blocks</strong>: Every block gets a marker. The server caches them as a unit.</li>
+<li><strong>Message history</strong>: A single breakpoint at the last message (or second-to-last if skip-write is set). Everything before this point is eligible for caching.</li>
+</ul>
+<p>Tool results that appear before the cache breakpoint get <code>cache_reference</code> tags linking them to their tool use IDs. This enables server-side cache editing — the server can delete a specific cached tool result without invalidating the entire prefix. This is how the system reclaims space from old tool results while keeping the cache warm.</p>
+<p>Cache control details vary by eligibility:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>type: ephemeral</span></span>
+<span class="line"><span>ttl: 5 minutes (default) or 1 hour (for eligible users)</span></span>
+<span class="line"><span>scope: global (shared across sessions) or unset</span></span></code></pre>
+<p>The 1-hour TTL is gated on subscriber status (not in overage) AND an allowlist of query sources. The allowlist uses prefix matching — <code>repl_main_thread*</code> covers all output style variants. This prevents background queries (title generation, suggestions) from claiming expensive 1-hour cache slots.</p>
+<h3 id="tools-thinking-and-extra-parameters">Tools, Thinking, and Extra Parameters</h3>
+<p>Each tool gets serialized to a JSON schema with name, description, and input schema. MCP tools can be deferred — the model sees the tool name but requests full details on demand, reducing the upfront token cost when dozens of MCP tools are connected.</p>
+<p>Thinking has three modes. <strong>Adaptive</strong>: the model decides how much to reason (latest models only). <strong>Budget</strong>: a fixed token budget for thinking. <strong>Disabled</strong>: no thinking blocks. When thinking is enabled, the API rejects requests that also set <code>temperature</code>, so the client forces temperature to undefined.</p>
+<p>The request body also carries: a speed parameter for fast mode (same model, faster inference, higher cost), an effort level, structured output format, task budgets for auto-continuation, feature flag beta headers, and extra body parameters parsed from an environment variable (for enterprise configurations like anti-distillation).</p>
+<h3 id="the-actual-call">The Actual Call</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>create(</span></span>
+<span class="line"><span>  parameters + { stream: true },</span></span>
+<span class="line"><span>  options: { abort_signal, headers: { client_request_id: random_uuid } }</span></span>
+<span class="line"><span>).with_response()</span></span></code></pre>
+<p>Always streaming. Always with an abort signal. The <code>.with_response()</code> call extracts both the event stream and the raw HTTP response object. The raw response is needed for header inspection — rate limit status, cache metrics, and request IDs all come from response headers, not the stream body.</p>
+<p>The client request ID is a UUID generated per call. It exists because timeout errors return no server-side request ID. When a request times out after 10 minutes, this is the only way to correlate the client failure with server-side logs.</p>
+<h2 id="the-client">The Client</h2>
+<p>Before any request fires, a factory function creates the SDK client. The client is provider-specific:</p>
+<ul>
+<li><strong>Direct API</strong>: API key or OAuth token authentication</li>
+<li><strong>AWS Bedrock</strong>: AWS credentials (bearer token, IAM, or STS session)</li>
+<li><strong>Azure Foundry</strong>: Azure AD credentials or API key</li>
+<li><strong>Google Vertex AI</strong>: Google Application Default Credentials with per-model region routing</li>
+</ul>
+<p>All four providers return the same base type, so downstream code doesn’t branch on provider. The provider-specific complexity is confined to the factory.</p>
+<p>A design trade-off in the Vertex setup: the Google auth library’s auto-detection hits the GCE metadata server when no credentials are configured, which hangs for 12 seconds on non-GCE machines. The client checks environment variables and credential file paths first, only falling back to the metadata-server path when neither is present. This trades a longer code path for avoiding a 12-second hang in the common case.</p>
+<p>Every request carries session-identifying headers: an app identifier (<code>cli</code>), a session ID, the SDK version, and optionally a container ID for remote environments. Custom headers from an environment variable (newline-separated <code>Name: Value</code> format) are merged in. For first-party API calls, the SDK’s fetch function is wrapped to inject the client request ID and log the request path for debugging.</p>
+<h2 id="streaming">Streaming</h2>
+<h3 id="what-the-user-sees">What the User Sees</h3>
+<p>While the API call is in flight, the user sees a spinner with live feedback. The spinner shows the current mode (“Thinking…”, “Reading files…”, “Running tools…”), an approximate token count updated in real-time as stream chunks arrive, and the elapsed time. If the stream stalls for more than 3 seconds, the spinner changes to indicate the stall visually. If the stall exceeds 30 seconds, the UI offers a contextual tip.</p>
+<p>During retries, the user sees a countdown: “Retrying in X seconds…” with the current attempt number and maximum retries. This is the retry generator’s yielded status messages being rendered — the async generator architecture means the UI stays responsive even during long backoff waits.</p>
+<p>When a rate limit warning is active, the notification bar shows utilization percentage and reset time. When context runs low, a token warning shows remaining capacity and distance to the auto-compact threshold. When a model fallback occurs, a system message appears explaining the switch.</p>
+<p>All of this feedback comes from the same event stream — the query loop yields events (stream chunks, retry status, error messages, compaction summaries) and the UI renders them in real-time. Nothing blocks on the complete response.</p>
+<h3 id="the-event-protocol">The Event Protocol</h3>
+<p>The response arrives as server-sent events:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>message_start     → initialize, extract initial usage</span></span>
+<span class="line"><span>content_block_start → begin text / thinking / tool_use block</span></span>
+<span class="line"><span>content_block_delta → accumulate content chunks</span></span>
+<span class="line"><span>content_block_stop  → finalize block</span></span>
+<span class="line"><span>message_delta     → update total usage, set stop reason</span></span>
+<span class="line"><span>message_stop      → end of stream</span></span></code></pre>
+<p>Text deltas are concatenated. Tool use inputs arrive as JSON fragments that are reassembled into a complete JSON object by the final <code>content_block_stop</code>. Thinking blocks accumulate both thinking text and a cryptographic signature (for verification).</p>
+<h3 id="the-idle-watchdog">The Idle Watchdog</h3>
+<p>A timer tracks the interval between stream chunks. If no data arrives for 90 seconds, the request is aborted. A warning fires at 45 seconds. This catches a failure mode that TCP timeouts don’t: the connection is alive (TCP keepalives succeed) but the server has stopped sending data. Without the watchdog, the client would hang silently for the full 10-minute request timeout.</p>
+<p>The 90-second threshold is configurable via environment variable. The trade-off: too short and you abort legitimate long-thinking responses; too long and you waste minutes on hung connections.</p>
+<h3 id="streaming-tool-execution">Streaming Tool Execution</h3>
+<p>When the model emits a tool use block, tool execution can start immediately — while the model might still be generating text or additional tool calls. If the model makes three tool calls and each takes 5 seconds, sequential execution adds 15 seconds. With streaming execution, the first tool starts as soon as it’s emitted, and all three may finish by the time the response completes.</p>
+<p>If a model fallback occurs mid-stream (3 consecutive overload errors trigger a switch to a fallback model), the streaming executor’s pending results are discarded. Tools are re-executed after the fallback response arrives. This prevents stale results from a partially-failed request from contaminating the fallback response.</p>
+<h3 id="resource-cleanup">Resource Cleanup</h3>
+<p>When streaming ends — normally, on error, or on abort — the client explicitly releases resources: the SDK stream object is cleaned up, and the HTTP response body is cancelled. This is a defensive pattern against connection pool exhaustion. In a long session with hundreds of tool loops, each API call opens a connection. Without explicit cleanup, idle connections accumulate until the pool is full and new requests fail with connection errors.</p>
+<h3 id="post-response-recovery">Post-Response Recovery</h3>
+<p>When the model responds but the response is problematic (no tool calls, but an error condition), the query loop has fallback strategies before surfacing the error:</p>
+<ul>
+<li><strong>Prompt too long</strong>: First, drain any staged context collapses. If that doesn’t free enough space, try reactive compaction — an aggressive, single-shot compression of the conversation. If that also fails, surface the error with a <code>/compact</code> hint.</li>
+<li><strong>Max output tokens hit</strong>: First, try escalating from 8K to 64K output tokens (one-time). If still hitting limits, inject a “Resume directly from where you left off” message and retry. Maximum 3 retries. This handles the case where the model’s response is legitimately long (a large code generation) rather than pathologically stuck.</li>
+<li><strong>Media size errors</strong>: Try reactive compaction with media stripping — removing images and documents that pushed the request over the payload limit.</li>
+</ul>
+<p>Each strategy is tried once per error type. The system doesn’t loop on recovery.</p>
+<h2 id="the-retry-wrapper">The Retry Wrapper</h2>
+<p>Every API call is wrapped in a retry generator. It yields status messages during waits (so the UI can show “Retrying in X seconds…”) and returns the final result on success.</p>
+<h3 id="the-decision-tree">The Decision Tree</h3>
+<p>When an error occurs, the handler walks through a priority-ordered sequence:</p>
+<p><strong>User abort</strong> → Throw immediately. No retry.</p>
+<p><strong>Fast mode + rate limit (429) or overload (529)</strong> → Check the retry-after header:</p>
+<ul>
+<li>Under 20 seconds: Wait and retry at fast speed. This preserves the prompt cache — switching speed would change the model identifier and break the cache.</li>
+<li>Over 20 seconds or unknown: Enter a cooldown period (minimum 10 minutes). During cooldown, requests use standard speed. This prevents spending 6x the cost on retries during extended overload.</li>
+<li>If the server signals that overage isn’t available (via a specific header), fast mode is permanently disabled for the session.</li>
+</ul>
+<p><strong>Overload (529) from a background source</strong> → Drop immediately. Background work (title generation, suggestions, classifiers) doesn’t deserve retries during a capacity crisis. Each retry is 3–10x gateway amplification. The user never sees background failures anyway. New query sources default to no-retry — they must be explicitly added to a foreground allowlist.</p>
+<p><strong>Consecutive 529 counter</strong> → After 3 consecutive overload errors, trigger a model fallback if one is configured. The counter persists across streaming-to-nonstreaming fallback transitions (a streaming 529 pre-seeds the counter for the non-streaming retry loop). Without a fallback model, external users get “Repeated 529 Overloaded errors” and the request fails.</p>
+<p><strong>Authentication errors</strong> → Re-create the entire SDK client. OAuth token expired (401)? Refresh it. OAuth revoked (403 + specific message)? Force re-login. AWS credentials expired? Clear the credential cache. GCP token invalid? Refresh credentials. The retry gets a fresh client with fresh credentials.</p>
+<p><strong>Stale connection (ECONNRESET/EPIPE)</strong> → Disable HTTP keep-alive (behind a feature flag) and reconnect. Keep-alive is normally desirable, but a stale pooled connection that repeatedly resets is worse than the overhead of new connections.</p>
+<p><strong>Context overflow (input + max_tokens > limit)</strong> → Parse the error for exact token counts, calculate available space with a safety buffer, adjust the max_tokens parameter, and retry. A floor of 3,000 tokens prevents the model from having zero room to respond. If thinking is enabled, the adjustment ensures the thinking budget isn’t silently eliminated.</p>
+<p><strong>Everything else</strong> → Check if retryable (connection errors, 408, 409, 429, 5xx → yes; 400, 404 → no). Calculate delay. Sleep. Retry.</p>
+<h3 id="backoff">Backoff</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>base_delay = min(500ms * 2^(attempt-1), max_delay)</span></span>
+<span class="line"><span>jitter = random() * 0.25 * base_delay</span></span>
+<span class="line"><span>delay = base_delay + jitter</span></span></code></pre>
+<p>The jitter is 0-25% of the base, preventing thundering herd when many clients retry simultaneously. If the server sends a <code>Retry-After</code> header, that value overrides the calculated delay.</p>
+<p>Three backoff modes exist:</p>
+<ul>
+<li><strong>Normal</strong>: Up to 10 attempts, max delay grows with attempts.</li>
+<li><strong>Persistent</strong> (headless/unattended sessions): Retries 429 and 529 indefinitely with a 5-minute cap. Long sleeps are chunked into 30-second intervals, and each chunk yields a status message so the host environment doesn’t kill the session for inactivity. A 6-hour absolute cap prevents pathological loops.</li>
+<li><strong>Rate-limited with reset timestamp</strong>: The server sends an <code>anthropic-ratelimit-unified-reset</code> header with the Unix timestamp when the rate limit window resets. The client sleeps until that exact time rather than polling with exponential backoff.</li>
+</ul>
+<h3 id="the-x-should-retry-header">The x-should-retry Header</h3>
+<p>The server can explicitly tell the client whether to retry via <code>x-should-retry: true|false</code>. But the client doesn’t always obey:</p>
+<ul>
+<li><strong>Subscribers hitting rate limits</strong>: The server says “retry: true” (the limit resets in hours). But the client says no — waiting hours is not useful. Enterprise users are an exception because they typically use pay-as-you-go rather than window-based limits.</li>
+<li><strong>Internal users on 5xx errors</strong>: The server may say “retry: false” (the error is deterministic). But internal users can ignore this for server errors specifically, because internal infrastructure sometimes returns transient 5xx errors that resolve on retry.</li>
+<li><strong>Remote environments on 401/403</strong>: Infrastructure-provided JWTs can fail transiently (auth service flap, network hiccup). The server says “don’t retry with the same bad key” — but the key isn’t bad, the auth service is flapping. So the client retries anyway.</li>
+</ul>
+<p>Each of these is a case where the client has context the server doesn’t. The server sees “this request failed with status X.” The client knows “I’m a subscriber who can’t wait 5 hours” or “my auth is infrastructure-managed, not user-provided.”</p>
+<h2 id="error-classification">Error Classification</h2>
+<p>When retries are exhausted, the error is converted into a user-facing message with a recovery action. Over 20 specific error patterns map to targeted messages:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Pattern</th><th>User Sees</th><th>Recovery</th></tr></thead><tbody><tr><td>Context too long with token counts</td><td>”Prompt is too long”</td><td><code>/compact</code></td></tr><tr><td>Model not available</td><td>Subscription-aware message</td><td><code>/model</code></td></tr><tr><td>API key invalid</td><td>”Not logged in”</td><td><code>/login</code></td></tr><tr><td>OAuth revoked</td><td>”Token revoked”</td><td><code>/login</code></td></tr><tr><td>Credits exhausted</td><td>”Credit balance too low”</td><td>Add credits</td></tr><tr><td>Rate limit with reset time</td><td>Per-plan message</td><td>Wait or <code>/upgrade</code></td></tr><tr><td>PDF exceeds page limit</td><td>Size limit shown</td><td>Reduce pages</td></tr><tr><td>Image too large</td><td>Dimension limit shown</td><td>Resize</td></tr><tr><td>Bedrock model access denied</td><td>Model access guidance</td><td>Request access</td></tr><tr><td>Request timeout</td><td>”Request timed out”</td><td>Retry</td></tr></tbody></table>
+<p>Messages are context-sensitive. Interactive sessions show keyboard shortcuts (“esc esc” to abort). SDK sessions show generic text. Subscription users get different error messages than API key users. Internal users get a Slack channel link for rapid triage.</p>
+<p>Separately, every error gets classified into one of 25 analytics types (<code>rate_limit</code>, <code>prompt_too_long</code>, <code>server_overload</code>, <code>auth_error</code>, <code>ssl_cert_error</code>, <code>unknown</code>, etc.) for aggregate monitoring. This dual classification — human-readable + machine-readable — lets the same error inform both the user and the engineering dashboard.</p>
+<h3 id="the-529-detection-problem">The 529 Detection Problem</h3>
+<p>The SDK sometimes fails to pass the 529 status code during streaming. The server sends 529, but by the time the error reaches the client, the status field may be undefined or different. The client works around this by also checking the error message body for the string <code>"type":"overloaded_error"</code>. This string-matching fallback is fragile — if the API changes the error format, it breaks — but it catches a real class of misclassified overload errors that the status code alone misses.</p>
+<p>Similarly, the “fast mode not enabled” error is detected by string-matching the error message (<code>"Fast mode is not enabled"</code>). The code includes a comment noting this should be replaced with a dedicated response header once the API adds one. String-matching error messages is a known anti-pattern, but when the alternative is failing to detect a recoverable error, fragility is the better trade-off.</p>
+<h2 id="token-counting-and-cost-tracking">Token Counting and Cost Tracking</h2>
+<h3 id="how-tokens-are-counted">How Tokens Are Counted</h3>
+<p>The canonical context size function combines two sources:</p>
+<ol>
+<li>
+<p><strong>API-reported usage</strong>: Walk backward through messages to find the last assistant message with a <code>usage</code> field. This is the server’s authoritative token count at that point.</p>
+</li>
+<li>
+<p><strong>Client-side estimation</strong>: For messages added after the last API response (the user’s new message, any attachment messages), estimate tokens using heuristics: ~4 characters per token for text, 2,000 tokens flat for images, tool name + serialized input length for tool use blocks. Pad by 33%.</p>
+</li>
+</ol>
+<p>The estimation is intentionally conservative. Overestimating triggers compaction too early (wastes a few tokens of capacity). Underestimating triggers a prompt-too-long error (wastes an entire API call).</p>
+<p>A subtlety with parallel tool calls: when the model makes N tool calls in one response, streaming emits N separate assistant records sharing the same response ID. The query loop interleaves tool results between them: <code>[assistant(id=A), tool_result, assistant(id=A), tool_result, ...]</code>. The token counter must walk back to the FIRST message with the matching ID so all interleaved tool results are included. Stopping at the last one would miss them and undercount.</p>
+<h3 id="cost-calculation">Cost Calculation</h3>
+<p>A per-model pricing table maps model identifiers to rates:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>sonnet (3.5 through 4.6):  $3 / $15  per million tokens (input/output)</span></span>
+<span class="line"><span>opus 4/4.1:                $15 / $75</span></span>
+<span class="line"><span>opus 4.5/4.6:              $5 / $25</span></span>
+<span class="line"><span>opus 4.6 fast:             $30 / $150</span></span>
+<span class="line"><span>haiku 4.5:                 $1 / $5</span></span></code></pre>
+<p>Cache reads cost 10% of input price. Cache writes cost 125% of input price. The formula:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>cost = (input / 1M) * input_rate</span></span>
+<span class="line"><span>     + (output / 1M) * output_rate</span></span>
+<span class="line"><span>     + (cache_read / 1M) * cache_read_rate</span></span>
+<span class="line"><span>     + (cache_write / 1M) * cache_write_rate</span></span>
+<span class="line"><span>     + web_searches * $0.01</span></span></code></pre>
+<p>Fast mode pricing is determined by the server, not the client. The API response includes a <code>speed</code> field in usage data. If the server processed the request at standard speed despite a fast-mode request (possible during overload), you pay standard rates. The client trusts this field for billing rather than its own request parameter.</p>
+<p>Costs are persisted per-session. On session resume, the client checks that the saved session ID matches before restoring — preventing one session’s costs from bleeding into another. Unknown models (new model IDs not yet in the table) fall back to the Opus 4.5/4.6 tier and fire an analytics event so the table can be updated.</p>
+<h2 id="cache-break-detection">Cache Break Detection</h2>
+<p>A cache break means the server couldn’t read the cached prefix and had to re-process all input tokens. On a 100K-token conversation, that’s the difference between paying for 5K tokens (cache read) and 100K tokens (full write). Silent cache breaks are an invisible cost multiplier.</p>
+<p>The detection system uses two phases:</p>
+<p><strong>Pre-call</strong>: Before each API call, snapshot the state — hashes of the system prompt, tool schemas, cache control config, model name, speed mode, beta headers, effort level, and extra body parameters.</p>
+<p><strong>Post-call</strong>: After the response, compare cache read tokens to the previous call’s value. If reads dropped by more than 2,000 tokens and didn’t reach 95% of the previous value, flag a cache break.</p>
+<p>When a break is detected, the system identifies which snapshot fields changed: model switch, system prompt edit, tool schema addition/removal, speed toggle, beta header change, cache TTL/scope flip. If nothing changed in the snapshot, it infers a time-based cause: over 1 hour since last call (TTL expiry), over 5 minutes (short TTL expiry), or under 5 minutes (server-side eviction).</p>
+<p>A unified diff file is written showing the before/after prompt state. With debug mode enabled, this makes cache break investigation straightforward — you can see exactly which tool schema changed or which system prompt section grew.</p>
+<p>State is tracked per query source with a cap of 10 tracked sources to prevent unbounded memory growth. Short-lived sources (background speculation, session memory extraction) are excluded from tracking — they don’t benefit from cross-call analysis.</p>
+<h2 id="rate-limits-and-early-warnings">Rate Limits and Early Warnings</h2>
+<p>After every API response, the client extracts rate limit headers: status (<code>allowed</code>, <code>allowed_warning</code>, <code>rejected</code>), reset timestamp, limit type (<code>five_hour</code>, <code>seven_day</code>, <code>seven_day_opus</code>), overage status, and fallback availability.</p>
+<h3 id="early-warnings">Early Warnings</h3>
+<p>Before hitting the actual limit, the client warns users who are burning through quota unusually fast:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>5-hour window:  warn if 90% used but &#x3C; 72% of time elapsed</span></span>
+<span class="line"><span>7-day window:   warn if 75% used but &#x3C; 60% of time elapsed</span></span>
+<span class="line"><span>                warn if 50% used but &#x3C; 35% of time elapsed</span></span>
+<span class="line"><span>                warn if 25% used but &#x3C; 15% of time elapsed</span></span></code></pre>
+<p>The intuition: if you’ve used 90% of your 5-hour quota but only 3.6 hours have passed, you’re on pace to hit the wall. The preferred method uses a server-sent <code>surpassed-threshold</code> header. The client-side time calculation is a fallback.</p>
+<p>False positive suppression: warnings are suppressed when utilization is below 70% (prevents spurious alerts right after a rate limit reset). For team/enterprise users with seamless overage rollover, session-limit warnings are skipped entirely — they’ll never hit a wall.</p>
+<h3 id="overage-detection">Overage Detection</h3>
+<p>When <code>status</code> changes from <code>rejected</code> to <code>allowed</code> while <code>overageStatus</code> is also <code>allowed</code>, the user has silently crossed from subscription quota to overage billing. The client detects this transition and shows a notification: “You’re now using extra usage.” This matters because overage has its own cost implications.</p>
+<h3 id="quota-probing">Quota Probing</h3>
+<p>On startup, a test call checks quota status before the first real query: a single-token request to the smallest model. The call uses <code>.with_response()</code> to access the raw headers. This lets the UI show rate limit state immediately rather than waiting for the first user message.</p>
+<h2 id="the-full-round-trip">The Full Round-Trip</h2>
+<p>Putting it all together, here’s one API call:</p>
+<ol>
+<li><strong>Message preparation</strong>: microcompact, autocompact, context collapse</li>
+<li><strong>Request construction</strong>: system prompt blocks with cache markers, converted messages with cache breakpoints and tool result references, tool schemas, thinking config, beta headers, extra body params</li>
+<li><strong>Cache state snapshot</strong>: hash system prompt, tools, config</li>
+<li><strong>Retry wrapper</strong>: up to 10 attempts with exponential backoff</li>
+<li><strong>Client creation</strong>: provider-specific SDK with auth, headers, fetch wrapper</li>
+<li><strong>API call</strong>: streaming request with abort signal and client request ID</li>
+<li><strong>Stream processing</strong>: event-by-event content accumulation, idle watchdog</li>
+<li><strong>Tool execution</strong>: streaming — start tools as they’re emitted, before the response completes</li>
+<li><strong>Header extraction</strong>: rate limits, cache metrics, request IDs</li>
+<li><strong>Cache break analysis</strong>: compare pre/post token ratios</li>
+<li><strong>Cost tracking</strong>: per-model pricing, session accumulation, persistence</li>
+<li><strong>Error recovery</strong>: 20+ error patterns → specific recovery actions</li>
+<li><strong>Query loop</strong>: process tool results, append to history, loop back</li>
+</ol>
+<p>Each turn takes 2–30 seconds. A typical session makes 50–200 calls. The retry system makes those calls resilient to transient failures. The caching system makes them affordable. The error classification system makes failures actionable. And the token counter keeps track of exactly how close you are to the edge of the context window.</p>
+<p>The alternative to this defense-in-depth approach is simpler code that fails in opaque ways — silent cost overruns, mysterious context overflows, and retries that amplify outages instead of weathering them. Every layer described here exists because the simpler version broke in production.</p>
+<p>The key architectural choices:</p>
+<ul>
+<li><strong>Async generators everywhere</strong>: The query loop, the retry wrapper, and the stream processor are all async generators. This means every layer can yield events to the UI without blocking. A retry wait yields countdown messages. A compaction yields summary events. The UI stays responsive through multi-minute operations.</li>
+<li><strong>Trust the server’s numbers</strong>: Token counts come from API usage fields, not local tokenization. Cache status is inferred from token ratios, not server state. Cost is calculated from server-reported speed mode, not the client’s request. The client doesn’t have a tokenizer — it uses character-based estimation for new messages and cross-checks against the server’s count on every response.</li>
+<li><strong>Fail visible, not fail silent</strong>: Cache breaks are logged with diffs. Cost anomalies fire analytics events. Rate limit transitions trigger notifications. Unknown models get tracked. The system is designed so that degradation is always observable, even if it’s not always preventable.</li>
+<li><strong>Context over rules</strong>: The retry handler doesn’t just ask “is this error retryable?” It asks “is this error retryable for THIS user on THIS provider in THIS mode?” A subscriber hitting 429 is different from an enterprise user hitting 429. A remote environment hitting 401 is different from a local user hitting 401. The same status code gets different treatment depending on context the server can’t see.</li>
+</ul>
+<hr>
+<p><em>Follow me on <a href="https://x.com/oldeucryptoboi">X</a> — I post as @oldeucryptoboi.</em></p>  <div class="subscribe-cta" data-astro-cid-bvzihdzo> <p data-astro-cid-bvzihdzo>Get new posts delivered to your inbox</p> <a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener" data-astro-cid-bvzihdzo>Subscribe on Substack →</a> </div> <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/context-compaction-deep-dive/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>How Claude Code Manages Infinite Conversations in a Finite Context Window</span> </a> <a class="nav-link nav-next" href="/blog/ai-white-collar-great-recession/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Next</span> <span class="nav-title" data-astro-cid-bvzihdzo>94% Exposed, 30% Adopted: Why Engineering Leaders Need to Rethink How They Hire</span> </a> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+&copy; 2026 Laurent DeSegur
+</div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

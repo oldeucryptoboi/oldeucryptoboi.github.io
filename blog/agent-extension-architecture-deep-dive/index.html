@@ -1,0 +1,341 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Laurent DeSegur" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/agent-extension-architecture-deep-dive/"><!-- Primary Meta Tags --><title>How Claude Code Extends Itself: Skills, Hooks, Agents, and MCP</title><meta name="title" content="How Claude Code Extends Itself: Skills, Hooks, Agents, and MCP"><meta name="description" content="Six extension systems with layered trust — CLAUDE.md, hooks, skills, the tool pool, MCP servers, and agents. How each solves a different problem safely."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/agent-extension-architecture-deep-dive/"><meta property="og:title" content="How Claude Code Extends Itself: Skills, Hooks, Agents, and MCP"><meta property="og:description" content="Six extension systems with layered trust — CLAUDE.md, hooks, skills, the tool pool, MCP servers, and agents. How each solves a different problem safely."><meta property="og:site_name" content="Laurent DeSegur"><meta property="article:published_time" content="2026-04-07T00:00:00.000Z"><meta property="article:tag" content="Claude Code"><meta property="article:tag" content="Anthropic"><meta property="article:tag" content="Architecture"><meta property="article:tag" content="MCP"><meta property="article:tag" content="AI Agents"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/agent-extension-architecture-deep-dive/"><meta name="twitter:title" content="How Claude Code Extends Itself: Skills, Hooks, Agents, and MCP"><meta name="twitter:description" content="Six extension systems with layered trust — CLAUDE.md, hooks, skills, the tool pool, MCP servers, and agents. How each solves a different problem safely."><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and X/LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"How Claude Code Extends Itself: Skills, Hooks, Agents, and MCP","description":"Six extension systems with layered trust — CLAUDE.md, hooks, skills, the tool pool, MCP servers, and agents. How each solves a different problem safely.","url":"https://oldeucryptoboi.com/blog/agent-extension-architecture-deep-dive/","datePublished":"2026-04-07T00:00:00.000Z","author":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"keywords":"Claude Code, Anthropic, Architecture, MCP, AI Agents","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/agent-extension-architecture-deep-dive/"}}</script><link rel="stylesheet" href="/_astro/_slug_.WqGW7rbB.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo]{margin-top:3em;padding:1.5em;border:1px solid var(--border);text-align:center}.subscribe-cta[data-astro-cid-bvzihdzo] p[data-astro-cid-bvzihdzo]{margin:0 0 .75em;color:var(--text-dim);font-size:.85em;letter-spacing:.04em}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]{color:var(--hal-red);font-size:.8em;letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif;text-decoration:none;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]:hover{color:#fff}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2><span class="cap" data-astro-cid-3ef6ksr2>L</span>aurent <span class="cap" data-astro-cid-3ef6ksr2>D</span>e<span class="cap" data-astro-cid-3ef6ksr2>S</span>egur</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-04-07T00:00:00.000Z"> Apr 7, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>How Claude Code Extends Itself: Skills, Hooks, Agents, and MCP</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>Claude Code</span><span data-astro-cid-bvzihdzo>Anthropic</span><span data-astro-cid-bvzihdzo>Architecture</span><span data-astro-cid-bvzihdzo>MCP</span><span data-astro-cid-bvzihdzo>AI Agents</span> </div> </div>  <h2 id="the-problem">The Problem</h2>
+<p>You want Claude Code to know your team’s conventions, run your linter after every edit, delegate research to a background worker, and call your internal APIs through custom tools. These are four different extension problems, and the naive approach — one plugin system that does everything — fails because each problem has a fundamentally different trust profile.</p>
+<p>Consider a team’s coding conventions. These are passive instructions — text the model reads but never executes. They need no sandbox, no permissions, no isolation. Now consider a linter that runs after every file write. This is active code that executes on your machine in response to the model’s actions. It needs a trust boundary: what if a malicious project’s config file registers a hook that exfiltrates your SSH keys? Now consider a background research agent. It needs its own conversation, its own tool access, its own abort controller — but it must not silently approve dangerous operations. And a custom tool server? It’s a separate process speaking a protocol, potentially remote, potentially untrusted.</p>
+<p>One extension system can’t handle all of these safely. Passive instructions with no execution risk get the same UX as remote tool servers that can exfiltrate data? That’s either too permissive for tools or too restrictive for instructions.</p>
+<p>The design principle is <strong>layered trust with fail-closed defaults</strong>. Each extension type gets exactly the trust boundary its threat model requires. Instructions are injected as text — no execution, no permissions needed. Hooks execute deterministic code — sandboxed, workspace-trust-gated, exit-code-based control flow. Agents get isolated conversations with scoped tool access — permission prompts bubble to the parent. Tool servers run out-of-process with namespaced capabilities and enterprise policy controls. Unknown extension types don’t silently succeed — they don’t exist.</p>
+<p>This article traces six extension systems in execution order: CLAUDE.md (instructions), hooks (lifecycle callbacks), skills (reusable prompts), the tool pool (built-in + external), MCP (external tool servers), and agents (delegated execution). Each one exists because the others can’t solve its problem safely.</p>
+<hr>
+<h2 id="layer-1-claudemd--instructions-as-text">Layer 1: CLAUDE.md — Instructions as Text</h2>
+<h3 id="the-problem-it-solves">The Problem It Solves</h3>
+<p>Every project has conventions. “Use bun, not npm.” “Always run tests before committing.” “Never modify the migration files directly.” These need to reach the model on every turn, survive context compaction, and compose across nested directories — without executing anything.</p>
+<h3 id="how-discovery-works">How Discovery Works</h3>
+<p>Imagine you’re working in <code>/home/alice/projects/myapp/src/components/</code>. The system walks upward:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>/home/alice/projects/myapp/src/components/</span></span>
+<span class="line"><span>/home/alice/projects/myapp/src/</span></span>
+<span class="line"><span>/home/alice/projects/myapp/</span></span>
+<span class="line"><span>/home/alice/projects/</span></span>
+<span class="line"><span>/home/alice/</span></span></code></pre>
+<p>At each directory, it looks for three things:</p>
+<ul>
+<li><code>CLAUDE.md</code> (checked-in project instructions)</li>
+<li><code>.claude/CLAUDE.md</code> (same, nested in config dir)</li>
+<li><code>.claude/rules/*.md</code> (individual rule files)</li>
+</ul>
+<p>But not all directories are equal. The full discovery hierarchy has six tiers, loaded in order from lowest to highest priority:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1. Managed      — /etc/claude-code/CLAUDE.md (enterprise policy, always loaded)</span></span>
+<span class="line"><span>2. User         — ~/.claude/CLAUDE.md (your personal global instructions)</span></span>
+<span class="line"><span>3. Project      — CLAUDE.md files found walking up from cwd</span></span>
+<span class="line"><span>4. Local        — CLAUDE.local.md (gitignored, private per-developer)</span></span>
+<span class="line"><span>5. AutoMemory   — ~/.claude/projects/.../memory/MEMORY.md (persistent learning)</span></span>
+<span class="line"><span>6. TeamMemory   — Shared team memory (experimental)</span></span></code></pre>
+<p>Priority matters because the model pays more attention to later content. Your project’s “use bun” instruction at tier 3 takes precedence over a user-level “use npm” at tier 2. Enterprise policy at tier 1 is loaded first but can’t be overridden by anything below it — it’s structurally guaranteed to be present.</p>
+<h3 id="the-include-system">The Include System</h3>
+<p>A CLAUDE.md can reference other files:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="markdown"><code><span class="line"><span style="color:#79B8FF;font-weight:bold"># Project Rules</span></span>
+<span class="line"><span style="color:#E1E4E8">@./docs/coding-standards.md</span></span>
+<span class="line"><span style="color:#E1E4E8">@./docs/api-conventions.md</span></span></code></pre>
+<p>The <code>@</code> directive pulls in external files as separate instruction entries. Resolution rules:</p>
+<ul>
+<li><code>@./relative</code> — relative to the including file’s directory</li>
+<li><code>@~/path</code> — relative to home</li>
+<li><code>@/absolute</code> — absolute path</li>
+</ul>
+<p>Circular includes are tracked by recording every processed path in a set. If file A includes B and B includes A, the second inclusion is silently skipped.</p>
+<p>Security: only whitelisted text file extensions are loadable — over 100 extensions covering code, config, and documentation formats. Binary files (images, PDFs, executables) are rejected. This prevents a crafted include path from loading arbitrary binary data into the model’s context.</p>
+<h3 id="conditional-rules">Conditional Rules</h3>
+<p>Rule files can have frontmatter that restricts when they activate:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="markdown"><code><span class="line"><span style="color:#79B8FF;font-weight:bold">---</span></span>
+<span class="line"><span style="color:#E1E4E8">paths: src/api/**</span></span>
+<span class="line"><span style="color:#79B8FF;font-weight:bold">---</span></span>
+<span class="line"><span style="color:#E1E4E8">Never use raw SQL queries in API handlers. Always use the query builder.</span></span></code></pre>
+<p>This rule only appears when the model is working on files matching <code>src/api/**</code>. The matching uses gitignore-style patterns — the same library that handles <code>.gitignore</code>, so glob semantics are consistent. Rules without a <code>paths</code> field apply unconditionally.</p>
+<h3 id="how-instructions-reach-the-model">How Instructions Reach the Model</h3>
+<p>All discovered files are concatenated into a single block, wrapped in a system-reminder tag, and injected as part of a user message — not the system prompt. This is a deliberate choice: system prompt content is cached aggressively, but CLAUDE.md content can change between turns (the user might edit a file). By injecting it as user-message content, it gets re-read on every turn without invalidating the system prompt cache.</p>
+<p>The instruction block carries a header that tells the model these instructions override default behavior — a prompt-level enforcement that complements the structural priority ordering.</p>
+<h3 id="fail-closed-properties">Fail-Closed Properties</h3>
+<ul>
+<li>Unknown file extensions in <code>@include</code> → silently skipped (no binary loading)</li>
+<li>File read errors (ENOENT, EACCES) → silently skipped (missing files don’t crash)</li>
+<li>Circular includes → tracked and deduplicated</li>
+<li>Frontmatter parse errors → content loaded without conditional filtering (fail-open on conditions, fail-closed on content)</li>
+<li>HTML comments → stripped (authorial notes don’t reach the model)</li>
+<li>AutoMemory → truncated after 200 lines (prevents unbounded context growth)</li>
+</ul>
+<h3 id="trade-off-safety-over-convenience">Trade-Off: Safety Over Convenience</h3>
+<p>External includes (files outside the project root) require explicit approval. A CLAUDE.md in a cloned repository can’t silently <code>@/etc/passwd</code> to exfiltrate system files into the model’s context. The user must approve external includes once per project — a one-time friction that prevents a class of supply-chain attacks where a malicious repo’s instructions load sensitive files.</p>
+<hr>
+<h2 id="layer-2-hooks--deterministic-lifecycle-callbacks">Layer 2: Hooks — Deterministic Lifecycle Callbacks</h2>
+<h3 id="the-problem-it-solves-1">The Problem It Solves</h3>
+<p>You want to run your linter after every file write. You want to block the model from committing to main. You want to send a webhook when a session ends. These are deterministic actions — no LLM judgment needed — that execute in response to specific lifecycle events.</p>
+<h3 id="the-attack-that-shaped-the-design">The Attack That Shaped the Design</h3>
+<p>Early in development, a vulnerability was discovered: a project’s <code>.claude/settings.json</code> could register SessionEnd hooks that executed when the user declined the workspace trust dialog. The user says “I don’t trust this workspace” and the workspace’s code runs anyway. This led to a blanket rule: <strong>all hooks require workspace trust</strong>. In interactive mode, no hook executes until the user has explicitly accepted the trust dialog.</p>
+<h3 id="hook-events">Hook Events</h3>
+<p>Hooks fire at ~28 lifecycle points. The most important ones:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>PreToolUse    — Before any tool executes (can block, modify input, or allow)</span></span>
+<span class="line"><span>PostToolUse   — After successful tool execution (can inject context)</span></span>
+<span class="line"><span>Stop          — Before the model stops (can force continuation)</span></span>
+<span class="line"><span>SessionStart  — When a session begins</span></span>
+<span class="line"><span>SessionEnd    — When a session ends (1.5-second timeout, not 10 minutes)</span></span>
+<span class="line"><span>Notification  — When the system sends a notification</span></span></code></pre>
+<p>Each event carries structured JSON input — the tool name, the tool’s input, session IDs, working directory, and more.</p>
+<h3 id="four-hook-types">Four Hook Types</h3>
+<p><strong>Command hooks</strong> spawn a shell process (bash or PowerShell). The hook’s JSON input is written to stdin. The process’s exit code determines the outcome:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Exit 0  →  Success (continue normally)</span></span>
+<span class="line"><span>Exit 2  →  Blocking error (prevent the action)</span></span>
+<span class="line"><span>Exit 1  →  Non-blocking error (log and continue)</span></span></code></pre>
+<p>If the process writes JSON to stdout matching the hook output schema, that JSON controls behavior — permission decisions, additional context, modified tool input. If stdout isn’t JSON, it’s treated as plain text feedback.</p>
+<p>A concrete example: a PreToolUse hook that blocks dangerous git operations:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6A737D">#!/bin/bash</span></span>
+<span class="line"><span style="color:#6A737D"># Read JSON input from stdin</span></span>
+<span class="line"><span style="color:#E1E4E8">INPUT</span><span style="color:#F97583">=</span><span style="color:#E1E4E8">$(</span><span style="color:#B392F0">cat</span><span style="color:#E1E4E8">)</span></span>
+<span class="line"><span style="color:#E1E4E8">TOOL</span><span style="color:#F97583">=</span><span style="color:#E1E4E8">$(</span><span style="color:#79B8FF">echo</span><span style="color:#9ECBFF"> "</span><span style="color:#E1E4E8">$INPUT</span><span style="color:#9ECBFF">"</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> jq</span><span style="color:#79B8FF"> -r</span><span style="color:#9ECBFF"> '.tool_name'</span><span style="color:#E1E4E8">)</span></span>
+<span class="line"><span style="color:#E1E4E8">COMMAND</span><span style="color:#F97583">=</span><span style="color:#E1E4E8">$(</span><span style="color:#79B8FF">echo</span><span style="color:#9ECBFF"> "</span><span style="color:#E1E4E8">$INPUT</span><span style="color:#9ECBFF">"</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> jq</span><span style="color:#79B8FF"> -r</span><span style="color:#9ECBFF"> '.tool_input.command // empty'</span><span style="color:#E1E4E8">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#F97583">if</span><span style="color:#E1E4E8"> [ </span><span style="color:#9ECBFF">"</span><span style="color:#E1E4E8">$TOOL</span><span style="color:#9ECBFF">"</span><span style="color:#F97583"> =</span><span style="color:#9ECBFF"> "Bash"</span><span style="color:#E1E4E8"> ] &#x26;&#x26; </span><span style="color:#79B8FF">echo</span><span style="color:#9ECBFF"> "</span><span style="color:#E1E4E8">$COMMAND</span><span style="color:#9ECBFF">"</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> grep</span><span style="color:#79B8FF"> -q</span><span style="color:#9ECBFF"> "git push.*--force"</span><span style="color:#E1E4E8">; </span><span style="color:#F97583">then</span></span>
+<span class="line"><span style="color:#79B8FF">  echo</span><span style="color:#9ECBFF"> '{"decision": "block", "reason": "Force push blocked by policy"}'</span></span>
+<span class="line"><span style="color:#79B8FF">  exit</span><span style="color:#79B8FF"> 2</span></span>
+<span class="line"><span style="color:#F97583">fi</span></span>
+<span class="line"><span style="color:#79B8FF">exit</span><span style="color:#79B8FF"> 0</span></span></code></pre>
+<p>The exit code and JSON output are redundant by design — either mechanism can block. Exit code 2 without JSON still blocks. JSON <code>{"decision": "block"}</code> without exit code 2 still blocks. This redundancy means a hook that crashes mid-output (writing partial JSON) still has the exit code as a fallback signal.</p>
+<p>On Windows, command hooks run through Git Bash, not cmd.exe. Every path in environment variables is converted from Windows format (<code>C:\Users\foo</code>) to POSIX format (<code>/c/Users/foo</code>) — Git Bash can’t resolve Windows paths. PowerShell hooks skip this conversion and receive native paths.</p>
+<p><strong>Prompt hooks</strong> send the hook input to a fast model (Haiku by default) with a structured output schema: <code>{ok: boolean, reason?: string}</code>. No tool access. 30-second timeout. The LLM evaluates whether the action should proceed — useful when the decision requires judgment (“is this API call secure?”) rather than deterministic checking. Thinking is disabled to reduce cost and latency.</p>
+<p><strong>Agent hooks</strong> are multi-turn: they spawn a restricted agent that can use tools (Read, Bash) to investigate, then must call a synthetic output tool with <code>{ok, reason}</code>. 60-second timeout, 50-turn limit. The agent can read test output, check file contents, then make a judgment. Its tool pool is filtered — no subagent spawning, no plan mode — to prevent recursive agent creation. If the agent hits 50 turns without producing structured output, it’s cancelled silently — a fail-safe against infinite loops.</p>
+<p><strong>HTTP hooks</strong> POST the JSON input to a URL. SSRF protection blocks private/link-local IP ranges (except loopback). No redirects are followed (<code>maxRedirects: 0</code>). Header values support environment variable interpolation, but only from an explicit allowlist — <code>$SECRET_TOKEN</code> only resolves if <code>SECRET_TOKEN</code> is in the hook’s <code>allowedEnvVars</code> array. Unresolved variables expand to empty strings, preventing accidental exfiltration. CRLF and NUL bytes are stripped from header values to prevent header injection attacks.</p>
+<p>HTTP hooks are blocked for SessionStart and Setup events in headless mode — the sandbox callback would deadlock because the structured input consumer hasn’t started yet when these hooks fire.</p>
+<h3 id="pattern-matching">Pattern Matching</h3>
+<p>Hooks can filter by event subtype. A PreToolUse hook with matcher <code>"Write|Edit"</code> only fires for file writes and edits. Matchers support:</p>
+<ul>
+<li>Simple strings: <code>"Write"</code> (exact match)</li>
+<li>Pipe-separated: <code>"Write|Edit"</code> (multiple exact matches)</li>
+<li>Regex patterns: <code>"^Bash.*"</code> (full regex)</li>
+</ul>
+<p>An additional <code>if</code> condition supports permission-rule syntax: <code>"Bash(git *)"</code> only fires for bash commands starting with <code>git</code>.</p>
+<h3 id="aggregation-and-priority">Aggregation and Priority</h3>
+<p>Multiple hooks can fire for the same event. Results are aggregated with a strict priority:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1. Any hook returns "deny"    → action is blocked (deny wins)</span></span>
+<span class="line"><span>2. Any hook returns "allow"   → action is allowed (if no deny)</span></span>
+<span class="line"><span>3. Any hook returns "ask"     → prompt the user</span></span>
+<span class="line"><span>4. Default                    → normal permission flow</span></span></code></pre>
+<p>A single deny from any hook overrides all allows. This is the fail-closed property: a security hook can’t be overridden by a convenience hook.</p>
+<h3 id="configuration-snapshot">Configuration Snapshot</h3>
+<p>Hook configurations are captured at startup into a frozen snapshot. Settings changes during the session update the snapshot, but the hooks that actually execute come from this snapshot — not from a live re-read of settings files. This prevents a TOCTOU attack where a process modifies <code>.claude/settings.json</code> between the trust check and hook execution.</p>
+<p>Enterprise policy can lock hooks to managed-only (<code>allowManagedHooksOnly</code>), meaning only admin-defined hooks execute. Non-managed settings can’t override this — the check happens in the snapshot capture, not at execution time.</p>
+<h3 id="trade-off-safety-over-convenience-1">Trade-Off: Safety Over Convenience</h3>
+<p>SessionEnd hooks get a 1.5-second timeout (configurable via environment variable), not the 10-minute default. The reasoning: session teardown must be fast. A hook that takes 30 seconds to run would make “close the terminal” feel broken. This means complex cleanup (uploading logs, syncing state) must be designed to complete quickly or run asynchronously — a constraint that occasionally frustrates users but keeps the exit path responsive.</p>
+<hr>
+<h2 id="layer-3-skills--reusable-prompt-modules">Layer 3: Skills — Reusable Prompt Modules</h2>
+<h3 id="the-problem-it-solves-2">The Problem It Solves</h3>
+<p>You have a 500-line review checklist, a commit message template, or a complex deployment procedure. You want the model to follow it exactly when invoked, but you don’t want it consuming context on every turn.</p>
+<h3 id="progressive-disclosure">Progressive Disclosure</h3>
+<p>Skills use a three-level disclosure strategy to manage context:</p>
+<p><strong>Level 1 — Metadata only (always loaded):</strong> The skill’s name, description, and <code>when_to_use</code> field are injected into the system prompt’s skill listing. This costs ~50-100 tokens per skill. A budget cap (1% of context window, ~8KB) limits total skill metadata — if you have 200 skills, descriptions get truncated. Bundled skills (compiled into the binary) are never truncated; user skills are truncated first.</p>
+<p><strong>Level 2 — Tool prompt:</strong> When the model decides to invoke a skill, it calls the Skill tool with the skill name. The tool validates the name, checks permissions, and returns a “launching skill” placeholder.</p>
+<p><strong>Level 3 — Full content:</strong> The skill’s complete markdown body is loaded, argument substitution is applied (<code>$1</code>, <code>$2</code>, <code>${CLAUDE_SESSION_ID}</code>), inline shell commands are executed (if not from an MCP source), and the result is injected as new conversation messages. Only now does the full 500-line checklist enter the context.</p>
+<p>This means 200 skills cost ~8KB of ongoing context, and only the invoked skill’s full body enters the conversation.</p>
+<h3 id="skill-format">Skill Format</h3>
+<p>A skill lives in a directory: <code>.claude/skills/my-skill/SKILL.md</code>. The file uses YAML frontmatter:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="markdown"><code><span class="line"><span style="color:#79B8FF;font-weight:bold">---</span></span>
+<span class="line"><span style="color:#E1E4E8">description: Review code for security vulnerabilities</span></span>
+<span class="line"><span style="color:#E1E4E8">allowed-tools: Bash, Read, Grep</span></span>
+<span class="line"><span style="color:#E1E4E8">model: opus</span></span>
+<span class="line"><span style="color:#E1E4E8">paths: src/security/**</span></span>
+<span class="line"><span style="color:#E1E4E8">context: fork</span></span>
+<span class="line"><span style="color:#79B8FF;font-weight:bold">---</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#E1E4E8">Review the following code for OWASP Top 10 vulnerabilities...</span></span></code></pre>
+<p>Key frontmatter fields:</p>
+<ul>
+<li><code>allowed-tools</code> — which tools the skill can use (added to permission rules)</li>
+<li><code>model</code> — model override (<code>opus</code>, <code>sonnet</code>, <code>haiku</code>, or <code>inherit</code>)</li>
+<li><code>paths</code> — conditional activation (skill only available when working on matching files)</li>
+<li><code>context: fork</code> — execute in an isolated subagent instead of inline</li>
+<li><code>user-invocable</code> — whether the user can type <code>/skill-name</code> (default: true)</li>
+<li><code>hooks</code> — scoped hooks that only apply during skill execution</li>
+</ul>
+<h3 id="conditional-skills">Conditional Skills</h3>
+<p>Skills with <code>paths</code> frontmatter start dormant. They’re stored in a separate map, not exposed to the model. When a file operation touches a path matching the skill’s pattern, the skill activates — it moves to the dynamic skills map and becomes available. This is the same gitignore-style matching used by CLAUDE.md conditional rules.</p>
+<p>Why not just load all skills? Token budget. A project with 50 path-specific skills would waste context on skills irrelevant to the current work. Conditional activation means the model only sees skills relevant to the files it’s actually touching.</p>
+<h3 id="dynamic-discovery">Dynamic Discovery</h3>
+<p>When the model reads or writes a file in a subdirectory, the system walks upward from that file looking for <code>.claude/skills/</code> directories. Newly discovered skill directories are loaded and merged into the dynamic skills map. This enables monorepo patterns where each package has its own skills.</p>
+<p>Security: discovered directories are checked against <code>.gitignore</code>. A skill directory inside <code>node_modules/</code> is skipped — this prevents dependency packages from injecting skills.</p>
+<h3 id="inline-shell-execution">Inline Shell Execution</h3>
+<p>Skills can contain inline shell commands using <code>!</code> syntax:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="markdown"><code><span class="line"><span style="color:#E1E4E8">Current git branch: !</span><span style="color:#79B8FF">`git branch --show-current`</span></span></code></pre>
+<p>When the skill body is loaded, these commands execute and their output replaces the command syntax. MCP-sourced skills (remote, potentially untrusted) have shell execution disabled entirely — a hard security boundary. The check is a simple conditional: if the skill’s <code>loadedFrom</code> field is <code>'mcp'</code>, shell execution is skipped.</p>
+<h3 id="permission-model">Permission Model</h3>
+<p>The first time a skill is invoked by the model, the user is prompted. The permission check supports:</p>
+<ul>
+<li>Deny rules (exact or prefix match) → block permanently</li>
+<li>Allow rules (exact or prefix match) → allow permanently</li>
+<li>“Safe properties” auto-allow → skills that only set metadata (model, effort) and don’t add tools or hooks are auto-approved</li>
+</ul>
+<p>Default: ask. Unknown skills always prompt.</p>
+<h3 id="bundled-skill-security">Bundled Skill Security</h3>
+<p>Skills compiled into the binary extract their reference files to a temporary directory at runtime. The extraction uses <code>O_EXCL | O_NOFOLLOW</code> flags (POSIX) — the file must not already exist and symlinks are rejected. A per-process nonce in the directory path prevents pre-created symlink attacks. Path traversal protection rejects absolute paths and <code>..</code> components.</p>
+<hr>
+<h2 id="layer-4-the-tool-pool--assembly-and-permissions">Layer 4: The Tool Pool — Assembly and Permissions</h2>
+<h3 id="the-problem-it-solves-3">The Problem It Solves</h3>
+<p>The model needs a unified set of tools — built-in (Read, Write, Bash, Agent) plus external (MCP servers, IDE integrations). But which tools are available, and who controls access?</p>
+<h3 id="assembly">Assembly</h3>
+<p>The tool pool is assembled from two sources:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>built_in_tools = get_registered_tools(permission_context)</span></span>
+<span class="line"><span>mcp_tools = filter_by_deny_rules(all_mcp_tools, permission_context)</span></span>
+<span class="line"><span>pool = deduplicate(sort(built_in_tools) + sort(mcp_tools), by_name)</span></span></code></pre>
+<p>Three properties are maintained:</p>
+<ol>
+<li><strong>Built-ins always win</strong> — if an MCP tool has the same name as a built-in, the built-in takes precedence (deduplication preserves first occurrence)</li>
+<li><strong>Stable sort order</strong> — tools are sorted alphabetically within each partition, keeping built-ins as a contiguous prefix. This is critical for prompt caching: the server places a cache breakpoint after the last built-in tool. If MCP tools interleaved with built-ins, adding one MCP tool would invalidate all cached tool definitions downstream.</li>
+<li><strong>Deny rules are absolute</strong> — a tool in the deny list is removed regardless of source</li>
+</ol>
+<h3 id="mcp-tool-namespacing">MCP Tool Namespacing</h3>
+<p>External tools are namespaced to prevent collisions:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>mcp__github__create_issue</span></span>
+<span class="line"><span>mcp__jira__create_ticket</span></span></code></pre>
+<p>The pattern is <code>mcp__&#x3C;server>__&#x3C;tool></code>. Server and tool names are normalized: dots, spaces, and special characters become underscores. This namespacing means an MCP server can’t shadow a built-in tool — <code>mcp__evil__Read</code> is a different tool from <code>Read</code>.</p>
+<h3 id="ide-tool-filtering">IDE Tool Filtering</h3>
+<p>IDE extensions connect via MCP but have restricted access. Only two specific IDE tools are exposed to the model — the rest are blocked. This prevents an IDE extension from registering a tool named <code>Bash</code> that bypasses the bash security analyzer.</p>
+<hr>
+<h2 id="layer-5-mcp--external-tool-servers">Layer 5: MCP — External Tool Servers</h2>
+<h3 id="the-problem-it-solves-4">The Problem It Solves</h3>
+<p>You want to give the model access to your internal APIs, databases, or third-party services. These capabilities live in separate processes — potentially remote — and need their own lifecycle, authentication, and error recovery.</p>
+<h3 id="transport-types">Transport Types</h3>
+<p>MCP servers connect via six transport types:</p>
+<ul>
+<li><strong>stdio</strong> — local child process (default, most common)</li>
+<li><strong>SSE</strong> — Server-Sent Events (authenticated remote)</li>
+<li><strong>HTTP</strong> — Streamable HTTP (MCP spec 2025-03-26)</li>
+<li><strong>WebSocket</strong> — bidirectional streaming</li>
+<li><strong>SDK</strong> — in-process (managed by the SDK)</li>
+<li><strong>claude.ai proxy</strong> — remote servers bridged through a proxy with OAuth</li>
+</ul>
+<h3 id="configuration-hierarchy">Configuration Hierarchy</h3>
+<p>Like CLAUDE.md, MCP server configs merge from multiple sources:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Enterprise    → exclusive control when present (blocks all others)</span></span>
+<span class="line"><span>Local         → .claude/mcp.json in working directory</span></span>
+<span class="line"><span>Project       → claude.json in project root</span></span>
+<span class="line"><span>User          → ~/.claude/mcp.json</span></span>
+<span class="line"><span>Dynamic       → SDK-provided servers</span></span></code></pre>
+<p>When an enterprise config exists, it has total control. Other scopes are blocked. This is the nuclear option for organizations that need to control exactly which external services the model can access.</p>
+<h3 id="enterprise-allowlistdenylist">Enterprise Allowlist/Denylist</h3>
+<p>Policy settings define three types of allowlist entries:</p>
+<ul>
+<li><strong>Name-based</strong>: <code>{serverName: "github"}</code></li>
+<li><strong>Command-based</strong>: <code>{serverCommand: ["node", "path/to/mcp.js"]}</code> (for stdio servers)</li>
+<li><strong>URL-based</strong>: <code>{serverUrl: "https://mcp.example.com"}</code> (for remote servers)</li>
+</ul>
+<p>The denylist always wins. A server matching any deny entry is blocked regardless of allowlist membership. If the allowlist exists but is empty, all servers are blocked. If the allowlist is undefined, all servers are allowed. This three-state logic (undefined/empty/populated) gives administrators precise control.</p>
+<h3 id="connection-and-timeout">Connection and Timeout</h3>
+<p>Servers are connected with a 30-second timeout. Connection is batched: 3 local servers in parallel, 20 remote servers in parallel. If a server fails to connect, it enters a failure state but doesn’t block other servers.</p>
+<p>Tool calls have a separate timeout — nearly 28 hours by default (configurable). This allows long-running operations (database migrations, large builds) without arbitrary cutoffs. Progress is logged every 30 seconds so the user knows something is happening.</p>
+<h3 id="session-expiry-and-recovery">Session Expiry and Recovery</h3>
+<p>Remote servers have stateful sessions. When a session expires, the server returns a 404 with JSON-RPC error code -32001, or the connection closes with error -32000. The client detects both cases, clears the connection cache, and throws a session-expired error. The next tool call will transparently reconnect.</p>
+<p>Authentication failures (401) follow a parallel path: the client status updates to “needs-auth,” tokens are cached with a 15-minute TTL, and the next connection attempt triggers a token refresh. OAuth flows support step-up authentication — a 403 response triggers a re-authentication challenge before the SDK’s default handler fires.</p>
+<p>A more subtle failure: URL elicitation. Some MCP servers require the user to visit a URL to authorize an action (OAuth consent, MFA challenge). The server returns error code -32042 with a completion URL. The client emits an elicitation request, waits indefinitely for the user to complete the flow, then retries the original tool call. This is a blocking wait — but since it’s triggered by a user-facing auth requirement, the blocking is intentional.</p>
+<h3 id="error-boundaries">Error Boundaries</h3>
+<p>MCP server errors never contain sensitive data. All error messages are wrapped in a telemetry-safe type that strips user code and file paths. Server stderr is buffered to a 64 MB cap to prevent unbounded memory growth from a chatty or malicious server. When a stdio server crashes (ECONNRESET), the error message says “Server may have crashed or restarted” — not the actual stderr contents.</p>
+<hr>
+<h2 id="layer-6-agents--delegated-execution">Layer 6: Agents — Delegated Execution</h2>
+<h3 id="the-problem-it-solves-5">The Problem It Solves</h3>
+<p>You want the model to research a codebase in the background while you keep working. You want it to delegate a complex task to a specialist (an “Explore” agent that only searches, a “Plan” agent that only designs). You want multiple agents working in parallel on different parts of a refactor.</p>
+<h3 id="three-execution-models">Three Execution Models</h3>
+<p><strong>Synchronous subagents</strong> share the parent’s abort controller. When the user presses Ctrl+C, both parent and child stop. The child’s state mutations (tool approvals, file reads) propagate to the parent via shared <code>setAppState</code>. The child runs inline — the parent waits for it to finish.</p>
+<p><strong>Async background agents</strong> get their own abort controller. The parent continues working. The child’s state mutations are isolated — a separate denial counter, separate tool decisions. When the child finishes, its result is delivered as a notification. Permission prompts are auto-denied (the child can’t show UI) unless the agent runs in “bubble” mode, where prompts surface in the parent’s terminal.</p>
+<p><strong>Teammates</strong> are full separate processes (via tmux split-pane or iTerm2) or in-process runners isolated via AsyncLocalStorage. Each teammate has its own conversation history, its own model, its own abort controller. Communication happens through a file-based mailbox — JSON messages written to a shared team directory. The team lead writes a prompt to a teammate’s inbox; the teammate polls it.</p>
+<h3 id="context-isolation">Context Isolation</h3>
+<p>Every agent gets its own <code>ToolUseContext</code> — a structure containing the conversation, tool pool, permissions, abort controller, file state cache, and callbacks. The isolation strategy:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>readFileState     → cloned (cache sharing for prompt cache hits)</span></span>
+<span class="line"><span>abortController   → shared (sync) or new (async)</span></span>
+<span class="line"><span>setAppState       → shared (sync) or no-op (async)</span></span>
+<span class="line"><span>messages          → stripped for teammates (they build their own)</span></span>
+<span class="line"><span>tool decisions    → fresh (no leaking parent's approve/deny history)</span></span>
+<span class="line"><span>MCP clients       → merged (parent + agent-specific servers)</span></span></code></pre>
+<p>The critical insight is that cloning <code>readFileState</code> isn’t about correctness — it’s about cache hits. When a forked agent makes an API call, the server checks whether the message prefix matches a cached prefix. If the fork and parent have different file state caches, they’ll make different tool-result replacement decisions, producing different message bytes and missing the cache. Cloning ensures byte-identical prefixes.</p>
+<h3 id="cache-safe-forking">Cache-Safe Forking</h3>
+<p>After every turn, the parent saves its “cache-safe parameters” — system prompt, user context, system context, tool definitions, and conversation messages. When a fork is created, it retrieves these parameters and uses them directly. The fork’s API request starts with a byte-identical prefix, and only the fork’s new prompt differs. The server recognizes the shared prefix and reads it from cache — potentially saving 90%+ on input costs for the fork.</p>
+<p>This is why fork children inherit the parent’s exact tool pool (<code>useExactTools: true</code>) and thinking config. Changing even one tool definition would alter the tool schema bytes, breaking the prefix match.</p>
+<h3 id="tool-filtering">Tool Filtering</h3>
+<p>Each agent definition can specify allowed and disallowed tools:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>tools: [Read, Grep, Glob, Bash]          → only these tools available</span></span>
+<span class="line"><span>disallowed_tools: [Write, Edit, Agent]    → these removed from pool</span></span></code></pre>
+<p>The resolution:</p>
+<ol>
+<li>Start with the full tool pool</li>
+<li>If <code>tools</code> is specified and not <code>['*']</code>, filter to only listed tools (plus always-included tools like the stop tool)</li>
+<li>Remove any tools in <code>disallowed_tools</code></li>
+<li>Remove agent-disallowed tools (Agent tool itself for non-fork agents, plan mode tools)</li>
+</ol>
+<p>Read-only agents like Explore and Plan additionally skip CLAUDE.md (saves ~5-15 Gtok/week fleet-wide) and git status (stale snapshot, they’ll run <code>git status</code> themselves if needed).</p>
+<h3 id="permission-bubbling">Permission Bubbling</h3>
+<p>When an agent needs a permission decision:</p>
+<ul>
+<li><strong>Sync agents</strong>: The prompt surfaces in the parent’s terminal. The user approves or denies. The decision propagates to the child’s permission context.</li>
+<li><strong>Async agents in bubble mode</strong>: Same as sync — the prompt surfaces in the parent’s terminal, but the agent waits asynchronously. Automated checks (permission classifier, hooks) run first; the user is only interrupted when automation can’t resolve it.</li>
+<li><strong>Async agents without bubble</strong>: Permissions are auto-denied. The agent must work within its pre-approved tool rules.</li>
+<li><strong>Teammates</strong>: Permission mode is inherited via CLI flags when spawning the process. <code>--dangerously-skip-permissions</code> propagates — but not when plan mode is required (a safety interlock).</li>
+</ul>
+<h3 id="fork-recursion-guard">Fork Recursion Guard</h3>
+<p>Fork children keep the Agent tool in their tool pool (for cache-identical tool definitions), but recursive forking is blocked at call time. The system scans the conversation history for a boilerplate tag injected into every fork child’s first message. If found, the agent is already a fork — further forking is rejected.</p>
+<p>The boilerplate itself is instructive. Every fork child receives a message that begins:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>STOP. READ THIS FIRST.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>You are a forked worker process. You are NOT the main agent.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>RULES (non-negotiable):</span></span>
+<span class="line"><span>1. Your system prompt says "default to forking." IGNORE IT — that's for</span></span>
+<span class="line"><span>   the parent. You ARE the fork. Do NOT spawn sub-agents; execute directly.</span></span>
+<span class="line"><span>2. Do NOT converse, ask questions, or suggest next steps</span></span>
+<span class="line"><span>3. USE your tools directly: Bash, Read, Write, etc.</span></span>
+<span class="line"><span>...</span></span></code></pre>
+<p>This prompt engineering is a defense-in-depth against the model’s tendency to delegate. The system prompt (inherited from the parent for cache reasons) may contain instructions to fork work. The boilerplate overrides those instructions at the conversation level — later in the message sequence, higher priority.</p>
+<h3 id="worktree-isolation">Worktree Isolation</h3>
+<p>Agents can be spawned with <code>isolation: "worktree"</code>, which creates a separate git worktree — a full copy of the repository on a separate branch. The agent operates in this isolated copy: writes don’t affect the parent’s files, and the parent’s subsequent edits don’t corrupt the agent’s state.</p>
+<p>When a worktree agent inherits conversation context from the parent, all file paths in that context refer to the parent’s working directory. The system injects a notice telling the agent to translate paths, re-read files before editing (they may have changed since the parent saw them), and understand that changes are isolated.</p>
+<h3 id="max-turns-and-cleanup">Max Turns and Cleanup</h3>
+<p>Every agent has a turn limit (default varies by agent type, capped by definition). When the limit is reached, the agent receives a <code>max_turns_reached</code> attachment and stops. The cleanup sequence:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1. Close agent-specific MCP servers (only newly created ones, not shared)</span></span>
+<span class="line"><span>2. Remove scoped hooks registered by the agent's frontmatter</span></span>
+<span class="line"><span>3. Clear prompt cache tracking state</span></span>
+<span class="line"><span>4. Release cloned file state cache</span></span>
+<span class="line"><span>5. Free conversation messages (GC)</span></span>
+<span class="line"><span>6. Remove Perfetto trace registration</span></span>
+<span class="line"><span>7. Clear transcript routing</span></span>
+<span class="line"><span>8. Kill background bash tasks spawned by this agent</span></span></code></pre>
+<p>This cleanup happens in a <code>finally</code> block — it runs whether the agent succeeded, failed, or was aborted.</p>
+<hr>
+<h2 id="the-full-pipeline">The Full Pipeline</h2>
+<p>When you type a message, here’s what happens to the extension systems:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1. CLAUDE.md files discovered and loaded (6-tier hierarchy)</span></span>
+<span class="line"><span>   → Instructions injected as system-reminder in user message</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>2. UserPromptSubmit hooks fire</span></span>
+<span class="line"><span>   → Can block the prompt, inject additional context, or modify it</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>3. System prompt assembled with skill metadata</span></span>
+<span class="line"><span>   → ~50-100 tokens per skill, budget-capped at 1% of context</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>4. Tool pool assembled (built-in + MCP, sorted, deduplicated)</span></span>
+<span class="line"><span>   → Deny rules applied, built-ins win on name conflict</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>5. Model generates response, calls tools</span></span>
+<span class="line"><span>   → PreToolUse hooks fire before each tool (can block, allow, modify input)</span></span>
+<span class="line"><span>   → PostToolUse hooks fire after each tool (can inject context)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>6. Model invokes a Skill</span></span>
+<span class="line"><span>   → Permission check → full body loaded → argument substitution</span></span>
+<span class="line"><span>   → Shell commands executed (unless MCP source) → content injected</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>7. Model spawns an Agent</span></span>
+<span class="line"><span>   → Isolated context created → tools filtered → MCP servers merged</span></span>
+<span class="line"><span>   → Hooks scoped → query loop runs → results returned</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>8. Session ends</span></span>
+<span class="line"><span>   → SessionEnd hooks fire (1.5-second timeout)</span></span>
+<span class="line"><span>   → MCP servers disconnected → agent cleanup</span></span></code></pre>
+<p>Every layer is fail-closed. Unknown CLAUDE.md extensions are skipped. Unknown hook events are ignored. Unknown skill types are rejected. Unknown MCP tools are filtered by deny rules. Unknown agent types are blocked at validation. The system doesn’t need to anticipate every new extension type — it only needs to correctly handle the ones it explicitly supports. Everything else gets a “no.”</p>
+<p>The alternative — a blocklist approach where you enumerate what’s dangerous — means every new extension type is a zero-day. The allowlist approach means every new extension type starts with “ask the user.” That’s the fundamental trade-off: a slight friction on adoption in exchange for a structural guarantee that surprises are visible.</p>
+<hr>
+<p><em>Follow me on <a href="https://x.com/oldeucryptoboi">X</a> — I post as @oldeucryptoboi.</em></p>  <div class="subscribe-cta" data-astro-cid-bvzihdzo> <p data-astro-cid-bvzihdzo>Get new posts delivered to your inbox</p> <a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener" data-astro-cid-bvzihdzo>Subscribe on Substack →</a> </div> <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/context-compaction-deep-dive/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>How Claude Code Manages Infinite Conversations in a Finite Context Window</span> </a> <a class="nav-link nav-next" href="/blog/api-client-pipeline-deep-dive/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Next</span> <span class="nav-title" data-astro-cid-bvzihdzo>What Happens When Claude Code Calls the API</span> </a> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+&copy; 2026 Laurent DeSegur
+</div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

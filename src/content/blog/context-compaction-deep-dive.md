@@ -1,6 +1,6 @@
 ---
 title: "How Claude Code Manages Infinite Conversations in a Finite Context Window"
-description: "A source-level deep dive into Claude Code's three-tier context compaction system — microcompact, full compact, and session memory compact — and how it preserves critical context while staying within token limits."
+description: "How Claude Code compresses conversations without losing context. Three tiers — microcompact, full compact, session memory — and the engineering behind each."
 pubDate: 2026-04-07
 tags: ["Claude Code", "Anthropic", "AI Agents", "Context Window", "Architecture"]
 ---

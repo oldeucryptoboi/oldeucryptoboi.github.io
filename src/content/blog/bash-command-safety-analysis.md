@@ -1,6 +1,6 @@
 ---
 title: "How Bash Command Safety Analysis Works in AI Systems"
-description: "A clean-room reconstruction of how AI systems evaluate bash command safety before execution — eight defensive layers from pre-parse validation to policy enforcement, and why uncertainty should never default to execution."
+description: "How AI systems evaluate bash command safety before execution. Eight defensive layers from pre-parse validation to policy enforcement."
 pubDate: 2026-04-06
 tags: ["AI Agents", "Security", "Developer Tools", "Shell", "Claude Code"]
 ---

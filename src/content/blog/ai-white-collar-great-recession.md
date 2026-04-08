@@ -1,6 +1,6 @@
 ---
 title: "94% Exposed, 30% Adopted: Why Engineering Leaders Need to Rethink How They Hire"
-description: "Anthropic's labor market data shows 94% of coding tasks could be handled by AI but only 30% are. The gap is closing. If your hiring process still optimizes for implementation speed, you're selecting for the layer being automated."
+description: "Anthropic's data shows 94% of coding tasks could be handled by AI but only 30% are. The gap is closing — and it changes how you should hire."
 pubDate: 2026-04-07
 heroImage: "../../assets/hero-ai-white-collar-great-recession.webp"
 heroAlt: "Bar chart showing AI labor market impact with most exposed jobs — computer programmers at 74.5%, customer service at 70.1%, data entry at 67.1%, and financial analysts at 57.2%"

@@ -1,6 +1,6 @@
 ---
 title: "What Happens When Claude Code Calls the API"
-description: "The full client-side pipeline behind every Claude Code API call — request construction, prompt caching, retry strategies, streaming, error recovery, cost tracking, and rate limit management. Defense in depth from source code."
+description: "The full client-side pipeline behind every Claude Code API call — caching, retries, streaming, error recovery, cost tracking, and rate limits."
 pubDate: 2026-04-07
 tags: ["Claude Code", "Anthropic", "API", "Architecture", "Developer Tools"]
 ---

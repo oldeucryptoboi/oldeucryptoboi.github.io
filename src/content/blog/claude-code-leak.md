@@ -1,6 +1,6 @@
 ---
 title: "The Claude Code Leak: What Anthropic Accidentally Revealed About the Future of AI"
-description: "A source map in an npm package exposed Claude Code's full TypeScript source. Inside: the ant flag, KAIROS background agent, ULTRAPLAN, Fennec model, Undercover Mode, Shadow Mode, and a gap between shipped and built that changes everything."
+description: "A source map exposed Claude Code's TypeScript source. Inside: the ant flag, KAIROS, ULTRAPLAN, Undercover Mode, and the gap between shipped and built."
 pubDate: 2026-04-01
 tags: ["Claude Code", "Anthropic", "AI Agents", "Source Code Leak", "KAIROS", "ULTRAPLAN"]
 ---

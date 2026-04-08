@@ -1,0 +1,446 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Laurent DeSegur" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/tool-search-deep-dive/"><!-- Primary Meta Tags --><title>How Tool Search Defers Tools to Save Tokens</title><meta name="title" content="How Tool Search Defers Tools to Save Tokens"><meta name="description" content="Claude Code defers MCP tool definitions behind a search layer, cutting tool token costs by 95%. Inside the deferral logic, scoring algorithm, and compaction snapshots."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/tool-search-deep-dive/"><meta property="og:title" content="How Tool Search Defers Tools to Save Tokens"><meta property="og:description" content="Claude Code defers MCP tool definitions behind a search layer, cutting tool token costs by 95%. Inside the deferral logic, scoring algorithm, and compaction snapshots."><meta property="og:site_name" content="Laurent DeSegur"><meta property="article:published_time" content="2026-04-08T00:00:00.000Z"><meta property="article:tag" content="Claude Code"><meta property="article:tag" content="Anthropic"><meta property="article:tag" content="Architecture"><meta property="article:tag" content="MCP"><meta property="article:tag" content="AI Agents"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/tool-search-deep-dive/"><meta name="twitter:title" content="How Tool Search Defers Tools to Save Tokens"><meta name="twitter:description" content="Claude Code defers MCP tool definitions behind a search layer, cutting tool token costs by 95%. Inside the deferral logic, scoring algorithm, and compaction snapshots."><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and X/LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"How Tool Search Defers Tools to Save Tokens","description":"Claude Code defers MCP tool definitions behind a search layer, cutting tool token costs by 95%. Inside the deferral logic, scoring algorithm, and compaction snapshots.","url":"https://oldeucryptoboi.com/blog/tool-search-deep-dive/","datePublished":"2026-04-08T00:00:00.000Z","author":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"keywords":"Claude Code, Anthropic, Architecture, MCP, AI Agents","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/tool-search-deep-dive/"}}</script><link rel="stylesheet" href="/_astro/_slug_.WqGW7rbB.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo]{margin-top:3em;padding:1.5em;border:1px solid var(--border);text-align:center}.subscribe-cta[data-astro-cid-bvzihdzo] p[data-astro-cid-bvzihdzo]{margin:0 0 .75em;color:var(--text-dim);font-size:.85em;letter-spacing:.04em}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]{color:var(--hal-red);font-size:.8em;letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif;text-decoration:none;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]:hover{color:#fff}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2><span class="cap" data-astro-cid-3ef6ksr2>L</span>aurent <span class="cap" data-astro-cid-3ef6ksr2>D</span>e<span class="cap" data-astro-cid-3ef6ksr2>S</span>egur</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-04-08T00:00:00.000Z"> Apr 8, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>How Tool Search Defers Tools to Save Tokens</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>Claude Code</span><span data-astro-cid-bvzihdzo>Anthropic</span><span data-astro-cid-bvzihdzo>Architecture</span><span data-astro-cid-bvzihdzo>MCP</span><span data-astro-cid-bvzihdzo>AI Agents</span> </div> </div>  <h1 id="how-tool-search-defers-tools-to-save-tokens">How Tool Search Defers Tools to Save Tokens</h1>
+<p>Claude Code can use dozens of built-in tools and an unlimited number of MCP tools. Every tool the model might call needs a definition — a name, description, and JSON schema — sent with each API request. A single MCP tool definition might cost 200–800 tokens. Connect three MCP servers with 50 tools each, and you’re burning 60,000 tokens on tool definitions alone. Every turn. Before the model reads a single message.</p>
+<p>That’s not sustainable. A 200K context window that loses 30% to tool definitions before the conversation starts is a bad experience. The model has less room to think, compaction triggers sooner, and cost per turn climbs.</p>
+<p>The naive solution is obvious: don’t send tools the model doesn’t need. But which tools does the model need? You don’t know until it tries to use one. And if the tool definition isn’t there when the model tries to call it, the call fails.</p>
+<p>Claude Code solves this with a system called <strong>tool search</strong>. When MCP tool definitions exceed a token threshold, most tools are deferred — their definitions are withheld from the API request. In their place, the model gets a single <code>ToolSearch</code> tool it can invoke to discover and load tools on demand. The API receives a <code>tool_reference</code> content block in the search result, expands it to the full definition, and the model can call the tool on its next turn.</p>
+<p>Consider the concrete flow. A user has configured MCP servers for GitHub, Slack, and Jira — 147 tools total. Without tool search, every API call sends 147 tool definitions: ~90,000 tokens. With tool search, the API call sends ~25 built-in tool definitions plus ToolSearch itself: ~15,000 tokens. The model’s prompt tells it “147 deferred tools are available — use ToolSearch to load them.” When the model needs to create a GitHub issue, it calls <code>ToolSearch({ query: "github create issue" })</code>. The system returns a <code>tool_reference</code> for <code>mcp__github__create_issue</code>. On the next turn, that tool’s full schema is available, and the model calls it normally. Total overhead for this discovery: one extra turn, ~200 tokens. Savings over a 20-turn conversation: ~1.5 million tokens.</p>
+<p>This article traces the entire pipeline: the deferral decision, the threshold calculation, the search algorithm, the discovery loop across turns, and the snapshot mechanism that preserves discovered tools across context compaction. Every layer is designed around the same principle: <strong>fail closed, fail toward asking</strong>. If anything is uncertain — an unknown model, a proxy gateway, a missing token count — the system falls back to loading all tools, never to silently hiding them.</p>
+<hr>
+<h2 id="the-deferral-decision">The Deferral Decision</h2>
+<p>Not every tool can be deferred. The model needs certain tools on turn one, before it has a chance to search for anything. The deferral decision is a priority-ordered checklist:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function isDeferredTool(tool):</span></span>
+<span class="line"><span>    # Explicit opt-out: MCP tools can declare they must always load</span></span>
+<span class="line"><span>    if tool.alwaysLoad is true:</span></span>
+<span class="line"><span>        return false</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # MCP tools are deferred by default (workflow-specific, often numerous)</span></span>
+<span class="line"><span>    if tool.isMcp is true:</span></span>
+<span class="line"><span>        return true</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # ToolSearch itself is never deferred — it's the bootstrap</span></span>
+<span class="line"><span>    if tool.name is "ToolSearch":</span></span>
+<span class="line"><span>        return false</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Core communication tools are never deferred</span></span>
+<span class="line"><span>    # (Agent, Brief — model needs these immediately)</span></span>
+<span class="line"><span>    if tool is a critical communication channel:</span></span>
+<span class="line"><span>        return false</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Everything else: defer only if explicitly marked</span></span>
+<span class="line"><span>    return tool.shouldDefer is true</span></span></code></pre>
+<p>The <code>alwaysLoad</code> opt-out is the escape hatch. An MCP server can set <code>_meta['anthropic/alwaysLoad']</code> on a tool to force it into every API request regardless of deferral mode. This handles tools like a primary database query tool that the model will need on nearly every turn.</p>
+<p>Notice the ordering. <code>alwaysLoad</code> is checked before the MCP check. This means an MCP tool can opt out of deferral even though MCP tools are deferred by default. And <code>ToolSearch</code> is checked after the MCP check, which means if someone wraps ToolSearch in an MCP server (don’t), it still won’t be deferred. The checklist is a priority chain where each rule can only override the ones below it.</p>
+<p>The <code>shouldDefer</code> flag at the bottom is for built-in tools that want to participate in deferral without being MCP tools. Currently this isn’t widely used, but it exists as an extension point — a built-in tool could mark itself as deferrable if it’s rarely needed and expensive to describe.</p>
+<h3 id="three-modes">Three Modes</h3>
+<p>The deferral system operates in one of three modes, controlled by an environment variable:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function getToolSearchMode():</span></span>
+<span class="line"><span>    # Kill switch: if all beta features are disabled, never defer</span></span>
+<span class="line"><span>    if DISABLE_EXPERIMENTAL_BETAS:</span></span>
+<span class="line"><span>        return "standard"</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    value = env.ENABLE_TOOL_SEARCH</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Explicit "always defer" mode</span></span>
+<span class="line"><span>    if value is truthy or value is "auto:0":</span></span>
+<span class="line"><span>        return "tst"</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Threshold-based: only defer when tools exceed a token budget</span></span>
+<span class="line"><span>    if value is "auto" or value is "auto:N" where 1 &#x3C;= N &#x3C;= 99:</span></span>
+<span class="line"><span>        return "tst-auto"</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Explicit disable</span></span>
+<span class="line"><span>    if value is falsy:</span></span>
+<span class="line"><span>        return "standard"</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Default: always defer MCP and shouldDefer tools</span></span>
+<span class="line"><span>    return "tst"</span></span></code></pre>
+<p>The default mode is <code>tst</code> — always defer. This is the right default because any user with MCP tools has already accepted the latency of an extra search turn in exchange for a larger effective context window. The <code>tst-auto</code> mode provides a middle ground: defer only when the token cost actually justifies it.</p>
+<h3 id="the-threshold-calculation">The Threshold Calculation</h3>
+<p>In <code>tst-auto</code> mode, the system measures how many tokens the deferred tools would consume and compares against a budget:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>threshold = floor(contextWindow * percentage / 100)</span></span>
+<span class="line"><span># Default percentage: 10%</span></span>
+<span class="line"><span># For a 200K context model: threshold = 20,000 tokens</span></span></code></pre>
+<p>The token count comes from the API’s <code>countTokens</code> endpoint when available. The system serializes each deferred tool into its API schema (name + description + JSON schema), sends them to the counting endpoint, and caches the result keyed by the tool name set. The cache invalidates when MCP servers connect or disconnect, changing the tool pool.</p>
+<p>There’s a subtlety in the counting. The API adds a fixed preamble (~500 tokens) whenever tools are present in a request. When counting tools individually, each count includes this overhead, so counting N tools individually would report N × 500 tokens of phantom overhead. The system subtracts this constant from the total:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>rawCount = countTokensViaAPI(deferredToolSchemas)</span></span>
+<span class="line"><span>adjustedCount = max(0, rawCount - 500)</span></span></code></pre>
+<p>When the token counting API is unavailable — perhaps the provider doesn’t support it, or the network request fails — the system falls back to a character-based heuristic. It sums the character lengths of each tool’s name, description, and serialized input schema, then converts using a ratio of 2.5 characters per token:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>charThreshold = floor(tokenThreshold * 2.5)</span></span>
+<span class="line"><span>totalChars = sum(tool.name.length + tool.description.length + tool.schema.length</span></span>
+<span class="line"><span>                 for each deferred tool)</span></span>
+<span class="line"><span>enabled = totalChars >= charThreshold</span></span></code></pre>
+<p>This heuristic is intentionally conservative. Tool definitions are schema-heavy (lots of short keys and structural characters), which tokenize at a higher density than natural language. A 2.5 chars/token ratio slightly overestimates the token count, biasing toward enabling deferral — the safe direction.</p>
+<hr>
+<h2 id="the-search-mechanism">The Search Mechanism</h2>
+<p>When tool search is enabled, the model sees a <code>ToolSearch</code> tool in its tool list. The tool accepts a query string and returns up to 5 results (configurable). There are two query modes.</p>
+<h3 id="direct-selection">Direct Selection</h3>
+<p>The model can request specific tools by name:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>ToolSearch({ query: "select:mcp__github__create_issue" })</span></span>
+<span class="line"><span>ToolSearch({ query: "select:Read,Edit,Grep" })  # comma-separated</span></span></code></pre>
+<p>Direct selection is a lookup, not a search. For each requested name, the system checks the deferred tool pool first, then falls back to the full tool set. Finding a tool in the full set that isn’t deferred is a no-op — the tool is already loaded — but returning it prevents the model from retrying in a loop.</p>
+<p>Why does the fallback to the full tool set matter? After context compaction or in subagent conversations, the model sometimes tries to “select” a tool it previously used, not realizing the tool is already loaded (because its earlier search result was summarized away). Without the full-set fallback, the select would fail, the model would get “no matching deferred tools found,” and it would waste a turn figuring out the tool is already available. The fallback makes this a silent success.</p>
+<h3 id="keyword-search">Keyword Search</h3>
+<p>When the model doesn’t know the exact tool name, it searches by keyword:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>ToolSearch({ query: "slack send message" })</span></span>
+<span class="line"><span>ToolSearch({ query: "+github pull request" })  # + requires term</span></span></code></pre>
+<p>The search algorithm scores each deferred tool against the query terms:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function scoreToolForQuery(tool, terms):</span></span>
+<span class="line"><span>    parts = parseToolName(tool.name)</span></span>
+<span class="line"><span>    # "mcp__slack__send_message" -> parts: ["slack", "send", "message"]</span></span>
+<span class="line"><span>    # "NotebookEdit" -> parts: ["notebook", "edit"]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    score = 0</span></span>
+<span class="line"><span>    for term in terms:</span></span>
+<span class="line"><span>        # Exact part match (highest signal)</span></span>
+<span class="line"><span>        if term in parts:</span></span>
+<span class="line"><span>            score += 12 if tool.isMcp else 10</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        # Substring match within a part</span></span>
+<span class="line"><span>        elif any(term in part for part in parts):</span></span>
+<span class="line"><span>            score += 6 if tool.isMcp else 5</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        # Full name fallback</span></span>
+<span class="line"><span>        elif term in fullName and score is 0:</span></span>
+<span class="line"><span>            score += 3</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        # searchHint match (curated capability phrase)</span></span>
+<span class="line"><span>        if wordBoundaryMatch(term, tool.searchHint):</span></span>
+<span class="line"><span>            score += 4</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        # Description match (lowest signal, most noise)</span></span>
+<span class="line"><span>        if wordBoundaryMatch(term, tool.description):</span></span>
+<span class="line"><span>            score += 2</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    return score</span></span></code></pre>
+<p>MCP tools get slightly higher weight on exact matches (12 vs 10) and substring matches (6 vs 5). This is deliberate: when tool search is active, most deferred tools are MCP tools. Boosting their scores ensures they rank above built-in tools that happen to share terminology.</p>
+<p>The <code>searchHint</code> field is a curated string that tools can provide to improve discoverability. It’s weighted above description matches (4 vs 2) because it’s intentional signal — a tool author explicitly saying “this tool handles X” — rather than incidental keyword overlap in a long description.</p>
+<p>Description matching uses word-boundary regex (<code>\bterm\b</code>) to avoid false positives. Without boundaries, a search for “read” would match every tool whose description contains “already”, “thread”, or “spreadsheet”.</p>
+<p>There’s also a required-term mechanism. Prefixing a term with <code>+</code> makes it mandatory: only tools matching ALL required terms in their name, description, or search hint are scored. This lets the model narrow results when a server has many tools: <code>+slack send</code> finds tools with “slack” in the name AND ranks them by “send” relevance.</p>
+<h3 id="a-concrete-scoring-example">A Concrete Scoring Example</h3>
+<p>Suppose the deferred pool contains these tools:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>mcp__slack__send_message        (MCP)</span></span>
+<span class="line"><span>mcp__slack__list_channels       (MCP)</span></span>
+<span class="line"><span>mcp__github__create_issue       (MCP)</span></span>
+<span class="line"><span>mcp__email__send_email          (MCP)</span></span></code></pre>
+<p>The model searches: <code>ToolSearch({ query: "slack send" })</code>. Here’s the scoring:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>mcp__slack__send_message:</span></span>
+<span class="line"><span>  parts = ["slack", "send", "message"]</span></span>
+<span class="line"><span>  "slack": exact part match, MCP → +12</span></span>
+<span class="line"><span>  "send":  exact part match, MCP → +12</span></span>
+<span class="line"><span>  Total: 24</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>mcp__slack__list_channels:</span></span>
+<span class="line"><span>  parts = ["slack", "list", "channels"]</span></span>
+<span class="line"><span>  "slack": exact part match, MCP → +12</span></span>
+<span class="line"><span>  "send":  no match in parts, no match in name → +0</span></span>
+<span class="line"><span>  Total: 12</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>mcp__email__send_email:</span></span>
+<span class="line"><span>  parts = ["email", "send", "email"]</span></span>
+<span class="line"><span>  "slack": no match → +0</span></span>
+<span class="line"><span>  "send":  exact part match, MCP → +12</span></span>
+<span class="line"><span>  Total: 12</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>mcp__github__create_issue:</span></span>
+<span class="line"><span>  parts = ["github", "create", "issue"]</span></span>
+<span class="line"><span>  "slack": no match → +0</span></span>
+<span class="line"><span>  "send":  no match → +0</span></span>
+<span class="line"><span>  Total: 0</span></span></code></pre>
+<p>Result: <code>["mcp__slack__send_message", "mcp__slack__list_channels", "mcp__email__send_email"]</code>. The Slack send tool wins, the other Slack tool ties with the email send tool, and the GitHub tool is excluded. Note how multi-term queries naturally boost tools that match on multiple dimensions — a tool matching both “slack” AND “send” scores 24, while one matching only “slack” scores 12.</p>
+<p>The regex patterns are pre-compiled once per search to avoid creating them inside the hot loop (N tools × M terms × 2 checks). Each unique term gets one compiled regex, and all tools share them.</p>
+<h3 id="the-mcp-prefix-fast-path">The MCP Prefix Fast Path</h3>
+<p>When the query starts with <code>mcp__</code>, the system checks for prefix matches before falling through to keyword search:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>if query starts with "mcp__":</span></span>
+<span class="line"><span>    matches = tools where name starts with query</span></span>
+<span class="line"><span>    if matches found:</span></span>
+<span class="line"><span>        return first maxResults matches</span></span></code></pre>
+<p>This handles the common pattern where the model knows the server name but not the specific action. Searching <code>mcp__github</code> returns all GitHub MCP tools without keyword scoring.</p>
+<h3 id="what-search-returns">What Search Returns</h3>
+<p>The search doesn’t return tool definitions. It returns <code>tool_reference</code> content blocks:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span># Tool result sent back to the API:</span></span>
+<span class="line"><span>{</span></span>
+<span class="line"><span>    type: "tool_result",</span></span>
+<span class="line"><span>    tool_use_id: "...",</span></span>
+<span class="line"><span>    content: [</span></span>
+<span class="line"><span>        { type: "tool_reference", tool_name: "mcp__github__create_issue" },</span></span>
+<span class="line"><span>        { type: "tool_reference", tool_name: "mcp__github__list_issues" }</span></span>
+<span class="line"><span>    ]</span></span>
+<span class="line"><span>}</span></span></code></pre>
+<p>This is a beta API feature. The API server receives the <code>tool_reference</code> block and expands it into the full tool definition in the model’s context. The client never sends the definition itself — the API resolves the reference from the deferred schemas that were sent with <code>defer_loading: true</code>.</p>
+<p>This is the key insight of the architecture. The client marks deferred tools with <code>defer_loading: true</code> in their schema, telling the API “here’s the definition, but don’t show it to the model unless referenced.” The <code>tool_reference</code> block is the trigger that expands a deferred definition. The model sees the full schema in its context only after a successful search.</p>
+<p>Why not just return the full tool definition in the search result? Two reasons. First, the API handles the injection into the model’s tool context — the client doesn’t need to construct a new API request with the tool added. Second, <code>tool_reference</code> is a structured content block that the API validates against the known deferred schemas. The client can’t fabricate a tool definition in a tool_result and have it treated as a callable tool. The API is the authority on which tools exist.</p>
+<h3 id="the-two-layer-gate">The Two-Layer Gate</h3>
+<p>For tool search to actually engage, two checks must pass:</p>
+<p><strong>Optimistic check</strong> (fast, stateless): Can tool search possibly be enabled? This runs early — during tool pool assembly — to decide whether ToolSearch itself should be included in the tool list. It checks mode and proxy gateway, but NOT model or threshold. This is called “optimistic” because it says “yes” even if the definitive check might say “no” later.</p>
+<p><strong>Definitive check</strong> (async, contextual): Should tool search be used for this specific API request? This runs at request time with the full context: model name, tool list, token counts. It checks model support, ToolSearch availability, and (for <code>tst-auto</code>) the threshold.</p>
+<p>The two-layer design avoids a chicken-and-egg problem. You can’t check the definitive gate until you’ve assembled the tool pool. But the tool pool includes ToolSearch. If ToolSearch isn’t in the pool, the definitive check will say “ToolSearch unavailable, disable.” So the optimistic check decides whether to include ToolSearch, and the definitive check decides whether to use it.</p>
+<hr>
+<h2 id="the-discovery-loop">The Discovery Loop</h2>
+<p>Tool search creates a multi-turn protocol. On turn 1, the model sees only non-deferred tools plus ToolSearch. It calls ToolSearch. On turn 2, the discovered tools are available. But how does the system know which tools to include on turn 2?</p>
+<h3 id="scanning-message-history">Scanning Message History</h3>
+<p>Before each API request, the system scans the conversation history for <code>tool_reference</code> blocks:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function extractDiscoveredToolNames(messages):</span></span>
+<span class="line"><span>    discovered = empty set</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    for message in messages:</span></span>
+<span class="line"><span>        # Compact boundaries carry a snapshot (explained later)</span></span>
+<span class="line"><span>        if message is compact_boundary:</span></span>
+<span class="line"><span>            for name in message.metadata.preCompactDiscoveredTools:</span></span>
+<span class="line"><span>                discovered.add(name)</span></span>
+<span class="line"><span>            continue</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        # tool_reference blocks only appear in user messages</span></span>
+<span class="line"><span>        # (tool_result is a user-role message in the API)</span></span>
+<span class="line"><span>        if message is not user:</span></span>
+<span class="line"><span>            continue</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        for block in message.content:</span></span>
+<span class="line"><span>            if block is tool_result with array content:</span></span>
+<span class="line"><span>                for item in block.content:</span></span>
+<span class="line"><span>                    if item.type is "tool_reference":</span></span>
+<span class="line"><span>                        discovered.add(item.tool_name)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    return discovered</span></span></code></pre>
+<p>The extracted set determines which deferred tools to include in the next request:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function filterToolsForRequest(tools, deferredToolNames, discoveredToolNames):</span></span>
+<span class="line"><span>    return tools where:</span></span>
+<span class="line"><span>        # Always include non-deferred tools</span></span>
+<span class="line"><span>        tool.name not in deferredToolNames</span></span>
+<span class="line"><span>        # Always include ToolSearch itself</span></span>
+<span class="line"><span>        OR tool.name is "ToolSearch"</span></span>
+<span class="line"><span>        # Include deferred tools that have been discovered</span></span>
+<span class="line"><span>        OR tool.name in discoveredToolNames</span></span></code></pre>
+<p>This creates an accumulating set. Once a tool is discovered via search, it stays available for the rest of the conversation. The model never needs to re-search for a tool it’s already found.</p>
+<p>There’s an important detail in what gets sent to <code>toolToAPISchema</code>. The filtering controls which tools appear in the API’s tool array. But the ToolSearch prompt — which lists available deferred tools for the model to see — is generated from the <em>full</em> tool list, not the filtered one. This separation ensures the model can always search the complete pool, even though only discovered tools have their schemas sent.</p>
+<h3 id="a-complete-round-trip">A Complete Round-Trip</h3>
+<p>Let’s trace a single discovery end-to-end:</p>
+<p><strong>Turn 1</strong>: User says “Create a GitHub issue for this bug.”</p>
+<ul>
+<li>System computes deferred set: 147 MCP tools.</li>
+<li>System scans history: no <code>tool_reference</code> blocks yet.</li>
+<li>Filtered tools: 25 built-in + ToolSearch. 147 deferred sent with <code>defer_loading: true</code>.</li>
+<li>Model sees 26 tools. It knows it needs GitHub. It calls ToolSearch.</li>
+</ul>
+<p><strong>Turn 1 response</strong>: Model generates <code>tool_use</code> for ToolSearch with query <code>"select:mcp__github__create_issue"</code>.</p>
+<p><strong>Turn 1 result</strong>: System looks up the name, finds it in deferred pool. Returns:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>{ type: "tool_result", content: [</span></span>
+<span class="line"><span>    { type: "tool_reference", tool_name: "mcp__github__create_issue" }</span></span>
+<span class="line"><span>]}</span></span></code></pre>
+<p><strong>Turn 2</strong>: System prepares next API request.</p>
+<ul>
+<li>Scans history: finds <code>tool_reference</code> for <code>mcp__github__create_issue</code>.</li>
+<li>Filtered tools: 25 built-in + ToolSearch + <code>mcp__github__create_issue</code>.</li>
+<li>Model sees 27 tools. <code>mcp__github__create_issue</code> has full schema. Model calls it.</li>
+</ul>
+<p>The discovery cost was one turn and ~200 tokens. The savings persist for the rest of the conversation — <code>mcp__github__create_issue</code> stays in the filtered set.</p>
+<h3 id="the-defer_loading-flag">The defer_loading Flag</h3>
+<p>Each tool that passes through the filter gets serialized into an API schema. Deferred tools — those in <code>deferredToolNames</code> — get an extra field:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>schema = {</span></span>
+<span class="line"><span>    name: tool.name,</span></span>
+<span class="line"><span>    description: tool.description,</span></span>
+<span class="line"><span>    input_schema: tool.jsonSchema,</span></span>
+<span class="line"><span>    defer_loading: true   # &#x3C;-- tells API: definition present but hidden</span></span>
+<span class="line"><span>}</span></span></code></pre>
+<p>The <code>defer_loading</code> flag is the contract between client and API. It says: “I’m sending you this tool’s definition so you can expand <code>tool_reference</code> blocks that name it, but don’t include it in the model’s visible tool list unless a reference triggers it.”</p>
+<p>Without this flag, sending a tool definition means the model sees it. With it, the definition is staged but invisible until referenced. This is what makes the system work — the API has all the information it needs to expand references without the client re-sending definitions on demand.</p>
+<h3 id="announcing-available-tools">Announcing Available Tools</h3>
+<p>The model needs to know what tools it can search for. There are two mechanisms for this, gated by a feature flag:</p>
+<p><strong>Pre-message approach</strong> (original): Before the conversation messages, the system prepends a user message listing all deferred tool names:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>&#x3C;available-deferred-tools></span></span>
+<span class="line"><span>mcp__github__create_issue</span></span>
+<span class="line"><span>mcp__github__list_issues</span></span>
+<span class="line"><span>mcp__slack__send_message</span></span>
+<span class="line"><span>...</span></span>
+<span class="line"><span>&#x3C;/available-deferred-tools></span></span></code></pre>
+<p><strong>Delta attachment approach</strong> (newer): Instead of prepending the full list every turn, the system computes a diff against what’s already been announced:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function getDeferredToolsDelta(tools, messages):</span></span>
+<span class="line"><span>    # Scan prior attachment messages for previous announcements</span></span>
+<span class="line"><span>    announced = empty set</span></span>
+<span class="line"><span>    for message in messages:</span></span>
+<span class="line"><span>        if message is attachment of type "deferred_tools_delta":</span></span>
+<span class="line"><span>            for name in message.addedNames: announced.add(name)</span></span>
+<span class="line"><span>            for name in message.removedNames: announced.delete(name)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    deferred = tools where isDeferredTool(tool)</span></span>
+<span class="line"><span>    deferredNames = names of deferred tools</span></span>
+<span class="line"><span>    poolNames = names of all tools</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    added = deferred tools not yet announced</span></span>
+<span class="line"><span>    removed = announced tools no longer in the pool AND no longer in base tools</span></span>
+<span class="line"><span>    # Note: a tool that was deferred but is now loaded (undeferred) is NOT</span></span>
+<span class="line"><span>    # reported as removed — it's still available, just loaded differently</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    if no changes: return null</span></span>
+<span class="line"><span>    return { addedNames, removedNames }</span></span></code></pre>
+<p>The delta approach has a critical advantage: it doesn’t bust the prompt cache. The pre-message approach changes the first message whenever the tool pool changes (MCP server connects late, tools added/removed), which invalidates the cached prefix. Deltas are appended as attachment messages, leaving the prefix stable.</p>
+<hr>
+<h2 id="surviving-compaction">Surviving Compaction</h2>
+<p>Context compaction summarizes old messages to free space. But compaction destroys <code>tool_reference</code> blocks — the summary is plain text, not structured content. If the system can’t find tool references after compaction, it thinks no tools have been discovered, and every deferred tool disappears from subsequent requests.</p>
+<h3 id="the-snapshot-mechanism">The Snapshot Mechanism</h3>
+<p>Before compaction runs, the system takes a snapshot of all discovered tools and stores it on the compact boundary marker:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function compact(messages):</span></span>
+<span class="line"><span>    # Snapshot BEFORE summarizing</span></span>
+<span class="line"><span>    discoveredTools = extractDiscoveredToolNames(messages)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    summary = summarize(messages)</span></span>
+<span class="line"><span>    boundaryMarker = createBoundaryMessage(summary)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    if discoveredTools is not empty:</span></span>
+<span class="line"><span>        boundaryMarker.metadata.preCompactDiscoveredTools =</span></span>
+<span class="line"><span>            sorted(discoveredTools)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    return [boundaryMarker, ...remainingMessages]</span></span></code></pre>
+<p>This snapshot appears in three compaction paths: full compaction, partial compaction (which keeps recent messages intact), and session-memory compaction. All three perform the same snapshot.</p>
+<p>After compaction, when <code>extractDiscoveredToolNames</code> scans the messages, it encounters the compact boundary marker first and reads the snapshot:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span># Post-compaction message array:</span></span>
+<span class="line"><span>[</span></span>
+<span class="line"><span>    compact_boundary {</span></span>
+<span class="line"><span>        metadata.preCompactDiscoveredTools: ["mcp__github__create_issue", ...]</span></span>
+<span class="line"><span>    },</span></span>
+<span class="line"><span>    ... remaining messages with tool_reference blocks ...</span></span>
+<span class="line"><span>]</span></span></code></pre>
+<p>The scan merges the snapshot with any new references in remaining messages. The union is the full discovered set — nothing is lost.</p>
+<h3 id="why-this-works">Why This Works</h3>
+<p>The snapshot is idempotent. Multiple compactions each snapshot the accumulated set. If compaction A captures tools {X, Y} and the model later discovers Z, compaction B captures {X, Y, Z}. The set only grows.</p>
+<p>Partial compaction scans all messages, not just the ones being summarized. This is deliberate — it’s simpler than tracking which tools were referenced in which half, and set union is idempotent, so double-counting is harmless.</p>
+<hr>
+<h2 id="edge-cases-and-fail-closed-design">Edge Cases and Fail-Closed Design</h2>
+<h3 id="model-support">Model Support</h3>
+<p>Not every model supports <code>tool_reference</code> content blocks. The system uses a negative list: models are assumed to support tool search <strong>unless</strong> they match a pattern in the unsupported list.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>UNSUPPORTED_MODEL_PATTERNS = ["haiku"]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>function modelSupportsToolReference(model):</span></span>
+<span class="line"><span>    normalized = lowercase(model)</span></span>
+<span class="line"><span>    for pattern in UNSUPPORTED_MODEL_PATTERNS:</span></span>
+<span class="line"><span>        if pattern in normalized:</span></span>
+<span class="line"><span>            return false</span></span>
+<span class="line"><span>    return true   # new models work by default</span></span></code></pre>
+<p>This is a deliberate design choice. A positive list (allowlist) would require code changes for every new model. The negative list means new models inherit tool search support automatically. Only models known to lack the capability are excluded.</p>
+<p>The unsupported pattern list can be updated remotely via feature flags, without shipping a new release. This handles the case where a new model launches without <code>tool_reference</code> support — the team adds it to the list, and all running instances pick it up.</p>
+<h3 id="proxy-gateway-detection-a-two-act-failure">Proxy Gateway Detection: A Two-Act Failure</h3>
+<p>This is a case where a real-world failure, a fix, and a failure of the fix shaped the final design.</p>
+<p><strong>Act 1</strong>: Users routing API calls through third-party proxy gateways (LiteLLM, corporate firewalls) started getting API 400 errors: <code>"Messages content type tool_reference not supported."</code> The proxy only accepted standard content types — <code>text</code>, <code>image</code>, <code>tool_use</code>, <code>tool_result</code> — and rejected the beta <code>tool_reference</code> blocks. Tool search worked fine with direct Anthropic API calls but broke through any intermediary.</p>
+<p><strong>Act 2</strong>: The fix was aggressive: detect non-Anthropic base URLs and disable tool search entirely. This stopped the 400 errors but created a new problem — users with <em>compatible</em> proxies (LiteLLM passthrough mode, Cloudflare AI Gateway) lost deferred tool loading. All their MCP tools loaded into the main context window every turn. For users with many MCP tools, this was a significant regression in context efficiency.</p>
+<p>The final design balances both failures:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function isToolSearchEnabledOptimistic():</span></span>
+<span class="line"><span>    if mode is "standard":</span></span>
+<span class="line"><span>        return false</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Proxy detection: first-party provider but non-Anthropic URL</span></span>
+<span class="line"><span>    # Only triggers when ENABLE_TOOL_SEARCH is unset (default behavior)</span></span>
+<span class="line"><span>    if ENABLE_TOOL_SEARCH is not set</span></span>
+<span class="line"><span>       AND provider is "firstParty"</span></span>
+<span class="line"><span>       AND baseURL is not a known Anthropic host:</span></span>
+<span class="line"><span>        return false   # proxy would reject tool_reference blocks</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    return true</span></span></code></pre>
+<p>The key insight is the <code>ENABLE_TOOL_SEARCH is not set</code> condition. When the environment variable is unset, the system assumes unknown proxies can’t handle beta features. But setting <em>any</em> non-empty value — <code>true</code>, <code>auto</code>, <code>auto:10</code> — tells the system “I know what I’m doing, my proxy supports this.” The user takes explicit responsibility for their proxy’s capabilities.</p>
+<p>There’s also a global kill switch: <code>DISABLE_EXPERIMENTAL_BETAS</code> forces standard mode regardless of other settings. When this is set, the system strips beta-specific fields from tool schemas before sending them to the API, ensuring no <code>defer_loading</code> or <code>tool_reference</code> reaches the wire. This was itself motivated by a separate failure: the kill switch originally didn’t remove all beta headers, breaking LiteLLM-to-Bedrock proxies that rejected unknown beta flags.</p>
+<h3 id="pending-mcp-servers">Pending MCP Servers</h3>
+<p>MCP servers connect asynchronously. When a user starts Claude Code, some servers may still be initializing. If tool search is enabled but no deferred tools exist yet (because no servers have connected), the system normally disables tool search for that request — there’s nothing to search.</p>
+<p>But if MCP servers are pending, it keeps ToolSearch available:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>if useToolSearch AND no deferred tools AND no pending MCP servers:</span></span>
+<span class="line"><span>    useToolSearch = false   # nothing to search, save a tool slot</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>if useToolSearch AND no deferred tools AND pending MCP servers:</span></span>
+<span class="line"><span>    # keep ToolSearch — tools will appear when servers connect</span></span></code></pre>
+<p>When the model calls ToolSearch and no tools match, the result includes the names of pending servers:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>{</span></span>
+<span class="line"><span>    matches: [],</span></span>
+<span class="line"><span>    total_deferred_tools: 0,</span></span>
+<span class="line"><span>    pending_mcp_servers: ["github", "slack"]</span></span>
+<span class="line"><span>}</span></span></code></pre>
+<p>This tells the model “your search found nothing, but these servers are still connecting — try again shortly.”</p>
+<h3 id="cache-invalidation">Cache Invalidation</h3>
+<p>Tool descriptions are memoized to avoid recomputing them on every search. But the deferred tool set can change mid-conversation (MCP server connects, tools added/removed). The cache key is the sorted, comma-joined list of deferred tool names. When the set changes, the cache clears:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function maybeInvalidateCache(deferredTools):</span></span>
+<span class="line"><span>    currentKey = sorted(tool.name for tool in deferredTools).join(",")</span></span>
+<span class="line"><span>    if currentKey != cachedKey:</span></span>
+<span class="line"><span>        clearDescriptionCache()</span></span>
+<span class="line"><span>        cachedKey = currentKey</span></span></code></pre>
+<p>The token count is also memoized with the same key scheme. This means connecting a new MCP server triggers one fresh token count and one fresh description computation, then subsequent searches reuse the cache.</p>
+<h3 id="tool-search-disabled-mid-conversation">Tool Search Disabled Mid-Conversation</h3>
+<p>If the model switches from a supported model (Sonnet) to an unsupported one (Haiku) mid-conversation, the message history may contain <code>tool_reference</code> blocks that the new model can’t process. The system handles this by stripping tool-search artifacts:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>if not useToolSearch:</span></span>
+<span class="line"><span>    for message in apiMessages:</span></span>
+<span class="line"><span>        if message is user:</span></span>
+<span class="line"><span>            stripToolReferenceBlocks(message)</span></span>
+<span class="line"><span>        if message is assistant:</span></span>
+<span class="line"><span>            stripCallerField(message)   # tool_use caller metadata</span></span></code></pre>
+<p>This ensures the API never receives <code>tool_reference</code> blocks when the current model doesn’t support them, even if a previous model generated them.</p>
+<p>There’s an additional stripping path for a subtler failure: MCP server disconnection. If a server disconnects mid-conversation, previously valid <code>tool_reference</code> blocks now point to tools that don’t exist in the current pool. The API rejects these with “Tool reference not found in available tools.” The normalization pipeline strips <code>tool_reference</code> blocks for tools that aren’t in the current available set, even when tool search is otherwise enabled.</p>
+<h3 id="the-turn-boundary-problem">The Turn Boundary Problem</h3>
+<p>When the API server receives a <code>tool_result</code> containing <code>tool_reference</code> blocks, it expands them into a <code>&#x3C;functions></code> block — the same format used for tool definitions at the start of the prompt. This expansion happens server-side, and it creates an unexpected problem in the wire format.</p>
+<p>The expanded <code>&#x3C;functions></code> block appears inline in the conversation. If the same user message that contains the <code>tool_result</code> also has text siblings (auto-memory reminders, skill instructions, etc.), those text blocks render as a second <code>Human:</code> turn segment immediately after the <code>&#x3C;/functions></code> closing tag. This creates an anomalous pattern in the conversation structure: two consecutive human turns with a functions block in between.</p>
+<p>The model learns this pattern. After seeing it several times in a conversation, it starts completing the pattern: when it encounters a bare tool result at the tail of the conversation (no text siblings), it emits the stop sequence instead of generating a meaningful response. The conversation just… stops. An A/B experiment with five arms confirmed the dose-response: more tool_reference messages with text siblings → higher stop-sequence rate.</p>
+<p>Two mitigations work in concert:</p>
+<p><strong>Turn boundary injection</strong>: When a user message contains <code>tool_reference</code> blocks and no text siblings, the system injects a minimal text block (<code>"Tool loaded."</code>) as a sibling. This creates a clean <code>Human: Tool loaded.</code> turn boundary that prevents the model from seeing a bare functions block at the tail.</p>
+<p><strong>Sibling relocation</strong>: When a user message contains <code>tool_reference</code> blocks AND has text siblings (from auto-memory, attachments, etc.), the system moves those text blocks to the next user message that has <code>tool_result</code> content but NO <code>tool_reference</code>. This eliminates the anomalous two-human-turns pattern. If no valid target exists (the tool_reference message is near the end of the conversation), the siblings stay — that’s safe because a tail ending in a human turn gets a proper assistant cue.</p>
+<h3 id="schema-not-sent-recovery">Schema-Not-Sent Recovery</h3>
+<p>Sometimes the model tries to call a deferred tool without first discovering it via ToolSearch. This happens when the model hallucinates having seen the tool’s schema (perhaps from its training data) or when a prior discovery was lost to compaction. The call fails at input validation — the model sends parameters that don’t match any known schema, because the schema was never sent.</p>
+<p>The raw validation error (“expected object, received string”) doesn’t tell the model what went wrong. So the system checks: is this a deferred tool that wasn’t in the discovered set? If yes, it appends a hint:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>"This tool's schema was not sent to the API — it was not in the</span></span>
+<span class="line"><span>discovered-tool set. Use ToolSearch to load it first:</span></span>
+<span class="line"><span>ToolSearch({ query: 'select:&#x3C;tool_name>' })"</span></span></code></pre>
+<p>This turns a confusing Zod error into an actionable instruction. The model reads the hint, calls ToolSearch, gets the schema, and retries — one extra turn instead of a conversation-ending failure.</p>
+<h3 id="invisible-by-design">Invisible by Design</h3>
+<p>ToolSearch calls never appear in the user’s terminal output. The tool’s <code>renderToolUseMessage</code> returns null and its <code>userFacingName</code> returns an empty string. In the message collapse system — which groups consecutive reads and searches into compact “Read 5 files” summaries — ToolSearch is classified as “absorbed silently”: it joins a collapse group without incrementing any counter. The user sees “Read 3 files, searched 2 files” but the ToolSearch call that loaded the tool definitions is invisible.</p>
+<p>This is deliberate. ToolSearch is infrastructure, not user-facing functionality. Showing “Searched for tools” in the output would be confusing — the user asked to create a GitHub issue, not to search for tools. The tool discovery is an implementation detail of how the model accesses MCP tools, and the UI hides it accordingly.</p>
+<hr>
+<h2 id="the-complete-pipeline">The Complete Pipeline</h2>
+<p>Here’s the full sequence for a single API request:</p>
+<ol>
+<li>
+<p><strong>Mode check</strong>: Determine if tool search is <code>tst</code>, <code>tst-auto</code>, or <code>standard</code>.</p>
+</li>
+<li>
+<p><strong>Model check</strong>: Verify the model supports <code>tool_reference</code> blocks. If not, disable.</p>
+</li>
+<li>
+<p><strong>Availability check</strong>: Confirm ToolSearch is in the tool pool (not disallowed).</p>
+</li>
+<li>
+<p><strong>Threshold check</strong> (tst-auto only): Count deferred tool tokens via API (or character heuristic fallback). Compare to <code>floor(contextWindow × 10%)</code>.</p>
+</li>
+<li>
+<p><strong>Build deferred set</strong>: Mark each tool as deferred or not via the priority checklist.</p>
+</li>
+<li>
+<p><strong>Scan history</strong>: Extract discovered tool names from <code>tool_reference</code> blocks and compact boundary snapshots.</p>
+</li>
+<li>
+<p><strong>Filter tools</strong>: Include non-deferred tools, ToolSearch, and discovered deferred tools. Exclude undiscovered deferred tools.</p>
+</li>
+<li>
+<p><strong>Serialize schemas</strong>: Add <code>defer_loading: true</code> to deferred tools. Add beta header.</p>
+</li>
+<li>
+<p><strong>Announce pool</strong>: Prepend deferred tool list or compute delta attachment.</p>
+</li>
+<li>
+<p><strong>Send request</strong>: API receives full definitions with <code>defer_loading</code>, shows only non-deferred and discovered tools to the model.</p>
+</li>
+<li>
+<p><strong>Model searches</strong>: Calls ToolSearch with a query. Gets <code>tool_reference</code> blocks back.</p>
+</li>
+<li>
+<p><strong>Next turn</strong>: Step 6 finds the new references. Step 7 includes the discovered tools. The model can now call them.</p>
+</li>
+<li>
+<p><strong>Compaction</strong>: Before summarizing, snapshot discovered tools to boundary marker. After compaction, step 6 reads the snapshot.</p>
+</li>
+</ol>
+<p>Each step fails toward loading more tools, not fewer. Unknown model? Load everything. Token count unavailable? Use conservative heuristic. Proxy detected? Load everything unless explicitly opted in. The worst case is wasting tokens on tool definitions. The best case is saving 90% of tool definition tokens while maintaining full functionality through on-demand discovery.</p>
+<p>The system turns an O(N) per-turn cost into O(1) for idle tools and O(k) for the k tools actually used in a conversation. For a user with 200 MCP tools who typically uses 5–10 per session, that’s a 95% reduction in tool definition tokens — context space reclaimed for actual work.</p>
+<hr>
+<h2 id="design-trade-offs">Design Trade-offs</h2>
+<p>Every engineering decision in this system reflects a trade-off. Here are the ones worth understanding:</p>
+<p><strong>Deferral granularity</strong>: Why defer by tool, not by MCP server? Server-level deferral would mean discovering one tool loads all tools from that server. This is simpler but wasteful — a GitHub server might have 40 tools, and you only need 3. Tool-level deferral uses more search turns but saves more tokens. The scoring system mitigates the extra turns: a single keyword search for “github” returns the most relevant tools, not all 40.</p>
+<p><strong>Negative vs. positive model list</strong>: The unsupported model list (<code>["haiku"]</code>) means every new model gets tool search by default. The alternative — a positive list of supported models — would mean every new model launch requires a code update. The negative list risks sending <code>tool_reference</code> blocks to a model that can’t handle them, but the API would return a clear error, and the feature flag system can add models to the unsupported list within minutes.</p>
+<p><strong>Token counting precision</strong>: The character-per-token heuristic (2.5) is intentionally imprecise. Why not always use the API’s token counter? Because the counter requires a network round-trip that might fail or add latency. The heuristic runs instantly. And the cost of over-counting (deferring when unnecessary) is one extra search turn. The cost of under-counting (not deferring when needed) is 60,000 wasted tokens per turn. The asymmetry favors the conservative heuristic.</p>
+<p><strong>Cache key design</strong>: Both the description cache and token count cache use the sorted tool name list as key, not a hash. This means cache comparison is O(N) in the number of deferred tools, but N is typically &#x3C;200 and the comparison runs once per API request. A hash would be O(1) but risks collisions, and debugging cache issues with hashed keys is harder than with readable name lists.</p>
+<p><strong>Snapshot vs. protection</strong>: Why snapshot discovered tools instead of protecting <code>tool_reference</code> messages from compaction? The snip compaction strategy does protect these messages, but full compaction summarizes everything. Protecting individual messages from full compaction would fragment the summary and reduce its quality. The snapshot approach lets compaction work normally and reconstructs the discovery state from metadata.</p>  <div class="subscribe-cta" data-astro-cid-bvzihdzo> <p data-astro-cid-bvzihdzo>Get new posts delivered to your inbox</p> <a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener" data-astro-cid-bvzihdzo>Subscribe on Substack →</a> </div> <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/ai-white-collar-great-recession/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>94% Exposed, 30% Adopted: Why Engineering Leaders Need to Rethink How They Hire</span> </a> <span data-astro-cid-bvzihdzo></span> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+&copy; 2026 Laurent DeSegur
+</div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

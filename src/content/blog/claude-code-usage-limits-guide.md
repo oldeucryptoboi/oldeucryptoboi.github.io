@@ -1,6 +1,6 @@
 ---
 title: "Claude Code Is Burning Through Your Quota. Here's What's Actually Happening and How to Fix It."
-description: "Claude Code drains faster during peak hours and shares limits with claude.ai. 10 confirmed tactics: off-peak scheduling, Sonnet over Opus, lower thinking tokens, and more."
+description: "Claude Code drains faster during peak hours and shares limits with claude.ai. 10 tactics: off-peak scheduling, Sonnet over Opus, lower thinking tokens."
 pubDate: 2026-04-09
 tags: ["Claude Code", "Anthropic", "AI Agents", "Developer Tools", "Cost Optimization"]
 ---

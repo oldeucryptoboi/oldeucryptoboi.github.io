@@ -1,0 +1,344 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Laurent DeSegur" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/memory-persistence-deep-dive/"><!-- Primary Meta Tags --><title>How Claude Code Remembers (And Forgets): The Memory and Persistence Architecture</title><meta name="title" content="How Claude Code Remembers (And Forgets): The Memory and Persistence Architecture"><meta name="description" content="Five persistence layers from CLAUDE.md to session transcripts. How knowledge survives across sessions, what compaction destroys, and the wiki gap."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/memory-persistence-deep-dive/"><meta property="og:title" content="How Claude Code Remembers (And Forgets): The Memory and Persistence Architecture"><meta property="og:description" content="Five persistence layers from CLAUDE.md to session transcripts. How knowledge survives across sessions, what compaction destroys, and the wiki gap."><meta property="og:site_name" content="Laurent DeSegur"><meta property="article:published_time" content="2026-04-09T00:00:00.000Z"><meta property="article:tag" content="Claude Code"><meta property="article:tag" content="Anthropic"><meta property="article:tag" content="Architecture"><meta property="article:tag" content="Memory"><meta property="article:tag" content="AI Agents"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/memory-persistence-deep-dive/"><meta name="twitter:title" content="How Claude Code Remembers (And Forgets): The Memory and Persistence Architecture"><meta name="twitter:description" content="Five persistence layers from CLAUDE.md to session transcripts. How knowledge survives across sessions, what compaction destroys, and the wiki gap."><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and X/LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"How Claude Code Remembers (And Forgets): The Memory and Persistence Architecture","description":"Five persistence layers from CLAUDE.md to session transcripts. How knowledge survives across sessions, what compaction destroys, and the wiki gap.","url":"https://oldeucryptoboi.com/blog/memory-persistence-deep-dive/","datePublished":"2026-04-09T00:00:00.000Z","author":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"keywords":"Claude Code, Anthropic, Architecture, Memory, AI Agents","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/memory-persistence-deep-dive/"}}</script><link rel="stylesheet" href="/_astro/_slug_.WqGW7rbB.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo]{margin-top:3em;padding:1.5em;border:1px solid var(--border);text-align:center}.subscribe-cta[data-astro-cid-bvzihdzo] p[data-astro-cid-bvzihdzo]{margin:0 0 .75em;color:var(--text-dim);font-size:.85em;letter-spacing:.04em}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]{color:var(--hal-red);font-size:.8em;letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif;text-decoration:none;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]:hover{color:#fff}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2><span class="cap" data-astro-cid-3ef6ksr2>L</span>aurent <span class="cap" data-astro-cid-3ef6ksr2>D</span>e<span class="cap" data-astro-cid-3ef6ksr2>S</span>egur</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-04-09T00:00:00.000Z"> Apr 9, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>How Claude Code Remembers (And Forgets): The Memory and Persistence Architecture</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>Claude Code</span><span data-astro-cid-bvzihdzo>Anthropic</span><span data-astro-cid-bvzihdzo>Architecture</span><span data-astro-cid-bvzihdzo>Memory</span><span data-astro-cid-bvzihdzo>AI Agents</span> </div> </div>  <h1 id="how-claude-code-remembers-and-forgets-the-memory-and-persistence-architecture">How Claude Code Remembers (And Forgets): The Memory and Persistence Architecture</h1>
+<p>Claude Code processes thousands of lines of code, generates insights, solves bugs, discovers architecture — then the session ends and it forgets everything. The next session starts from scratch. The model re-reads the same files, re-traces the same execution paths, re-discovers the same patterns. Nothing compounds.</p>
+<p>This is the fundamental limitation of a context-window-only architecture. The context window is working memory: capacious, fast, but volatile. When it fills up, old content is compressed or discarded. When the session ends, everything goes.</p>
+<p>The naive solution: just save everything to disk. But “everything” is too much. A 200-turn debugging session produces megabytes of tool calls, error messages, failed attempts, and dead ends. Loading all of that into the next session would waste most of the context window on irrelevant history. You need selectivity — keep the lessons, discard the scaffolding.</p>
+<p>The opposite extreme: save nothing. Let the model re-derive knowledge from the codebase every session. This works for small projects but collapses at scale. A developer who’s been working on a codebase for months has context that can’t be re-derived from the code alone: why this architecture was chosen, what patterns the team prefers, which approaches were tried and abandoned, what the user’s communication style is.</p>
+<p>Claude Code takes a middle path. It has five persistence mechanisms, each operating at a different timescale and abstraction level: CLAUDE.md instruction files, an auto-memory directory with a typed file system, a background memory extraction agent, context compaction that summarizes old messages, and raw session transcripts. Together they form a layered persistence architecture — not a wiki, not RAG, but something in between that trades comprehensiveness for simplicity.</p>
+<p>This article traces each layer: how it stores knowledge, what it discards, where it truncates, and what falls through the gaps.</p>
+<hr>
+<h2 id="layer-1-claudemd--the-instruction-layer">Layer 1: CLAUDE.md — The Instruction Layer</h2>
+<p>Before the model sees any user message, it loads a stack of instruction files. These are human-written (or human-edited) markdown files that tell the model how to behave in a specific project. They’re the most persistent layer — they survive not just across sessions but across users.</p>
+<h3 id="discovery">Discovery</h3>
+<p>The system discovers CLAUDE.md files by walking the filesystem in a specific order:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1. Managed: /etc/claude-code/CLAUDE.md</span></span>
+<span class="line"><span>   (global admin instructions, all users)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>2. User: ~/.claude/CLAUDE.md</span></span>
+<span class="line"><span>   (private global instructions, all projects)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>3. Project: walk from CWD up to root, in each directory check:</span></span>
+<span class="line"><span>   - CLAUDE.md</span></span>
+<span class="line"><span>   - .claude/CLAUDE.md</span></span>
+<span class="line"><span>   - .claude/rules/*.md</span></span>
+<span class="line"><span>   (committed to the codebase, shared with team)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>4. Local: CLAUDE.local.md in each project root</span></span>
+<span class="line"><span>   (gitignored, private to this developer)</span></span></code></pre>
+<p>Files are loaded in this order but <strong>priority increases from bottom to top</strong> — local files override project files, which override user files, which override managed files. The model sees them in reverse priority order and pays more attention to the last-loaded content.</p>
+<h3 id="the-include-directive">The @include Directive</h3>
+<p>CLAUDE.md files can reference other files using @ notation:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>@./docs/coding-standards.md</span></span>
+<span class="line"><span>@~/personal-preferences.md</span></span>
+<span class="line"><span>@/absolute/path/to/instructions.md</span></span></code></pre>
+<p>Included files are added as separate entries before the including file. The system prevents circular references by tracking processed paths. Only text-format files are allowed — binary files (images, PDFs) are silently ignored.</p>
+<h3 id="trust-boundaries">Trust Boundaries</h3>
+<p>Project-level CLAUDE.md files (<code>.claude/settings.json</code>) have restricted power compared to user-level files. A malicious repository could commit a CLAUDE.md that attempts to:</p>
+<ul>
+<li>Redirect the memory directory to <code>~/.ssh</code> to gain write access to sensitive files</li>
+<li>Set dangerous environment variables</li>
+<li>Override security-critical settings</li>
+</ul>
+<p>The system prevents this by restricting which settings project files can modify. The auto-memory directory path, for instance, can only be set from user-level, local-level, or policy-level settings — never from project settings committed to a shared repo.</p>
+<h3 id="the-40000-character-cap">The 40,000-Character Cap</h3>
+<p>Each CLAUDE.md file is capped at 40,000 characters. Beyond this, content is truncated. This prevents a project with an enormous instruction file from consuming the entire context window before the conversation even starts.</p>
+<hr>
+<h2 id="layer-2-auto-memory--the-persistent-knowledge-store">Layer 2: Auto-Memory — The Persistent Knowledge Store</h2>
+<p>The auto-memory system is Claude Code’s persistent knowledge base. It lives at <code>~/.claude/projects/&#x3C;sanitized-project-root>/memory/</code> and contains markdown files that persist across sessions.</p>
+<h3 id="the-memorymd-entrypoint">The MEMORY.md Entrypoint</h3>
+<p>Every memory directory has a <code>MEMORY.md</code> file that serves as an index. It’s loaded into the system prompt at the start of every session. The model sees it, and the model writes to it.</p>
+<p>Two hard caps prevent MEMORY.md from consuming too much context:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>MAX_LINES = 200</span></span>
+<span class="line"><span>MAX_BYTES = 25,000  # ~125 chars/line</span></span></code></pre>
+<p>If either cap is exceeded, the content is truncated and a warning is appended:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>> WARNING: MEMORY.md is 347 lines (limit: 200).</span></span>
+<span class="line"><span>> Only part of it was loaded. Keep index entries to</span></span>
+<span class="line"><span>> one line under ~200 chars; move detail into topic files.</span></span></code></pre>
+<p>The byte cap was added to catch a specific failure mode: “long-line indexes that slip past the line cap.” Production telemetry showed the p100 (worst case) was a MEMORY.md at 197KB while staying under 200 lines — each line averaging ~1,000 characters. The line check passed. The context window ate 197KB of memory index. The 25KB byte cap catches this.</p>
+<h3 id="the-truncation-algorithm">The Truncation Algorithm</h3>
+<p>The truncation is a two-step process, and the order matters:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function truncateEntrypointContent(raw):</span></span>
+<span class="line"><span>    lines = raw.trim().split('\n')</span></span>
+<span class="line"><span>    lineCount = lines.length</span></span>
+<span class="line"><span>    byteCount = raw.trim().length</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Step 1: Truncate by lines (natural boundary)</span></span>
+<span class="line"><span>    if lineCount > MAX_LINES:</span></span>
+<span class="line"><span>        truncated = lines[0:MAX_LINES].join('\n')</span></span>
+<span class="line"><span>    else:</span></span>
+<span class="line"><span>        truncated = raw.trim()</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Step 2: Truncate by bytes (catches long-line abuse)</span></span>
+<span class="line"><span>    # BUT: cut at the last newline before the cap</span></span>
+<span class="line"><span>    # so we don't slice mid-line</span></span>
+<span class="line"><span>    if truncated.length > MAX_BYTES:</span></span>
+<span class="line"><span>        cutPoint = truncated.lastIndexOf('\n', MAX_BYTES)</span></span>
+<span class="line"><span>        truncated = truncated[0:cutPoint or MAX_BYTES]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Append warning naming WHICH cap fired</span></span>
+<span class="line"><span>    # (line only, byte only, or both)</span></span>
+<span class="line"><span>    return truncated + warning</span></span></code></pre>
+<p>A subtle design choice: the warning message names the <em>original</em> byte count, not the post-line-truncation byte count. This means the warning says “your file is 197KB” even though line truncation already reduced it. The user sees the real problem (lines are too long) rather than a misleading post-truncation size.</p>
+<p>The byte truncation cuts at <code>lastIndexOf('\n', MAX_BYTES)</code> — it finds the last newline before the byte cap and cuts there, rather than slicing mid-line. If no newline exists before the cap (one enormous line), it falls back to a hard cut at the byte boundary.</p>
+<h3 id="the-mkdir-problem">The mkdir Problem</h3>
+<p>An early failure mode: the model would burn turns running <code>ls</code> and <code>mkdir -p</code> before writing its first memory file. It didn’t trust that the directory existed. The system now explicitly tells the model in the prompt:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>This directory already exists — write to it directly</span></span>
+<span class="line"><span>with the Write tool (do not run mkdir or check for</span></span>
+<span class="line"><span>its existence).</span></span></code></pre>
+<p>The harness guarantees this by calling <code>ensureMemoryDirExists()</code> during prompt building. The mkdir is recursive and swallows <code>EEXIST</code>. If it fails for a real reason (permissions, read-only filesystem), the error is logged at debug level and the model’s Write call will surface the actual error.</p>
+<h3 id="the-index-not-a-memory">The Index, Not a Memory</h3>
+<p>A critical design choice: MEMORY.md is an <strong>index</strong>, not a memory store. Each entry should be one line under ~150 characters — a title and a link to a topic file:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>- [Testing preferences](testing.md) — always use vitest, prefer unit tests</span></span>
+<span class="line"><span>- [Git workflow](git-workflow.md) — conventional commits, squash merges</span></span></code></pre>
+<p>The actual knowledge lives in separate topic files (<code>testing.md</code>, <code>git-workflow.md</code>). These are read on demand when relevant, not loaded into every session’s context. This two-tier design keeps the always-loaded context small while allowing arbitrarily detailed knowledge in topic files.</p>
+<h3 id="typed-memory-system">Typed Memory System</h3>
+<p>The system defines a taxonomy of memory types with structured frontmatter:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>---</span></span>
+<span class="line"><span>name: User testing preferences</span></span>
+<span class="line"><span>type: preference</span></span>
+<span class="line"><span>description: How the user wants tests written and run</span></span>
+<span class="line"><span>---</span></span></code></pre>
+<p>The taxonomy has four types — not generic categories, but carefully scoped roles:</p>
+<ul>
+<li><strong>user</strong>: Who the user is — role, expertise, goals. “Senior Go engineer, new to React” changes how the model explains frontend code. Always private (never shared with team memory).</li>
+<li><strong>feedback</strong>: What the user corrected or confirmed. “Don’t mock the database — we got burned when mocks passed but prod migration failed.” Includes <em>why</em> so the model can judge edge cases, not just follow the rule blindly. The prompt explicitly instructs: record from success AND failure, not just corrections.</li>
+<li><strong>project</strong>: Ongoing work, deadlines, decisions. “Merge freeze starts Thursday for mobile release.” Must convert relative dates to absolute (“Thursday” → “2026-03-05”) so the memory stays interpretable after time passes. These decay fast.</li>
+<li><strong>reference</strong>: Pointers to external systems. “Pipeline bugs tracked in Linear project INGEST.” These are bookmarks, not content.</li>
+</ul>
+<p>Each type has structured guidance for when to save, how to use, and body structure (lead with fact, then “Why:” line, then “How to apply:” line). The prompt includes worked examples showing the model’s expected behavior for each type.</p>
+<h3 id="what-not-to-save">What NOT to Save</h3>
+<p>The instructions explicitly prohibit saving information that’s derivable from the current project state:</p>
+<ul>
+<li>Code patterns visible in the codebase</li>
+<li>Architecture discoverable from the file structure</li>
+<li>Git history that git commands can retrieve</li>
+<li>Session-specific context (current task, in-progress work)</li>
+<li>Speculative or unverified conclusions</li>
+</ul>
+<p>This constraint fights a specific failure mode: memory files that duplicate what the model can already see. A memory entry saying “the project uses React with TypeScript” is worse than useless — it wastes context on information the model can derive from <code>package.json</code> in seconds.</p>
+<h3 id="path-resolution">Path Resolution</h3>
+<p>The auto-memory directory path is resolved through a three-step chain:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1. CLAUDE_COWORK_MEMORY_PATH_OVERRIDE env var</span></span>
+<span class="line"><span>   (full-path override, used by Cowork/SDK)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>2. autoMemoryDirectory in settings.json</span></span>
+<span class="line"><span>   (trusted sources only: policy, local, user — NOT project)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>3. ~/.claude/projects/&#x3C;sanitized-git-root>/memory/</span></span>
+<span class="line"><span>   (computed from canonical git root)</span></span></code></pre>
+<p>The first match wins. Step 1 exists for multi-agent orchestration (Cowork) where the per-session working directory contains the VM process name — every session would produce a different project key without the override. Step 2 lets users customize the path in their personal settings. Step 3 is the default.</p>
+<p>The result is memoized, keyed on the project root. This prevents repeated filesystem operations: render-path callers fire per tool-use message per React re-render, and each miss would cost four <code>parseSettingsFile</code> calls (one per settings source), each involving <code>realpathSync</code> and <code>readFileSync</code>.</p>
+<h3 id="path-security">Path Security</h3>
+<p>The memory directory path undergoes strict validation:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function validateMemoryPath(raw):</span></span>
+<span class="line"><span>    reject if relative (starts with "../")</span></span>
+<span class="line"><span>    reject if root or near-root (length &#x3C; 3)</span></span>
+<span class="line"><span>    reject if Windows drive root ("C:\")</span></span>
+<span class="line"><span>    reject if UNC path ("\\server\share")</span></span>
+<span class="line"><span>    reject if contains null byte</span></span>
+<span class="line"><span>    reject if tilde expansion would resolve to $HOME</span></span>
+<span class="line"><span>    normalize and add trailing separator</span></span></code></pre>
+<p>This prevents a settings file from redirecting the memory directory to sensitive locations. A particularly subtle attack: setting <code>autoMemoryDirectory: "~/"</code> would make <code>isAutoMemPath()</code> match everything under the home directory, granting the model write access to <code>~/.ssh</code>, <code>~/.gitconfig</code>, and other sensitive files. The validator rejects bare tilde expansions that would resolve to the home directory itself.</p>
+<h3 id="worktree-sharing">Worktree Sharing</h3>
+<p>The memory directory key is derived from the <strong>canonical git root</strong>, not the current working directory. This means all git worktrees of the same repository share one memory directory. If you’re working in <code>feature-branch</code> worktree and save a memory about testing preferences, the <code>main</code> worktree sees it too.</p>
+<hr>
+<h2 id="layer-3-memory-extraction--the-background-agent">Layer 3: Memory Extraction — The Background Agent</h2>
+<p>Manually saving memories requires the model to decide, mid-task, to stop and write knowledge to disk. This interrupts the task, consumes context tokens on memory management, and relies on the model prioritizing long-term knowledge over short-term task completion.</p>
+<p>The memory extraction agent solves this by running <strong>after</strong> the main task completes. It’s a forked agent — a perfect fork of the main conversation that shares the parent’s prompt cache — triggered at the end of each query loop when the model produces a final response with no tool calls.</p>
+<h3 id="how-it-works">How It Works</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function executeExtractMemories(hookContext):</span></span>
+<span class="line"><span>    # Skip if extract mode not active</span></span>
+<span class="line"><span>    if not isExtractModeActive():</span></span>
+<span class="line"><span>        return</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Skip if the main agent already wrote memories this turn</span></span>
+<span class="line"><span>    if hasMemoryWritesSince(lastMemoryMessageUuid):</span></span>
+<span class="line"><span>        return</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Skip if not enough context has accumulated</span></span>
+<span class="line"><span>    if turnsSinceLastExtraction &#x3C; threshold:</span></span>
+<span class="line"><span>        return</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Scan existing memory files for manifest</span></span>
+<span class="line"><span>    manifest = scanMemoryFiles(autoMemDir)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Build extraction prompt with conversation context</span></span>
+<span class="line"><span>    prompt = buildExtractPrompt(manifest, pendingContext)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Fork the agent with restricted tool access</span></span>
+<span class="line"><span>    runForkedAgent({</span></span>
+<span class="line"><span>        prompt: prompt,</span></span>
+<span class="line"><span>        canUseTool: createAutoMemCanUseTool(),</span></span>
+<span class="line"><span>        # ... shares parent's prompt cache</span></span>
+<span class="line"><span>    })</span></span></code></pre>
+<h3 id="tool-restrictions">Tool Restrictions</h3>
+<p>The extraction agent is severely restricted:</p>
+<ul>
+<li><strong>Read tools</strong>: Glob, Grep, Read — can search and read any file</li>
+<li><strong>Bash</strong>: Read-only mode (no writes, no side effects)</li>
+<li><strong>Write/Edit</strong>: Only to files within the auto-memory directory</li>
+</ul>
+<p>This prevents a memory extraction bug from corrupting the project’s source code. The agent can read anything to understand context, but can only write to memory files.</p>
+<h3 id="deduplication">Deduplication</h3>
+<p>The main agent has full save instructions in its prompt — it can write memories at any time. The extraction agent is the backup for when it doesn’t. These two must be mutually exclusive per turn.</p>
+<p>Detection works by scanning assistant messages after the last extraction cursor for Write or Edit tool calls targeting an auto-memory path. The check is simple: iterate messages after the cursor UUID, find assistant messages with <code>tool_use</code> blocks, extract the file path from the tool input, and test it against <code>isAutoMemPath()</code>.</p>
+<p>If any memory write is found, the extraction agent skips entirely and advances its cursor past the range. The main agent’s explicit save is trusted. If no memory write is found, the extraction agent forks and scans for anything the main agent missed.</p>
+<p>A subtle edge case: if the cursor UUID was removed by context compaction (the message it pointed to was summarized away), the system falls back to counting all model-visible messages rather than returning zero. Returning zero would permanently disable extraction for the rest of the session — a silent failure mode that was caught and fixed.</p>
+<h3 id="feature-gates">Feature Gates</h3>
+<p>Memory extraction is behind multiple feature gates: a compile-time <code>EXTRACT_MEMORIES</code> flag, a GrowthBook <code>tengu_passport_quail</code> runtime gate, and a throttling gate (<code>tengu_bramble_lintel</code>) that controls how often extraction runs. In non-interactive sessions (SDK, CI), extraction is disabled by default unless explicitly opted in.</p>
+<h3 id="memory-vs-plans-vs-tasks">Memory vs. Plans vs. Tasks</h3>
+<p>The system prompt explicitly tells the model when NOT to use memory:</p>
+<ul>
+<li><strong>Plans</strong> are for non-trivial implementation tasks where alignment with the user is needed. If you’re about to start building something and want to confirm the approach, use a plan — don’t save it to memory. Plans are session-scoped.</li>
+<li><strong>Tasks</strong> are for breaking work into discrete steps and tracking progress within the current conversation. Tasks persist within the session but not across sessions.</li>
+<li><strong>Memory</strong> is reserved for information useful in future conversations: user preferences, project conventions, lessons learned.</li>
+</ul>
+<p>This separation fights a failure mode where the model saves everything to memory — including task lists, implementation plans, and debugging notes that are only relevant right now. Memory becomes a dump, not a knowledge base.</p>
+<hr>
+<h2 id="layer-4-context-compaction--the-lossy-summarizer">Layer 4: Context Compaction — The Lossy Summarizer</h2>
+<p>When the context window fills up, Claude Code doesn’t crash or stop. It compresses older messages into summaries, freeing space for new content. This is context compaction — and it’s the most impactful persistence mechanism because it operates during every long session.</p>
+<h3 id="microcompact-the-first-line-of-defense">Microcompact: The First Line of Defense</h3>
+<p>Before full compaction fires, the system tries a cheaper operation: clearing old tool results. Not all tool results — only results from specific tools that produce large, already-processed outputs:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>COMPACTABLE_TOOLS = {</span></span>
+<span class="line"><span>    FileRead, Bash, Grep, Glob, WebSearch,</span></span>
+<span class="line"><span>    WebFetch, FileEdit, FileWrite</span></span>
+<span class="line"><span>}</span></span></code></pre>
+<p>For each assistant message, the system collects tool-use IDs matching these tools, then replaces their corresponding tool-result content with <code>[Old tool result content cleared]</code>. This recovers tokens without losing semantic information — the model already processed these results and incorporated them into its reasoning.</p>
+<p>Microcompact runs on a time-based schedule, not just at threshold. The system estimates token counts per message using a conservative 4/3 padding multiplier (since the estimation is approximate). Images and documents are estimated at a flat 2,000 tokens regardless of actual size.</p>
+<h3 id="the-auto-compact-threshold">The Auto-Compact Threshold</h3>
+<p>The auto-compact trigger is not “~80% of the context window.” It’s more precise than that:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>MAX_OUTPUT_TOKENS_FOR_SUMMARY = 20,000  # p99.99 of summary output</span></span>
+<span class="line"><span>AUTOCOMPACT_BUFFER_TOKENS = 13,000</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>effective_window = context_window - MAX_OUTPUT_TOKENS_FOR_SUMMARY</span></span>
+<span class="line"><span>threshold = effective_window - AUTOCOMPACT_BUFFER_TOKENS</span></span></code></pre>
+<p>For a 200K-token context window: effective = 180K, threshold = 167K. That’s ~83% of the raw window, but the calculation is based on reserving output space, not a simple percentage.</p>
+<p>The system also supports an environment variable (<code>CLAUDE_AUTOCOMPACT_PCT_OVERRIDE</code>) that sets the threshold as a percentage — useful for testing compaction behavior without filling the entire context window.</p>
+<h3 id="the-full-compaction-pipeline">The Full Compaction Pipeline</h3>
+<p>When the threshold is hit:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1. Pre-compact hooks: Execute user-defined pre-compact hooks</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>2. Fork a summary agent: Uses runForkedAgent (same pattern as</span></span>
+<span class="line"><span>   memory extraction) to read old messages and produce a summary.</span></span>
+<span class="line"><span>   Max output: 20,000 tokens.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>3. Replace old messages: The summary becomes a "boundary message"</span></span>
+<span class="line"><span>   — a system message that says "here's what happened before</span></span>
+<span class="line"><span>   this point."</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>4. Post-compact cleanup: Strip images, clear stale attachments,</span></span>
+<span class="line"><span>   prune tool reference blocks</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>5. Post-compact hooks: Execute user-defined post-compact hooks</span></span></code></pre>
+<h3 id="recursion-guards">Recursion Guards</h3>
+<p>Compaction itself uses a forked agent that consumes context. If the compaction agent’s own context fills up and triggers auto-compact inside the compaction fork, the system would deadlock. Three query sources are excluded from auto-compact: <code>session_memory</code>, <code>compact</code>, and the context-collapse agent (<code>marble_origami</code>). Each one would create a recursive loop if it triggered compaction.</p>
+<h3 id="what-compaction-preserves">What Compaction Preserves</h3>
+<p>The boundary message includes metadata that downstream systems need:</p>
+<ul>
+<li><strong>User context</strong>: CLAUDE.md content, memory files, git status (snapshotted at compaction time so it can be re-injected if the summary doesn’t mention it)</li>
+<li><strong>Discovered tools</strong>: Tools that were loaded via tool search before compaction (so they remain available after)</li>
+<li><strong>Message count</strong>: How many messages were summarized (for analytics)</li>
+<li><strong>Trigger type</strong>: Whether compaction was manual (<code>/compact</code>) or automatic</li>
+</ul>
+<h3 id="what-compaction-loses">What Compaction Loses</h3>
+<p>This is the critical limitation. Compaction is a <strong>lossy</strong> operation. The summary agent compresses dozens of messages into a paragraph. Details that seemed unimportant at compaction time are discarded:</p>
+<ul>
+<li>Specific error messages from failed attempts</li>
+<li>Exact file contents that were read</li>
+<li>The sequence of approaches tried and abandoned</li>
+<li>Tool call arguments and raw outputs</li>
+<li>Nuances in the user’s instructions</li>
+</ul>
+<p>A five-turn debugging session where the model read three files, tried two fixes, and discovered a subtle race condition gets summarized as: “Investigated race condition in worker pool. Fixed by adding mutex around shared counter.” The specific files, the failed fix, the diagnostic reasoning — gone.</p>
+<p>This is the opposite of the wiki pattern. A wiki would compile those details into a persistent artifact: a page for the race condition, cross-referenced with the worker pool architecture page, noting which approach failed and why. Compaction discards all of that to save tokens.</p>
+<h3 id="the-circuit-breaker">The Circuit Breaker</h3>
+<p>Compaction can fail. The summary agent might produce an incomplete response, the API might return an error, or the summarized content might still exceed the context window. The system tracks consecutive failures:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES = 3</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>if compaction fails 3 times in a row:</span></span>
+<span class="line"><span>    stop attempting compaction entirely</span></span></code></pre>
+<p>This cap was added after telemetry revealed the cost of unbounded retries: 1,279 sessions had 50 or more consecutive compaction failures in a single session, with the worst reaching 3,272 consecutive failures. Globally, this wasted approximately 250,000 API calls per day — sessions stuck in a compact → fail → compact → fail loop, each attempt consuming tokens for the summary agent but never producing a usable result.</p>
+<p>The failure modes that cause this are typically irrecoverable: <code>prompt_too_long</code> errors where even the compacted content exceeds the window, or API errors that persist regardless of retries. Three consecutive failures is enough to distinguish “transient error” from “structurally impossible.”</p>
+<p>A separate guard prevents a specific infinite loop: compact → still too long → error → stop hook blocking → compact → repeat. A boolean flag (<code>hasAttemptedReactiveCompact</code>) ensures reactive compaction fires at most once per error cycle.</p>
+<hr>
+<h2 id="layer-5-session-transcripts--the-raw-archive">Layer 5: Session Transcripts — The Raw Archive</h2>
+<p>Every message in a Claude Code session is written to a JSONL file on disk. These are the raw, immutable transcripts — the equivalent of the “raw sources” layer in the wiki pattern.</p>
+<h3 id="where-they-live">Where They Live</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>~/.claude/projects/&#x3C;sanitized-project-root>/&#x3C;session-uuid>.jsonl</span></span></code></pre>
+<p>Each line is a JSON object representing a message: user messages, assistant messages, tool calls, tool results, system messages, compaction boundaries. The complete session, including compressed content, is preserved.</p>
+<h3 id="searching-past-context">Searching Past Context</h3>
+<p>The memory system includes instructions for searching transcripts as a last resort:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>## Searching past context</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>When looking for past context:</span></span>
+<span class="line"><span>1. Search topic files in your memory directory:</span></span>
+<span class="line"><span>   Grep with pattern="&#x3C;search term>" path="&#x3C;memory-dir>" glob="*.md"</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>2. Session transcript logs (last resort — large files, slow):</span></span>
+<span class="line"><span>   Grep with pattern="&#x3C;search term>" path="&#x3C;project-dir>/" glob="*.jsonl"</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Use narrow search terms (error messages, file paths, function names)</span></span>
+<span class="line"><span>rather than broad keywords.</span></span></code></pre>
+<p>This is the only mechanism for accessing knowledge from previous sessions that wasn’t explicitly saved to memory. It’s a raw text search over potentially megabytes of JSON — not indexed, not structured, not semantic. The instructions explicitly call it a “last resort” and warn that it’s slow.</p>
+<h3 id="the-cost-of-raw-storage">The Cost of Raw Storage</h3>
+<p>Session transcripts are the most complete persistence layer and the least useful. They contain everything — every tool call argument, every file content read, every failed attempt, every compaction boundary. A single long session can produce megabytes of JSONL.</p>
+<p>But the only access mechanism is raw text search: grep for a pattern across all <code>.jsonl</code> files in the project directory. No indexing, no semantic search, no filtering by message type or tool name. The instructions explicitly call this a “last resort” and warn about speed. In practice, searching transcripts is useful for recovering specific error messages or file paths from previous sessions, but useless for answering questions like “what architectural decisions did I make last month?”</p>
+<p>This is the raw-sources layer in the wiki pattern — comprehensive, immutable, and effectively inaccessible without a synthesis layer on top. The wiki pattern would build entity pages from these transcripts automatically. Claude Code leaves them as JSON on disk.</p>
+<h3 id="session-continuity">Session Continuity</h3>
+<p>When a session is resumed (via <code>claude --continue</code>), the system loads the transcript from disk and replays it into the context window. If the transcript is longer than the context window, it triggers compaction to fit. This means long sessions that are resumed lose detail from their early turns — the compaction at resume time is an additional lossy step.</p>
+<p>A resumed session re-appends session metadata (the original system prompt context, memory content, etc.) to ensure the model has the same starting context it would in a fresh session. But the compaction summary may omit details that the model relied on in earlier turns — a resumed session is always a degraded version of the original.</p>
+<hr>
+<h2 id="layer-6-the-assistant-daily-log-kairos-mode">Layer 6: The Assistant Daily Log (KAIROS Mode)</h2>
+<p>A separate persistence mode exists for long-lived assistant sessions. When KAIROS mode is active, the memory system switches from the index-and-topic-files model to an <strong>append-only daily log</strong>:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>~/.claude/projects/&#x3C;root>/memory/logs/2026/04/2026-04-09.md</span></span></code></pre>
+<p>The agent appends timestamped bullets to today’s log file as it works. A separate nightly <code>/dream</code> skill distills these logs into topic files and updates MEMORY.md. This acknowledges that long-lived sessions produce too much context for real-time synthesis — the distillation happens offline.</p>
+<p>The prompt for this mode is carefully designed for cache stability: it describes the log path as a <strong>pattern</strong> (<code>YYYY/MM/YYYY-MM-DD.md</code>) rather than today’s literal date, because the system prompt is cached and not invalidated on date change. The model derives the current date from a separate attachment.</p>
+<hr>
+<h2 id="whats-missing-the-wiki-gap">What’s Missing: The Wiki Gap</h2>
+<p>Andrej Karpathy’s <a href="https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f">LLM Wiki</a> proposes a three-layer architecture for LLM-maintained knowledge: raw sources (the codebase, documents, conversation logs), a wiki layer (persistent, interlinked entity pages maintained by the LLM itself), and a schema layer (instructions that teach the LLM how to maintain the wiki). Claude Code has the raw sources (the codebase on disk, session transcripts) and the schema (CLAUDE.md, memory type taxonomy). What it’s missing is the wiki — a persistent, compounding knowledge artifact where every interaction makes the knowledge base richer.</p>
+<p>Comparing Claude Code’s persistence architecture to this pattern reveals specific gaps — not as criticism, but as a map of where knowledge fails to compound.</p>
+<h3 id="no-cross-referencing">No Cross-Referencing</h3>
+<p>Memory files are isolated. A file about “testing preferences” doesn’t link to a file about “CI pipeline” even though they’re related. There’s no link graph, no backlinks, no mechanism for the model to discover connections between memories without reading every file.</p>
+<h3 id="no-contradiction-detection">No Contradiction Detection</h3>
+<p>If session 1 saves “use vitest for testing” and session 50 saves “the project migrated to jest,” both memories coexist. No system detects the contradiction. The model might follow either one depending on which it reads first.</p>
+<h3 id="no-query-time-filing">No Query-Time Filing</h3>
+<p>When the model answers a complex question — synthesizing information from five files, discovering an architectural insight, tracing a subtle bug — the answer dies with the session. There’s no mechanism to say “this answer was valuable, file it as a wiki page.” The next session will have to re-derive the same insight from scratch.</p>
+<h3 id="no-lint-or-health-check">No Lint or Health Check</h3>
+<p>There’s no periodic audit of memory quality. No detection of stale entries, orphan files, missing frontmatter, or entries that contradict the current codebase. A memory file from six months ago saying “the API uses REST” might be wrong if the project migrated to gRPC, but nothing flags this.</p>
+<h3 id="no-structured-index">No Structured Index</h3>
+<p>MEMORY.md is a flat list. It has no categories, no hierarchy, no metadata beyond what the model chose to write. Compare this to a wiki’s index page with categories, entity counts, last-updated dates, and navigational structure.</p>
+<h3 id="the-compaction-wall">The Compaction Wall</h3>
+<p>The deepest gap is architectural. Compaction — the most frequently-used persistence mechanism — is <strong>destructive</strong>. It throws away detail to save tokens. A wiki would do the opposite: compile detail into a persistent artifact where it accumulates and becomes more valuable over time. Every time Claude Code compacts a conversation, knowledge moves from a rich representation (the full message history) to a poor one (a paragraph summary). The information exists in the transcript on disk, but it’s effectively inaccessible — buried in megabytes of unindexed JSON.</p>
+<hr>
+<h2 id="the-complete-pipeline">The Complete Pipeline</h2>
+<p>Here’s how knowledge flows through Claude Code’s persistence layers:</p>
+<ol>
+<li>
+<p><strong>Session starts</strong>: Load CLAUDE.md stack (managed → user → project → local). Load MEMORY.md into system prompt. Topic files available on demand.</p>
+</li>
+<li>
+<p><strong>During session</strong>: Model reads files, runs commands, generates insights. All stored in the context window (working memory). Nothing persists yet.</p>
+</li>
+<li>
+<p><strong>Context fills</strong>: Compaction fires. Old messages are summarized into a boundary message. Detail is lost. Discovered tools are preserved as metadata.</p>
+</li>
+<li>
+<p><strong>Turn ends</strong>: Memory extraction agent (if enabled) forks from the main conversation. Scans the transcript for durable knowledge. Writes to topic files in the memory directory. Updates MEMORY.md index.</p>
+</li>
+<li>
+<p><strong>User says “remember this”</strong>: Model writes directly to memory files. Extraction agent skips this turn to avoid duplication.</p>
+</li>
+<li>
+<p><strong>Session ends</strong>: Full transcript written to JSONL file. Compacted summaries included. Raw tool outputs preserved.</p>
+</li>
+<li>
+<p><strong>Next session starts</strong>: MEMORY.md loaded (200 lines max). CLAUDE.md loaded. Previous session’s transcript available via grep but not automatically loaded. Everything not in memory or CLAUDE.md must be re-derived.</p>
+</li>
+</ol>
+<p>The persistence architecture is conservative by design. It saves little, loads little, and trusts the model to re-derive what it needs from the codebase. This works because codebases are their own knowledge base — the model can always re-read the source. What it can’t re-derive is the user’s preferences, the project’s conventions, the lessons from debugging sessions, and the strategic context behind decisions. Those are what the memory system is for, and those are what fall through the gaps when the extraction agent doesn’t run, the user doesn’t say “remember this,” and compaction throws away the details.</p>
+<p>The seed of a wiki is here: a persistent directory of typed markdown files with an index entrypoint, a typed taxonomy of memory categories, a background agent that extracts knowledge without interrupting the main task, and a daily-log mode that acknowledges real-time synthesis is too expensive for long sessions.</p>
+<p>But the compounding property — where every interaction makes the knowledge base richer, where cross-references build automatically, where contradictions are flagged, where insights are filed back — that’s not implemented yet. The KAIROS daily-log mode comes closest: append-only logging with nightly distillation is exactly the write-now-synthesize-later pattern the wiki needs. If that distillation step were generalized beyond daily logs to cover all session transcripts, and if the synthesis produced interlinked entity pages rather than flat topic files, the architecture would cross the threshold from memory storage to knowledge building.</p>
+<p>The architecture stores memories. It doesn’t build understanding. The gap between those two is the gap between a file system and a wiki — and that gap is where the most valuable knowledge falls through.</p>  <div class="subscribe-cta" data-astro-cid-bvzihdzo> <p data-astro-cid-bvzihdzo>Get new posts delivered to your inbox</p> <a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener" data-astro-cid-bvzihdzo>Subscribe on Substack →</a> </div> <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/tool-search-deep-dive/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>How Tool Search Defers Tools to Save Tokens</span> </a> <a class="nav-link nav-next" href="/blog/functional-emotions-production-guardrails/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Next</span> <span class="nav-title" data-astro-cid-bvzihdzo>Functional Emotions and Production Guardrails: What Interpretability Research Means for Claude Code</span> </a> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+&copy; 2026 Laurent DeSegur
+</div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

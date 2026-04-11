@@ -1,0 +1,371 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Laurent DeSegur" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/token-budget-two-ends-deep-dive/"><!-- Primary Meta Tags --><title>Two Ends of the Token Budget: Caveman and Tool Search</title><meta name="title" content="Two Ends of the Token Budget: Caveman and Tool Search"><meta name="description" content="Caveman compresses what the model says. Tool search defers what the API sends. Two opposite strategies for one budget: the context window."><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/token-budget-two-ends-deep-dive/"><meta property="og:title" content="Two Ends of the Token Budget: Caveman and Tool Search"><meta property="og:description" content="Caveman compresses what the model says. Tool search defers what the API sends. Two opposite strategies for one budget: the context window."><meta property="og:site_name" content="Laurent DeSegur"><meta property="article:published_time" content="2026-04-11T00:00:00.000Z"><meta property="article:tag" content="ai"><meta property="article:tag" content="claude"><meta property="article:tag" content="agents"><meta property="article:tag" content="tokens"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/token-budget-two-ends-deep-dive/"><meta name="twitter:title" content="Two Ends of the Token Budget: Caveman and Tool Search"><meta name="twitter:description" content="Caveman compresses what the model says. Tool search defers what the API sends. Two opposite strategies for one budget: the context window."><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and X/LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Two Ends of the Token Budget: Caveman and Tool Search","description":"Caveman compresses what the model says. Tool search defers what the API sends. Two opposite strategies for one budget: the context window.","url":"https://oldeucryptoboi.com/blog/token-budget-two-ends-deep-dive/","datePublished":"2026-04-11T00:00:00.000Z","author":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"keywords":"ai, claude, agents, tokens","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/token-budget-two-ends-deep-dive/"}}</script><link rel="stylesheet" href="/_astro/_slug_.WqGW7rbB.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo]{margin-top:3em;padding:1.5em;border:1px solid var(--border);text-align:center}.subscribe-cta[data-astro-cid-bvzihdzo] p[data-astro-cid-bvzihdzo]{margin:0 0 .75em;color:var(--text-dim);font-size:.85em;letter-spacing:.04em}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]{color:var(--hal-red);font-size:.8em;letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif;text-decoration:none;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]:hover{color:#fff}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2><span class="cap" data-astro-cid-3ef6ksr2>L</span>aurent <span class="cap" data-astro-cid-3ef6ksr2>D</span>e<span class="cap" data-astro-cid-3ef6ksr2>S</span>egur</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-04-11T00:00:00.000Z"> Apr 11, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>Two Ends of the Token Budget: Caveman and Tool Search</h1> <div class="tags" data-astro-cid-bvzihdzo> <span data-astro-cid-bvzihdzo>ai</span><span data-astro-cid-bvzihdzo>claude</span><span data-astro-cid-bvzihdzo>agents</span><span data-astro-cid-bvzihdzo>tokens</span> </div> </div>  <p>Every Claude Code session has a single budget: the context window. Two hundred thousand tokens, give or take, that have to hold the system prompt, the tool definitions, the conversation history, the user’s input, the model’s output, and (if extended thinking is on) the chain of thought. There is exactly one pile, and everything gets withdrawn from it.</p>
+<p>The pile has two openings. Tokens flow in from the system side: tool schemas, system prompt, prior turns, files the model read. And tokens flow out from the model side: explanations, code, commit messages, plans. Both sides count against the same total. Both sides eat budget.</p>
+<p>Two projects look at this single budget from opposite ends.</p>
+<p>The first is <strong>Caveman</strong>, a Claude Code plugin that makes the model talk like a caveman. “Why use many token when few do trick.” The mechanism is a prompt that tells the model to drop articles, filler, hedging, and pleasantries while keeping technical substance intact. The README claims ~75% output token savings, the benchmark table averages 65% across ten real tasks, and a bonus tool called <code>caveman-compress</code> rewrites your <code>CLAUDE.md</code> so the model reads less every session start. (<a href="https://github.com/JuliusBrussee/caveman">github.com/JuliusBrussee/caveman</a>)</p>
+<p>The second is <strong>tool search</strong>, a system inside Claude Code that defers MCP tool definitions until they’re needed. When a session connects three MCP servers with 50 tools each, that is 60,000 tokens of schema overhead before the conversation starts. Tool search hides the schemas behind a discovery tool, lets the model search for what it needs, and loads only the matching definitions. Same context space, fewer tokens spent on tools the model never calls. (Already documented in <a href="./tool-search-deep-dive.md">tool-search-deep-dive.md</a>.)</p>
+<p>Both projects target the same number — total tokens consumed per session. They reach it from opposite ends. Caveman compresses what the model says. Tool search defers what the API sends. One is lossy and lives at the prompt layer. The other is lossless and lives at the API layer. One is a single skill file plus two hooks. The other is a multi-stage pipeline with snapshot survival across compaction.</p>
+<p>This article walks both systems in enough detail to reconstruct them, then compares the trade-offs. Where the savings come from. What gets sacrificed. Which side of the budget you should attack first. And whether you can run them at the same time. The point is not to crown a winner — they don’t compete, they compose. The point is to understand the budget well enough to spend it on purpose.</p>
+<hr>
+<h2 id="where-the-tokens-actually-go">Where the tokens actually go</h2>
+<p>Look at a typical Claude Code session and label every token by source. A rough breakdown for an active coding session with a couple of MCP servers connected:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>SYSTEM PROMPT                ~3,000 tokens   (1.5%)</span></span>
+<span class="line"><span>TOOL DEFINITIONS             ~25,000 tokens  (12.5%)   &#x3C;- built-ins + MCP</span></span>
+<span class="line"><span>PROJECT MEMORY (CLAUDE.md)   ~2,000 tokens   (1%)</span></span>
+<span class="line"><span>CONVERSATION HISTORY         ~80,000 tokens  (40%)     &#x3C;- grows over time</span></span>
+<span class="line"><span>TOOL OUTPUTS (file reads)    ~50,000 tokens  (25%)</span></span>
+<span class="line"><span>MODEL OUTPUT (this turn)     ~5,000 tokens   (2.5%)</span></span>
+<span class="line"><span>HEADROOM                     ~35,000 tokens  (17.5%)</span></span>
+<span class="line"><span>-----------------------------------------------</span></span>
+<span class="line"><span>TOTAL                        200,000 tokens</span></span></code></pre>
+<p>Numbers vary by session, but the shape is consistent. Three categories dominate: tool definitions, conversation history, and tool outputs. Model output is small per turn but large per session, and it is the only category that grows even when the model is doing nothing useful — every “Sure, I’d be happy to help with that” is paid for.</p>
+<p>Now color the categories by who controls them:</p>
+<ul>
+<li><strong>System controls</strong>: system prompt, tool definitions, project memory loaded at start.</li>
+<li><strong>User controls</strong>: the prompts they type, the files they ask Claude to read.</li>
+<li><strong>Model controls</strong>: its own output.</li>
+<li><strong>Conversation history</strong>: a slow-burning mix of all three, accumulating over turns.</li>
+</ul>
+<p>Caveman attacks one cell of this grid: model output. It can also attack project memory via <code>caveman-compress</code>. Tool search attacks another cell: tool definitions. Neither touches the conversation history directly — that is compaction’s job, and it is a different article.</p>
+<p>The interesting observation is that the two projects aim at the smallest dominant category each. Tool definitions are ~12% of the budget. Per-turn model output is ~2.5%. Why bother?</p>
+<p>Because of the per-turn cost. Tool definitions are sent on <strong>every</strong> API call. A single 60,000-token tool block, multiplied by 50 API calls in a session, is 3 million input tokens — and input tokens, while cheaper than output, are not free. Model output, similarly, is sent every turn and accumulates into the conversation history, where it costs input tokens forever after. A 1,000-token explanation early in a session pays its full price once on output, then keeps re-paying as input on every subsequent turn.</p>
+<p>The right way to think about both savings is per-turn, amortized:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>caveman_savings_per_session  ~ avg_response_tokens * turns * compression_ratio</span></span>
+<span class="line"><span>tool_search_savings_per_turn ~ deferred_tool_tokens * turns_until_discovered</span></span></code></pre>
+<p>Caveman’s savings scale with conversation length. Tool search’s savings scale with the number of unused tools. A session with 50 turns and a chatty model wins big on caveman. A session with 200 MCP tools and a 5-tool workflow wins big on tool search. A session with both wins on both.</p>
+<p>The categories don’t fight for the same byte of budget. They fight for the same total.</p>
+<hr>
+<h2 id="caveman-compress-what-you-say">Caveman: compress what you say</h2>
+<p>Caveman is a Claude Code plugin. It ships as a marketplace package you install with one command:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">claude</span><span style="color:#9ECBFF"> plugin</span><span style="color:#9ECBFF"> marketplace</span><span style="color:#9ECBFF"> add</span><span style="color:#9ECBFF"> JuliusBrussee/caveman</span></span>
+<span class="line"><span style="color:#B392F0">claude</span><span style="color:#9ECBFF"> plugin</span><span style="color:#9ECBFF"> install</span><span style="color:#9ECBFF"> caveman@caveman</span></span></code></pre>
+<p>The installer puts three things in your environment: a SKILL file, two hooks, and several sub-skills (<code>caveman-commit</code>, <code>caveman-review</code>, <code>caveman-compress</code>). The mechanism is, at its core, a prompt. Not a parser, not a token filter, not a fine-tuned model. A prompt.</p>
+<h3 id="the-skill-file">The skill file</h3>
+<p>The main skill file opens with frontmatter declaring trigger phrases (“caveman mode”, “talk like caveman”, “less tokens”, “be brief”) and then lays out the rules in a few hundred tokens. The rules are blunt:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Drop: articles (a/an/the),</span></span>
+<span class="line"><span>      filler (just/really/basically/actually/simply),</span></span>
+<span class="line"><span>      pleasantries (sure/certainly/of course/happy to),</span></span>
+<span class="line"><span>      hedging.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Fragments OK.</span></span>
+<span class="line"><span>Short synonyms (big not extensive,</span></span>
+<span class="line"><span>                fix not "implement a solution for").</span></span>
+<span class="line"><span>Technical terms exact.</span></span>
+<span class="line"><span>Code blocks unchanged.</span></span>
+<span class="line"><span>Errors quoted exact.</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Pattern: [thing] [action] [reason]. [next step].</span></span></code></pre>
+<p>Then a before/after pair so the model has a concrete example to imitate:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>NOT: "Sure! I'd be happy to help you with that.</span></span>
+<span class="line"><span>      The issue you're experiencing is likely caused by..."</span></span>
+<span class="line"><span>YES: "Bug in auth middleware.</span></span>
+<span class="line"><span>      Token expiry check use `&#x3C;` not `&#x3C;=`. Fix:"</span></span></code></pre>
+<p>That is the entire compression engine. The model reads the rules, the pattern, and the example, then applies them to its own output. There is no postprocessor. There is no validator. The model is doing the work.</p>
+<h3 id="intensity-levels">Intensity levels</h3>
+<p>The skill defines six levels along a single axis: how much grammar to keep.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Level</th><th>Effect</th></tr></thead><tbody><tr><td><code>lite</code></td><td>Drop filler and hedging. Keep articles and full sentences. Professional but tight.</td></tr><tr><td><code>full</code></td><td>Drop articles, fragments OK, short synonyms. The default.</td></tr><tr><td><code>ultra</code></td><td>Abbreviate (DB, auth, cfg, req, res, fn). Strip conjunctions. Use arrows for causality. One word when one word suffices.</td></tr><tr><td><code>wenyan-lite</code></td><td>Semi-classical Chinese. Drop filler.</td></tr><tr><td><code>wenyan-full</code></td><td>Full classical Chinese. Subjects often omitted. Classical particles.</td></tr><tr><td><code>wenyan-ultra</code></td><td>Maximum classical compression.</td></tr></tbody></table>
+<p>The wenyan modes are not a joke. Classical Chinese is one of the most token-efficient written languages ever invented; most tokenizers handle CJK characters as one to two tokens each, and a wenyan sentence often packs the meaning of an English paragraph. The README’s example for “Why does the React component re-render?” goes from 41 English tokens (lite) down to about 9 wenyan-ultra tokens. Same answer.</p>
+<h3 id="the-hooks">The hooks</h3>
+<p>Two small Node scripts wire the skill into Claude Code’s hook system.</p>
+<p><code>caveman-activate.js</code> runs on <code>SessionStart</code>. It writes a flag file at <code>~/.claude/.caveman-active</code> containing the current mode (<code>full</code> by default), and prints a short ruleset reminder to stdout. Stdout from a <code>SessionStart</code> hook becomes part of the session’s context, so the model sees the rules even before it reads the user’s first prompt.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>on session_start:</span></span>
+<span class="line"><span>    mkdir ~/.claude</span></span>
+<span class="line"><span>    write ~/.claude/.caveman-active = "full"</span></span>
+<span class="line"><span>    print to stdout:</span></span>
+<span class="line"><span>        "CAVEMAN MODE ACTIVE.</span></span>
+<span class="line"><span>         Drop articles/filler/pleasantries/hedging.</span></span>
+<span class="line"><span>         Fragments OK. Pattern: [thing] [action] [reason].</span></span>
+<span class="line"><span>         Code/commits/security: write normal."</span></span></code></pre>
+<p><code>caveman-mode-tracker.js</code> runs on <code>UserPromptSubmit</code>. It reads the user’s input from stdin, looks for <code>/caveman</code> slash commands, parses the level argument, and rewrites the flag file. It also recognizes “stop caveman” and “normal mode” as deactivation phrases:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>on user_prompt_submit:</span></span>
+<span class="line"><span>    prompt = read_stdin().lower().trim()</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    if prompt starts with "/caveman":</span></span>
+<span class="line"><span>        cmd, arg = split first two words</span></span>
+<span class="line"><span>        case cmd:</span></span>
+<span class="line"><span>            "/caveman-commit"   -> mode = "commit"</span></span>
+<span class="line"><span>            "/caveman-review"   -> mode = "review"</span></span>
+<span class="line"><span>            "/caveman-compress" -> mode = "compress"</span></span>
+<span class="line"><span>            "/caveman":</span></span>
+<span class="line"><span>                case arg:</span></span>
+<span class="line"><span>                    "lite"         -> mode = "lite"</span></span>
+<span class="line"><span>                    "ultra"        -> mode = "ultra"</span></span>
+<span class="line"><span>                    "wenyan-lite"  -> mode = "wenyan-lite"</span></span>
+<span class="line"><span>                    "wenyan"       -> mode = "wenyan"</span></span>
+<span class="line"><span>                    "wenyan-ultra" -> mode = "wenyan-ultra"</span></span>
+<span class="line"><span>                    default        -> mode = "full"</span></span>
+<span class="line"><span>        if mode set:</span></span>
+<span class="line"><span>            write ~/.claude/.caveman-active = mode</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    if prompt matches "stop caveman" or "normal mode":</span></span>
+<span class="line"><span>        delete ~/.claude/.caveman-active</span></span></code></pre>
+<p>The flag file is mostly cosmetic: a separate statusline script reads it to display a <code>[CAVEMAN:ULTRA]</code> badge in the UI. The skill itself is what tells the model how to talk.</p>
+<h3 id="auto-clarity">Auto-clarity</h3>
+<p>The skill carves out scenarios where compression hurts more than it helps:</p>
+<ul>
+<li>Security warnings (the user must see the threat).</li>
+<li>Irreversible action confirmations (the user must understand what they’re approving).</li>
+<li>Multi-step sequences where reading order matters.</li>
+<li>The user is confused.</li>
+</ul>
+<p>In these cases the model is told to drop caveman, write normally, then resume. The example in the skill:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>> Warning: This will permanently delete all rows</span></span>
+<span class="line"><span>  in the `users` table and cannot be undone.</span></span>
+<span class="line"><span>> ```sql</span></span>
+<span class="line"><span>> DROP TABLE users;</span></span>
+<span class="line"><span>> ```</span></span>
+<span class="line"><span>> Caveman resume. Verify backup exist first.</span></span></code></pre>
+<p>This is a soft guardrail — the model’s judgement decides when “irreversible” or “confused” applies. The skill provides the rule; the model interprets it.</p>
+<h3 id="caveman-compress">caveman-compress</h3>
+<p>The bonus sub-skill turns the compression on a different file: your <code>CLAUDE.md</code>. Project memory loads on every session start, so its size is paid every time you launch Claude. <code>caveman-compress</code> rewrites your memory file in caveman style and keeps the human-readable version as a <code>.original.md</code> backup:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#B392F0">/caveman:compress</span><span style="color:#9ECBFF"> CLAUDE.md</span></span></code></pre>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>CLAUDE.md           # compressed (Claude reads this every session)</span></span>
+<span class="line"><span>CLAUDE.original.md  # human-readable backup (you read and edit this)</span></span></code></pre>
+<p>The README’s table reports 35–60% compression on real memory files, average 45%. The trick is the same: drop prose, keep code blocks, URLs, file paths, commands, and version numbers verbatim. The compressed memory file is still valid Markdown; the model parses it the same way. The human just has to translate when they want to update it (which is what the original backup is for).</p>
+<h3 id="the-benchmark">The benchmark</h3>
+<p>Caveman’s headline number is “~75% output token savings.” The benchmark table in the repo measures real Claude API token counts across ten tasks and reports an average of 65%, with a range from 22% (a refactor task that is already terse) to 87% (a verbose explanation task). The repo also cites a March 2026 paper that found brevity constraints can <em>improve</em> accuracy on certain benchmarks (<a href="https://arxiv.org/abs/2604.00025">arxiv.org/abs/2604.00025</a>) — the relevant claim is that asking large models to be brief doesn’t necessarily make them dumber and sometimes makes them sharper.</p>
+<p>The README is also honest about the limit: caveman only affects output tokens. Thinking/reasoning tokens are untouched. A model with extended thinking enabled still pays the same internal monologue cost. Caveman makes the <em>mouth</em> smaller, not the brain.</p>
+<p>The whole system is roughly a hundred lines of JavaScript and sixty lines of skill prompt. It works because the model is the engine.</p>
+<hr>
+<h2 id="tool-search-defer-what-you-receive">Tool search: defer what you receive</h2>
+<p>Tool search is the opposite shape: a multi-stage pipeline inside Claude Code that keeps tool definitions out of the API request until the model proves it needs them. No prompt to the model that says “use fewer tools.” No instruction at all. The model gets a smaller tool list, full stop, and a way to ask for more.</p>
+<h3 id="the-deferral-decision">The deferral decision</h3>
+<p>Tools are classified as deferrable or always-on. The classifier is a priority checklist, walked top to bottom on every tool every request:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function is_deferred_tool(tool):</span></span>
+<span class="line"><span>    # Explicit opt-out from the tool author</span></span>
+<span class="line"><span>    if tool.always_load:</span></span>
+<span class="line"><span>        return false</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # MCP tools are deferred by default</span></span>
+<span class="line"><span>    if tool.is_mcp:</span></span>
+<span class="line"><span>        return true</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # ToolSearch itself is the bootstrap, never deferred</span></span>
+<span class="line"><span>    if tool.name == "ToolSearch":</span></span>
+<span class="line"><span>        return false</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # FORK_SUBAGENT carve-out: when the fork-subagent variant</span></span>
+<span class="line"><span>    # of Agent is enabled, Agent stays loaded so the model can</span></span>
+<span class="line"><span>    # spawn subagents without a discovery hop</span></span>
+<span class="line"><span>    if feature("FORK_SUBAGENT") and tool.name == "Agent":</span></span>
+<span class="line"><span>        if fork_subagent_enabled():</span></span>
+<span class="line"><span>            return false</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # KAIROS carve-out: the Brief tool is always loaded under</span></span>
+<span class="line"><span>    # KAIROS because it is the primary user-facing channel</span></span>
+<span class="line"><span>    if (feature("KAIROS") or feature("KAIROS_BRIEF"))</span></span>
+<span class="line"><span>            and tool.name == BRIEF_TOOL_NAME:</span></span>
+<span class="line"><span>        return false</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # KAIROS + REPL carve-out: SendUserFile stays loaded when</span></span>
+<span class="line"><span>    # the REPL bridge is active, because the model needs to</span></span>
+<span class="line"><span>    # push files synchronously without a search round-trip</span></span>
+<span class="line"><span>    if feature("KAIROS") and tool.name == SEND_USER_FILE_TOOL_NAME</span></span>
+<span class="line"><span>            and is_repl_bridge_active():</span></span>
+<span class="line"><span>        return false</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    # Built-ins opt in by setting the should_defer flag</span></span>
+<span class="line"><span>    return tool.should_defer</span></span></code></pre>
+<p>The order matters. <code>always_load</code> is checked first so a tool author can declare something too important to defer. MCP comes next because most MCP tools are not used per-session. ToolSearch is exempt because the model needs at least one tool to discover the others. Then three feature-flagged carve-outs handle special cases where a discovery hop would break a primary workflow: spawning subagents, the user-facing Brief channel, and synchronous file sends through the REPL bridge. Built-in tools the model uses every turn (file read, bash, edit) fall through to the final <code>should_defer</code> check, which they leave false.</p>
+<h3 id="the-threshold-check">The threshold check</h3>
+<p>There are three modes, resolved from the <code>ENABLE_TOOL_SEARCH</code> environment variable:</p>
+<ul>
+<li><code>tst</code> — always defer the deferrable tools. The default.</li>
+<li><code>tst-auto</code> — defer only when the deferred tool tokens exceed a threshold. The threshold is set as <code>tst-auto:NN</code> where <code>NN</code> is the percentage.</li>
+<li><code>standard</code> — never defer.</li>
+</ul>
+<p>There is also a kill switch one level up: if <code>CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS</code> is set, the mode resolver returns <code>standard</code> immediately and a separate field-stripping pass on the API request removes <code>defer_loading: true</code> from any schema that still carries it. This is the escape hatch for users on enterprise contracts that pin against beta features.</p>
+<p>The auto threshold defaults to 10% of the context window. For a 200K-token model, the cutoff is 20,000 tokens. If the deferred tools would have cost less than 20K, deferral is disabled and everything loads — no point in paying the discovery latency for a small saving.</p>
+<p>The token count itself comes from the API’s count-tokens endpoint when available, falling back to a character-per-token heuristic (about 2.5 chars per token) when the endpoint is unreachable. There is also a per-tool overhead constant (around 500 tokens) that gets subtracted before comparing the per-tool cost against the threshold, because the count-tokens endpoint reports each tool’s full request envelope. The heuristic is intentionally conservative — it slightly overestimates, biasing toward enabling deferral, because the cost of over-deferring (one extra search turn) is much smaller than the cost of under-deferring (60K tokens of unused schema per request).</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>threshold = floor(context_window * 10 / 100)</span></span>
+<span class="line"><span>deferred_token_count = count_tokens_or_heuristic(deferred_tool_schemas)</span></span>
+<span class="line"><span>enabled = (deferred_token_count >= threshold)</span></span></code></pre>
+<p>There is one more gate, an optimistic disable that fires before any of the above. If the user has not explicitly set <code>ENABLE_TOOL_SEARCH</code> and the API base URL points at a non-Anthropic endpoint (a proxy or gateway), tool search returns <code>false</code> from its optimistic check and the ToolSearch tool is not even registered. The reasoning is that proxies often mediate beta headers in unpredictable ways, and silently sending <code>defer_loading</code> to a gateway that strips it would mean the model gets the bare-name list with no way to discover tools. Better to disable cleanly than fail mysteriously.</p>
+<p>The mode also affects model selection. A model name allowlist (defaulting to a hardcoded list with <code>haiku</code> as the only entry, but live-overridable through a remote config flag named <code>tengu_tool_search_unsupported_models</code>) marks specific models as not yet tool-search-capable. When the active model matches a pattern on that list, tool search returns <code>standard</code> regardless of the env var. The remote-config indirection exists so that newly released models can be flipped on or off without a Claude Code release.</p>
+<h3 id="the-search-tool">The search tool</h3>
+<p>When deferral is on, the model sees a <code>ToolSearch</code> tool in its tool list. The deferred tools are listed by name in the system prompt with a one-liner each (an A/B test on richer search hints in the listing was retired in early 2026; the current build sends just the names), but their full schemas — where the bulk of the tokens lives — are absent.</p>
+<p>The model searches in three forms, plus a couple of operators:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>ToolSearch({ query: "github create issue" })             // keyword search</span></span>
+<span class="line"><span>ToolSearch({ query: "select:mcp__github__create_issue" }) // direct selection</span></span>
+<span class="line"><span>ToolSearch({ query: "select:read_file,write_file,bash" }) // multi-select</span></span></code></pre>
+<p>The first is a keyword search across tool names and descriptions, scored against an internal hint field and returning the top-N matches (default 5, settable via <code>max_results</code>). The second is a direct selection by exact name, used when the model already knows what it wants — there is also a fast path that handles a bare tool name as an implicit select. The third is a comma-separated multi-select that loads several tools in a single turn, which the model uses when it has decided up front that a workflow needs three or four tools together.</p>
+<p>The keyword form supports two operators. A <code>+</code> prefix on a term marks it as required (<code>+github +issue create</code> will not match a tool that lacks “github” or “issue” in its searchable text). A <code>mcp__server__</code> prefix on a query is recognized as a server-scoped search and only ranks tools from that MCP server. Everything else is a regular optional term that contributes to the score but does not gate the match.</p>
+<p>All three forms return <code>tool_reference</code> content blocks — opaque pointers that the API expands into full tool definitions on the next request:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>{</span></span>
+<span class="line"><span>  "type": "tool_reference",</span></span>
+<span class="line"><span>  "tool_name": "mcp__github__create_issue"</span></span>
+<span class="line"><span>}</span></span></code></pre>
+<p>That is a few dozen tokens to mark a tool as discovered. On the next turn, the API sees the reference, looks up the full schema (the request itself still flags the tool with <code>defer_loading: true</code>, but discovery overrides deferral on the API side), and includes the schema in the tool list sent to the model. The model now has the schema and can call the tool normally.</p>
+<p>The beta header that opts an API request into all of this differs by provider. On the first-party Anthropic API the header is <code>advanced-tool-use-2025-11-20</code> and goes in the <code>betas</code> field. On Bedrock and Vertex it is <code>tool-search-tool-2025-10-19</code> and on Bedrock specifically it goes in <code>extraBodyParams</code> instead of <code>betas</code>, because Bedrock’s request envelope handles betas differently. The provider check happens in the request builder, after deferral is decided but before the request is signed.</p>
+<h3 id="the-discovery-loop">The discovery loop</h3>
+<p>Across turns, the system maintains a set of “discovered” tools by scanning the conversation history for <code>tool_reference</code> blocks. The tool list sent to the API on each turn is the union of:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>sent_tools = always_on_tools</span></span>
+<span class="line"><span>           + ToolSearch</span></span>
+<span class="line"><span>           + (deferred_tools intersected_with discovered_in_history)</span></span></code></pre>
+<p>A tool that was discovered on turn 5 stays in the tool list for turns 6 onward, because its <code>tool_reference</code> is still in the message history. The model doesn’t need to re-discover it. The system reads the history every turn and rebuilds the discovered set.</p>
+<h3 id="surviving-compaction">Surviving compaction</h3>
+<p>The tricky case is context compaction. When the conversation gets too long, Claude Code summarizes earlier turns into a compressed history. The summary doesn’t preserve raw <code>tool_reference</code> blocks — they are metadata, not text.</p>
+<p>Tool search handles this with a snapshot. Before compaction runs, the system writes the current discovered tool set into a boundary marker that survives the summary. After compaction, the discovery loop reads the boundary marker first, then continues scanning the post-compaction history. Tools discovered before the compaction boundary stay discovered.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>on compaction:</span></span>
+<span class="line"><span>    snapshot = current discovered tool set</span></span>
+<span class="line"><span>    write snapshot to compaction boundary marker</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>on discovery loop:</span></span>
+<span class="line"><span>    discovered = snapshot from boundary marker (if present)</span></span>
+<span class="line"><span>              + tool_references in post-boundary history</span></span></code></pre>
+<p>Without the snapshot, every compaction would force the model to re-discover its workflow. The user would notice as a sudden surge of <code>ToolSearch</code> calls right after compaction.</p>
+<h3 id="the-fail-closed-hint">The fail-closed hint</h3>
+<p>One last detail. The discovery loop is best-effort — there are scenarios where the model tries to call a tool whose schema is not in the current request. It might remember the tool from a long-ago turn whose <code>tool_reference</code> got summarized away. It might hallucinate a tool name. It might fire a deferred tool right after a snapshot loss. In every case, the failure happens before the API call: Claude Code validates the model’s tool input against a Zod schema on the client, and the schema for a deferred-but-undiscovered tool was never sent to the API in the first place, so the model is emitting parameters blind. Untyped parameters from a model that hasn’t seen the schema almost always fail Zod’s parse — strings where numbers were expected, missing required fields, wrong array shapes.</p>
+<p>Claude Code catches the Zod error, formats it into a tool-result block, and then asks one extra question: was this an undiscovered deferred tool? The check has four parts:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1. Is tool search optimistically enabled at all?</span></span>
+<span class="line"><span>2. Is the ToolSearch tool actually in the current tool list?</span></span>
+<span class="line"><span>3. Is this tool a deferred tool?</span></span>
+<span class="line"><span>4. Is this tool's name absent from the discovered set?</span></span></code></pre>
+<p>If all four are true, the formatted error gets a hint appended to it before being returned to the model:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>"This tool's schema was not sent to the API —</span></span>
+<span class="line"><span> it was not in the discovered-tool set derived</span></span>
+<span class="line"><span> from message history. Without the schema in your</span></span>
+<span class="line"><span> prompt, typed parameters (arrays, numbers, booleans)</span></span>
+<span class="line"><span> get emitted as strings and the client-side parser</span></span>
+<span class="line"><span> rejects them. Load the tool first: call ToolSearch</span></span>
+<span class="line"><span> with query 'select:&#x3C;tool_name>', then retry this call."</span></span></code></pre>
+<p>The hint is not an API error interception. It is an augmentation of a <em>client-side</em> validation failure, layered on top of the Zod report so the model sees both the parser’s complaint and the meta-explanation for why the parser is unhappy. The model reads the combined message, calls ToolSearch with a direct selection, gets the schema, and retries on the next turn. One extra turn instead of a conversation-ending failure, and zero risk of leaking anything to the API — the failed call never went out.</p>
+<h3 id="what-it-costs">What it costs</h3>
+<p>The savings: a session with 200 MCP tools and a 5-tool workflow drops from ~90,000 input tokens of tool definitions per turn to ~15,000 (the always-on tools plus ToolSearch plus the 5 discovered). Across 20 turns, that is 1.5 million input tokens saved.</p>
+<p>The cost: one extra API turn per discovery (call ToolSearch, get the reference, then call the actual tool on the next turn). For a workflow that calls 5 distinct tool groups, that is 5 extra turns over a 20-turn session — 25% more API calls, but each call is dramatically cheaper. The math works out heavily in favor of deferral.</p>
+<p>The risk: the model can’t find a tool it needs because the search didn’t surface it. The keyword search and the fail-closed hint both exist to mitigate this. In practice the failure mode is “model takes one extra turn to search differently,” not “model gives up.”</p>
+<p>The whole system is significantly more code than caveman. It is a parser for the deferral mode environment variable, a model-name allowlist with remote-config override, a proxy gateway optimistic disable, a token counter with caching and a heuristic fallback, a content-block emitter, a discovery loop scanning history, a snapshot mechanism for compaction survival, a Zod error augmenter for the fail-closed case, and (in the fullscreen UI environment, gated behind an <code>is_fullscreen_env_enabled</code> check) a collapse rule that absorbs ToolSearch calls silently into the surrounding tool group so the user never sees the discovery hop. It is lossless, by which I mean the model gets exactly the same schema it would have gotten without deferral — just delivered later.</p>
+<hr>
+<h2 id="lossy-versus-lossless">Lossy versus lossless</h2>
+<p>Here is the cleanest way to see the difference: caveman is lossy, tool search is lossless.</p>
+<p>Caveman makes the model write less. The tokens that disappear are real characters of real meaning — articles, hedges, transitional phrases, polite framing. A model running caveman cannot say “Sure, I’d be happy to help with that” because the rules forbid it. The savings come from content the model would otherwise produce. The savings are <em>content reduction</em>.</p>
+<p>Tool search makes the API send fewer tool definitions. The tool definitions that disappear from a given API call are not lost forever — they are reachable via discovery. A model running tool search and a model running standard mode receive the <em>same</em> schema for any tool they actually call. The only difference is when the schema arrives. The savings come from definitions the model never asked about. The savings are <em>delivery deferral</em>.</p>
+<p>The implication is different failure modes.</p>
+<p>Caveman fails by <em>misjudging compression</em>. The skill says “drop articles, except when the user is confused.” But who decides when the user is confused? The model. And the model has to decide on every response. The auto-clarity carve-out exists because compression can mask important nuance. A security warning written in caveman might miss the severity. A multi-step procedure written in fragments might be misread out of order. The skill puts the rule in front of the model and trusts the model’s judgement to apply it. When the judgement is right, the user reads a tighter, clearer answer. When it is wrong, the user reads a fragment that omits a precondition and they have to follow up. The wrong call is a content quality issue, not a system failure — there is no exception thrown, no error logged, just an answer that was too compressed.</p>
+<p>Tool search fails by <em>missing a search hit</em>. The model needs <code>mcp__github__create_issue</code> and searches for “github issue create.” If the search ranking is good, the right tool is in the top 5 results. If not, the model tries another query, or fails to find the tool and the user has to disambiguate. The fail-closed hint catches the worst case — calling a not-yet-loaded tool — and converts it to a one-turn detour. The wrong call is a <em>latency</em> issue, not a correctness issue. The tool the model eventually loads is the same tool it would have gotten without deferral.</p>
+<p>This is the asymmetry that matters: <strong>caveman trades correctness margin for tokens; tool search trades latency for tokens.</strong></p>
+<p>If you can afford to lose a little correctness margin in exchange for big output savings, caveman pays. If you can afford to wait one extra API round-trip in exchange for big input savings, tool search pays. The two things you can lose are different, so the projects don’t compete — they complement each other.</p>
+<p>There is a second asymmetry worth naming. Caveman’s output reduction is <em>sticky</em>: every compressed response stays in the conversation history forever, so the savings compound. A 1,000-token explanation reduced to 250 tokens saves 750 tokens once on output and another 750 tokens of input on every future turn that includes it. Tool search’s input reduction is <em>per-turn</em>: a deferred tool that costs 500 tokens saves 500 tokens on every API call where it is not discovered. Both compound in their own way, but caveman’s compounding is one-shot-then-permanent while tool search’s compounding is ongoing-while-relevant.</p>
+<p>Caveman’s failure case shows up immediately (the user sees a confusing fragment). Tool search’s failure case shows up immediately (the model takes an extra turn). Both projects fail loudly, which is the right kind of failure — silent wrong answers are the dangerous ones.</p>
+<p>A useful mental model: caveman is a lossy codec, tool search is a lazy loader. Lossy codecs trade fidelity for size. Lazy loaders trade latency for size. They are both compression; they are compressing different things, and they are paying with different currencies.</p>
+<hr>
+<h2 id="when-each-pays-off">When each pays off</h2>
+<p>Both projects have a sweet spot. Knowing which side of the budget your session leans on is the first question. The answer depends on the workload.</p>
+<h3 id="caveman-wins-when">Caveman wins when</h3>
+<ul>
+<li><strong>Output is a meaningful share of the token bill.</strong> Long explanations, design discussions, debugging walkthroughs, architectural Q&#x26;A. Anywhere the model produces paragraphs.</li>
+<li><strong>A human reads the output.</strong> Caveman’s compression is optimized for human readers — fragments, abbreviations, arrow notation. Tools that parse model output (linters, JSON consumers, automation hooks) might choke on caveman style. The skill exempts code blocks, commits, and PR titles for exactly this reason.</li>
+<li><strong>The conversation is long.</strong> Caveman’s savings compound through history. A 50-turn session with 65% output compression doesn’t just save 65% on each response; it saves 65% on the input cost of every subsequent turn that includes those responses.</li>
+<li><strong>You are paying per output token and want the bill smaller.</strong> Output tokens are typically the most expensive line on the invoice. Cutting them in half halves the most expensive line.</li>
+</ul>
+<p>Caveman loses when the model is mostly producing code or structured output, because those are exempt. A session that is 90% file edits and 10% explanations wins very little from caveman.</p>
+<h3 id="tool-search-wins-when">Tool search wins when</h3>
+<ul>
+<li><strong>You have a lot of MCP tools.</strong> Three servers with 50 tools each. A custom server with 200 endpoints. Anything where the schema cost is measured in tens of thousands of tokens.</li>
+<li><strong>You only use a small fraction of them per session.</strong> A workflow that touches 5 tools out of 200 is the ideal case. A workflow that touches 150 of 200 wastes the discovery overhead.</li>
+<li><strong>Sessions are long.</strong> Discovered tools stay discovered for the whole session (and across compactions, via the snapshot). The discovery cost is paid once.</li>
+<li><strong>You are paying per input token and tool definitions are a meaningful share of input.</strong> Per-turn API cost has tool definitions as a big cell; deferring them shrinks every turn.</li>
+</ul>
+<p>Tool search loses when the tool surface is small or the workflow uses most tools. A session with one MCP server and a 10-tool workflow that touches all 10 has nothing to gain — the deferred tools would all be discovered immediately.</p>
+<h3 id="when-to-use-both">When to use both</h3>
+<p>Most non-trivial Claude Code sessions will benefit from at least one of them and some will benefit from both. The decision is empirical. Run a session with measurement on (the API returns token counts in usage) and look at the breakdown:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>input_tokens</span></span>
+<span class="line"><span>  |- system + tool defs    &#x3C;- target with tool search</span></span>
+<span class="line"><span>  |- memory (CLAUDE.md)    &#x3C;- target with caveman-compress</span></span>
+<span class="line"><span>  |- conversation history  &#x3C;- compounded by caveman</span></span>
+<span class="line"><span>  +- tool outputs          &#x3C;- target with read planning</span></span>
+<span class="line"><span>output_tokens</span></span>
+<span class="line"><span>  +- model responses       &#x3C;- target with caveman</span></span></code></pre>
+<p>If the system + tool defs cell is the biggest, install tool search (it is already on by default in modern Claude Code; just check it is not disabled). If model responses are the biggest, install caveman. If both are big, install both. If neither is big, you don’t have a problem.</p>
+<p>The wrong move is to install compression aggressively without knowing where the bleed is. Compression has costs (correctness margin, latency, complexity). Pay them where they earn back.</p>
+<hr>
+<h2 id="stacking-them">Stacking them</h2>
+<p>The two projects compose because they live at different layers and target different parts of the budget.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>            +--------------------------+</span></span>
+<span class="line"><span>USER  --->  | /caveman:compress        |   compresses CLAUDE.md</span></span>
+<span class="line"><span>            |  CLAUDE.md               |   (input, system layer)</span></span>
+<span class="line"><span>            +----------+---------------+</span></span>
+<span class="line"><span>                       |</span></span>
+<span class="line"><span>                       v</span></span>
+<span class="line"><span>            +--------------------------+</span></span>
+<span class="line"><span>            | Claude Code session      |</span></span>
+<span class="line"><span>            |                          |</span></span>
+<span class="line"><span>SYSTEM ---> |  tool search             |   defers tool schemas</span></span>
+<span class="line"><span>            |  (deferral pipeline)     |   (input, API layer)</span></span>
+<span class="line"><span>            |                          |</span></span>
+<span class="line"><span>MODEL  ---> |  caveman skill           |   compresses responses</span></span>
+<span class="line"><span>            |  (prompt + hooks)        |   (output, prompt layer)</span></span>
+<span class="line"><span>            +----------+---------------+</span></span>
+<span class="line"><span>                       |</span></span>
+<span class="line"><span>                       v</span></span>
+<span class="line"><span>                  API request</span></span></code></pre>
+<p>Three different compression points in the same pipeline:</p>
+<ol>
+<li>
+<p><strong><code>caveman-compress</code> rewrites CLAUDE.md.</strong> This is a one-time, user-triggered batch operation. It runs before Claude Code starts and shrinks the project memory file the agent will load on every session. The savings are paid once and collected on every future startup. Layer: filesystem. Currency: prose tokens dropped permanently.</p>
+</li>
+<li>
+<p><strong>Tool search defers MCP schemas.</strong> This runs inside Claude Code on every API request. It decides which tool definitions to send and which to mark as deferred. Layer: API request builder. Currency: schema tokens delayed (sent later, when the model calls a discovered tool, or never if the model never asks).</p>
+</li>
+<li>
+<p><strong>The caveman skill compresses model responses.</strong> This is a prompt the model reads at session start and obeys on every turn. Layer: model output. Currency: response tokens dropped permanently.</p>
+</li>
+</ol>
+<p>None of the three steps interfere with each other. The compressed <code>CLAUDE.md</code> is still valid Markdown — Claude reads it the same way it reads any memory file. Tool search operates on the API request after the system prompt and memory are assembled, so a compressed memory file just means fewer tokens to ship alongside fewer tool definitions. The caveman skill operates on the model’s outgoing tokens, which are downstream of everything the API sent in. The three layers stack cleanly.</p>
+<p>A session with all three running might look like:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Without compression:    200K tokens used over 30 turns</span></span>
+<span class="line"><span>With caveman-compress:  198K tokens used (memory shrunk)</span></span>
+<span class="line"><span>   + tool search:       170K tokens used (tool defs deferred)</span></span>
+<span class="line"><span>   + caveman skill:     130K tokens used (output halved, history compounds)</span></span></code></pre>
+<p>The numbers depend wildly on the workload, but the structure is real: the three savings accumulate because they target three non-overlapping cells of the budget.</p>
+<p>This is the design payoff. The token budget is one number, but it has internal structure. Different compression strategies attack different cells. A project that aims at the right cell can win an order of magnitude more than a project that aims at a cell already being squeezed by something else. The two ends of the pipe — input and output — are not competing for the same byte. They are collaborating on the same budget.</p>
+<hr>
+<h2 id="closing">Closing</h2>
+<p>Claude Code, like every LLM agent, runs against a context window. The window is finite. Every category that shares it — tool schemas, memory, conversation history, model output — pays from the same pool. This sounds like a single-knob optimization problem until you look at where the tokens actually go, and then it becomes a multi-cell budget where each cell has its own dynamics, its own controllers, and its own compression strategy.</p>
+<p>Caveman attacks one cell from one direction: compress the model’s outgoing tokens by giving the model a stricter style guide. The mechanism is a prompt. The cost is correctness margin at the edges, mitigated by an auto-clarity carve-out. The savings compound through conversation history. The implementation is roughly a hundred lines of JavaScript and sixty lines of skill prompt — you could read the whole thing in ten minutes.</p>
+<p>Tool search attacks a different cell from a different direction: defer MCP tool schemas until they are searched and discovered. The mechanism is an API content block (<code>tool_reference</code>) plus a discovery loop that scans history. The cost is one extra API turn per discovered tool group, mitigated by a fail-closed hint that catches the worst case. The savings are per-turn and amortize over long sessions. The implementation is significantly more code, with snapshot survival, threshold logic, mode flags, and UI hiding.</p>
+<p>The two projects are not competing for the same byte. Caveman compresses output. Tool search defers input. They live at different layers — one is a prompt the model reads, the other is a request builder the model never sees. They can run at the same time and the savings combine.</p>
+<p>The shared lesson is the one that is easy to miss: before you compress anything, look at the budget. The right compression strategy depends on which cell is actually leaking tokens. Measure first. Compress second. Caveman would say: budget broken? look. fix biggest leak. then next.</p>
+<hr>
+<p><strong>Sources</strong></p>
+<ul>
+<li>Caveman: <a href="https://github.com/JuliusBrussee/caveman">github.com/JuliusBrussee/caveman</a></li>
+<li>“Brevity Constraints Reverse Performance Hierarchies in Language Models” (March 2026): <a href="https://arxiv.org/abs/2604.00025">arxiv.org/abs/2604.00025</a></li>
+<li>Tool search deep dive: <a href="./tool-search-deep-dive.md">tool-search-deep-dive.md</a></li>
+</ul>  <div class="subscribe-cta" data-astro-cid-bvzihdzo> <p data-astro-cid-bvzihdzo>Get new posts delivered to your inbox</p> <a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener" data-astro-cid-bvzihdzo>Subscribe on Substack →</a> </div> <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/atomic-skills-decomposition-deep-dive/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>Five Atomic Skills, Two Approaches: Claude Code and a Paper</span> </a> <span data-astro-cid-bvzihdzo></span> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+&copy; 2026 Laurent DeSegur
+</div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

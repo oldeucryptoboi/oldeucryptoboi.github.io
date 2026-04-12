@@ -1,7 +1,7 @@
 ---
 title: "Cross-Session Lessons in Carnival9: How an Agent Remembers What Worked"
 description: "How Carnival9's ActiveMemory implements continual learning for agents in 300 lines of TypeScript: redaction, atomic writes, retrieval-based eviction, fail-closed defaults."
-pubDate: 2026-04-11
+pubDate: 2026-04-12
 tags: ["ai", "agents", "memory", "architecture"]
 ---
 
@@ -21,7 +21,7 @@ The design principle that governs the real solution is harder to state but easie
 
 > The execution trace is the source of truth. Memory is derived state — small, distilled, redacted, prunable, attacker-observable but not attacker-controllable. It enters the model only through the same hardened channel that all other untrusted data enters, with the same delimiters, the same sanitization, and the same length caps.
 
-This is the principle Carnival9's `ActiveMemory` implements. It is a single class on disk, three hundred lines of TypeScript, and it is a more complete continual-learning system than most papers describe. The rest of this article walks through how it works in execution order and what attacks shaped each design decision.
+This is the principle Carnival9's [`ActiveMemory`](https://github.com/oldeucryptoboi/KarnEvil9) implements. It is a single class on disk, three hundred lines of TypeScript, and it is a more complete continual-learning system than most papers describe. The rest of this article walks through how it works in execution order and what attacks shaped each design decision.
 
 ## Phase one: when does a lesson get born
 

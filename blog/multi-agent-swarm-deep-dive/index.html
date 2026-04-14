@@ -1,0 +1,369 @@
+<!DOCTYPE html><html lang="en" data-astro-cid-bvzihdzo> <head><!-- Google Analytics --><script async src="https://www.googletagmanager.com/gtag/js?id=G-87345ZT63C"></script> <script type="module">window.dataLayer=window.dataLayer||[];function a(){dataLayer.push(arguments)}a("js",new Date);a("config","G-87345ZT63C");</script> <!-- Global Metadata --><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="icon" href="/favicon.ico"><link rel="sitemap" href="/sitemap-index.xml"><link rel="alternate" type="application/rss+xml" title="Laurent DeSegur" href="https://oldeucryptoboi.com/rss.xml"><meta name="generator" content="Astro v5.18.0"><meta name="google-site-verification" content="52SuCTLEd4SGPIPPtQYzdw7gQmWY1-O4AIzqO-d37GM"><!-- Font preloads --><link rel="preload" href="/fonts/atkinson-regular.woff" as="font" type="font/woff" crossorigin><link rel="preload" href="/fonts/atkinson-bold.woff" as="font" type="font/woff" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Oswald:wght@700&display=swap" rel="stylesheet"><!-- Canonical URL --><link rel="canonical" href="https://oldeucryptoboi.com/blog/multi-agent-swarm-deep-dive/"><!-- Primary Meta Tags --><title>How the Multi-Agent Swarm Actually Works</title><meta name="title" content="How the Multi-Agent Swarm Actually Works"><meta name="description" content="The Problem"><!-- Open Graph / Facebook --><meta property="og:type" content="article"><meta property="og:url" content="https://oldeucryptoboi.com/blog/multi-agent-swarm-deep-dive/"><meta property="og:title" content="How the Multi-Agent Swarm Actually Works"><meta property="og:description" content="The Problem"><meta property="og:site_name" content="Laurent DeSegur"><meta property="article:published_time" content="2026-04-14T00:00:00.000Z"><meta property="article:author" content="https://oldeucryptoboi.com/about"><!-- Twitter --><meta name="twitter:card" content="summary"><meta name="twitter:url" content="https://oldeucryptoboi.com/blog/multi-agent-swarm-deep-dive/"><meta name="twitter:title" content="How the Multi-Agent Swarm Actually Works"><meta name="twitter:description" content="The Problem"><meta name="twitter:site" content="@oldeucryptoboi"><meta name="twitter:creator" content="@oldeucryptoboi"><!-- JSON-LD Structured Data --><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com","description":"AI agents, deterministic runtimes, and the code that runs them. Building KarnEvil9, Tarkus, and X/LAID.","sameAs":["https://x.com/oldeucryptoboi","https://github.com/oldeucryptoboi","https://oldeucryptoboi.substack.com"],"knowsAbout":["AI Agents","AI Governance","AI Safety","Deterministic Runtimes","Multi-Agent Systems","TypeScript","Open Source"]}</script><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"How the Multi-Agent Swarm Actually Works","description":"The Problem","url":"https://oldeucryptoboi.com/blog/multi-agent-swarm-deep-dive/","datePublished":"2026-04-14T00:00:00.000Z","author":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"publisher":{"@type":"Person","name":"Laurent DeSegur","url":"https://oldeucryptoboi.com"},"keywords":"","mainEntityOfPage":{"@type":"WebPage","@id":"https://oldeucryptoboi.com/blog/multi-agent-swarm-deep-dive/"}}</script><link rel="stylesheet" href="/_astro/_slug_.WqGW7rbB.css">
+<style>main[data-astro-cid-bvzihdzo]{width:calc(100% - 2em);max-width:100%;margin:0}.prose[data-astro-cid-bvzihdzo]{width:740px;max-width:calc(100% - 2em);margin:auto;padding:1em;color:var(--text)}.article-header[data-astro-cid-bvzihdzo]{margin-bottom:2em;padding:2em 0;border-bottom:1px solid var(--border)}.article-header[data-astro-cid-bvzihdzo] .date[data-astro-cid-bvzihdzo]{color:var(--text-dim);font-size:.8em;letter-spacing:.04em;margin-bottom:.75em}.article-header[data-astro-cid-bvzihdzo] .last-updated-on[data-astro-cid-bvzihdzo]{font-style:italic}.article-header[data-astro-cid-bvzihdzo] h1[data-astro-cid-bvzihdzo]{margin:0;font-size:2em;color:#e0e0e0;text-transform:none;letter-spacing:.02em;line-height:1.25}.tags[data-astro-cid-bvzihdzo]{display:flex;gap:.5em;flex-wrap:wrap;margin-top:1em}.tags[data-astro-cid-bvzihdzo] span[data-astro-cid-bvzihdzo]{font-size:.65em;padding:.15em .5em;border:1px solid var(--border-light);color:var(--text-dim);letter-spacing:.04em;text-transform:uppercase;font-family:Atkinson,sans-serif}.post-nav[data-astro-cid-bvzihdzo]{display:flex;justify-content:space-between;margin-top:3em;padding-top:2em;border-top:1px solid var(--border);gap:2em}.nav-link[data-astro-cid-bvzihdzo]{display:flex;flex-direction:column;gap:.3em;text-decoration:none;max-width:45%;transition:background .15s ease}.nav-link[data-astro-cid-bvzihdzo]:hover .nav-title[data-astro-cid-bvzihdzo]{color:var(--hal-red)}.nav-next[data-astro-cid-bvzihdzo]{text-align:right;margin-left:auto}.nav-label[data-astro-cid-bvzihdzo]{font-size:.7em;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif}.nav-title[data-astro-cid-bvzihdzo]{color:var(--text);font-size:.9em;line-height:1.4;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo]{margin-top:3em;padding:1.5em;border:1px solid var(--border);text-align:center}.subscribe-cta[data-astro-cid-bvzihdzo] p[data-astro-cid-bvzihdzo]{margin:0 0 .75em;color:var(--text-dim);font-size:.85em;letter-spacing:.04em}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]{color:var(--hal-red);font-size:.8em;letter-spacing:.08em;text-transform:uppercase;font-family:Atkinson,sans-serif;text-decoration:none;transition:color .15s ease}.subscribe-cta[data-astro-cid-bvzihdzo] a[data-astro-cid-bvzihdzo]:hover{color:#fff}@media(max-width:720px){.post-nav[data-astro-cid-bvzihdzo]{flex-direction:column;gap:1.5em}.nav-link[data-astro-cid-bvzihdzo]{max-width:100%}.nav-next[data-astro-cid-bvzihdzo]{text-align:left}}
+</style></head> <body data-astro-cid-bvzihdzo> <header data-astro-cid-3ef6ksr2> <nav data-astro-cid-3ef6ksr2> <a class="site-title" href="/" data-astro-cid-3ef6ksr2> <span class="hal-eye" data-astro-cid-3ef6ksr2></span> <span data-astro-cid-3ef6ksr2><span class="cap" data-astro-cid-3ef6ksr2>L</span>aurent <span class="cap" data-astro-cid-3ef6ksr2>D</span>e<span class="cap" data-astro-cid-3ef6ksr2>S</span>egur</span> </a> <div class="internal-links" data-astro-cid-3ef6ksr2> <a href="/" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Home </a>  <a href="/blog" class="active" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Blog </a>  <a href="/projects" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Projects </a>  <a href="/course" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Course </a>  <a href="/consulting" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> Consulting </a>  <a href="/about" data-astro-cid-3ef6ksr2="true" data-astro-cid-eimmu3lg> About </a>  </div> <div class="social-links" data-astro-cid-3ef6ksr2> <a href="https://x.com/oldeucryptoboi" target="_blank" aria-label="X" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://oldeucryptoboi.substack.com" target="_blank" aria-label="Substack" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 24 24" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z" data-astro-cid-3ef6ksr2></path></svg> </a> <a href="https://github.com/oldeucryptoboi" target="_blank" aria-label="GitHub" data-astro-cid-3ef6ksr2> <svg viewBox="0 0 16 16" width="18" height="18" data-astro-cid-3ef6ksr2><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z" data-astro-cid-3ef6ksr2></path></svg> </a> </div> </nav> </header>  <main data-astro-cid-bvzihdzo> <article data-astro-cid-bvzihdzo> <div class="prose" data-astro-cid-bvzihdzo> <div class="article-header" data-astro-cid-bvzihdzo> <div class="date" data-astro-cid-bvzihdzo> <time datetime="2026-04-14T00:00:00.000Z"> Apr 14, 2026 </time>  </div> <h1 data-astro-cid-bvzihdzo>How the Multi-Agent Swarm Actually Works</h1>  </div>  <p>Claude Code can run multiple agents at the same time. A leader agent orchestrates workers that run in parallel — in separate terminal panes, in background processes, or in the same Node.js process. They coordinate through files on disk. Here is every mechanism, traced end-to-end through the source.</p>
+<hr>
+<h2 id="the-problem">The Problem</h2>
+<p>The simplest version of multi-agent coding is to run multiple CLI instances on the same repository and let them share a filesystem. Each agent works on its own task, reads and writes files, and eventually you merge the results. This approach fails almost immediately.</p>
+<p>State collisions come first. Two agents editing the same file produce corrupted output. Even agents working on different files can collide — one agent installs a dependency while another is mid-build, and the build fails with a partial lockfile. There is no coordination layer to prevent this, so agents step on each other constantly.</p>
+<p>Permission storms come next. Every agent independently asks the user for permission to run commands, read files, or access the network. With five agents running, the user faces a stream of interleaved permission prompts with no way to tell which agent is asking for what. The mental overhead makes the system unusable.</p>
+<p>Then there is lifecycle management. If the user cancels the leader task, the worker processes keep running. They have no parent to report to, no signal to stop, and no cleanup logic. They become zombie processes that continue modifying files after the user thinks everything has stopped.</p>
+<p>The real challenge has three parts. First, <strong>isolation</strong>: workers must not stomp each other’s mutable state, UI callbacks, or permission tracking. Second, <strong>communication</strong>: the leader must be able to assign work, receive results, and relay permission decisions. Third, <strong>lifecycle management</strong>: workers must die when the leader dies, and cleanup must always run.</p>
+<p>The design principle that solves all three is <strong>uniform communication, pluggable execution</strong>. All three execution modes — in-process, tmux panes, and iTerm2 panes — use the same file-based mailbox for coordination. The execution backend is swappable. The mailbox does not care which backend spawned the worker. A leader can have some workers running as in-process coroutines and others running in terminal panes, and the communication protocol is identical. This separation means the coordination logic is written once and tested once, while new execution backends can be added without touching the mailbox system.</p>
+<p>The file-based mailbox is the key architectural decision. It could have been a TCP socket, a Unix domain socket, or shared memory. Files were chosen because they work across process boundaries (pane-based workers are separate processes), survive brief disconnections, provide a natural audit trail, and require no daemon process. The tradeoff is latency — file I/O is slower than IPC — but for a system where messages are human-readable task assignments and status updates, 5-100ms of lock contention is invisible.</p>
+<hr>
+<h2 id="the-three-execution-modes">The Three Execution Modes</h2>
+<h3 id="in-process-asynclocalstorage-isolation">In-Process: AsyncLocalStorage Isolation</h3>
+<p>The lightweight path. The leader and all workers share one Node.js process. No child processes, no IPC, no terminal panes. Workers are concurrent async tasks running in the same event loop.</p>
+<p>The isolation mechanism is <code>AsyncLocalStorage</code>, a Node.js primitive that carries context through the async call stack without threading it through every function parameter. Each worker runs inside <code>AsyncLocalStorage.run()</code> with a <code>TeammateContext</code> that carries identity: name, team, color, and parent session ID. Any function anywhere in the call stack can call <code>getTeammateContext()</code> to discover “who am I?” without the identity being passed explicitly. This is critical because the codebase has hundreds of functions between the top-level agent loop and the low-level operations that need to know which agent is running.</p>
+<h4 id="two-level-abort-hierarchy">Two-Level Abort Hierarchy</h4>
+<p>Each worker gets two abort controllers, not one. The first is a <strong>lifecycle controller</strong> — aborting it kills the worker entirely. This controller is deliberately independent from the leader’s controller. Workers survive when the user interrupts the leader’s current query; a leader interrupt should not kill workers mid-task.</p>
+<p>The second is a <strong>per-turn controller</strong> created fresh at the start of each iteration of the worker’s main loop. This controller is stored in the worker’s task state so the UI can reach it. When the user presses Escape, it aborts only the per-turn controller, stopping the current API call and tool execution without killing the worker. The worker exits its current turn, sends an idle notification, and waits for its next instruction. The lifecycle controller remains untouched — the worker is still alive.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>main while loop:</span></span>
+<span class="line"><span>    create currentWorkAbortController        ← new each iteration</span></span>
+<span class="line"><span>    store in task state for UI access</span></span>
+<span class="line"><span>    run agent turn (uses currentWorkAbortController)</span></span>
+<span class="line"><span>    if currentWorkAbortController.aborted:</span></span>
+<span class="line"><span>        break out of agent turn, stay in while loop</span></span>
+<span class="line"><span>    clear controller from task state</span></span>
+<span class="line"><span>    send idle notification</span></span>
+<span class="line"><span>    wait for next prompt or shutdown</span></span></code></pre>
+<p>This two-level scheme means Escape stops current work (fast feedback) without losing the worker (no re-spawn cost). Force-killing the lifecycle controller is reserved for shutdown and cleanup.</p>
+<h4 id="toolusecontext-cloning">ToolUseContext Cloning</h4>
+<p>When the leader spawns a worker, it creates a subagent context by selectively cloning some fields and replacing others:</p>
+<ul>
+<li><strong>readFileState</strong>: cloned. Workers cache file reads independently, so one worker’s stale cache does not affect another.</li>
+<li><strong>setAppState</strong>: replaced with a no-op. Workers cannot mutate the leader’s UI state. Without this, a worker could overwrite the leader’s status display, progress indicators, or tool output panels.</li>
+<li><strong>setAppStateForTasks</strong>: shared, pointing at the root store. This is the critical exception to the isolation rule. When a worker spawns a background bash command, that command must be registered in the root application state. If it were registered in a no-op store, the command would become an orphan zombie process — no parent tracking it, no cleanup killing it. Safety over purity.</li>
+<li><strong>contentReplacementState</strong>: cloned (not fresh). A clone makes identical replacement decisions as the parent, which keeps the API request prefix byte-identical and preserves prompt cache hits. A fresh state would diverge and bust the cache.</li>
+<li><strong>localDenialTracking</strong>: fresh. The denial counter — which tracks how many times a user has denied a particular permission — must accumulate per worker, not per process. Otherwise one worker’s denied permissions would affect another worker’s escalation behavior.</li>
+<li><strong>UI callbacks</strong> (setToolJSX, addNotification): set to undefined. Workers have no UI surface.</li>
+<li><strong>shouldAvoidPermissionPrompts</strong>: set to true — workers must never prompt the user directly; they escalate to the leader.</li>
+</ul>
+<p>The leader passes <code>messages: []</code> to the worker. The worker never sees the leader’s conversation history. It receives only its initial prompt — the task description written by the leader. This is both an isolation measure (workers should not reason about the leader’s full context) and a practical one (the leader’s context window is already large; duplicating it per worker would be wasteful).</p>
+<h4 id="team-essential-tool-injection">Team-Essential Tool Injection</h4>
+<p>Even when a worker is configured with an explicit tool list (e.g., only file-reading tools), seven tools are always injected: SendMessage, TeamCreate, TeamDelete, TaskCreate, TaskGet, TaskList, TaskUpdate. Without these, a worker receiving a shutdown request could not acknowledge it (no SendMessage), and a worker assigned tasks from the task list could not update them. The injection uses set-deduplication so tools already in the list are not duplicated.</p>
+<h3 id="pane-based-tmux-and-iterm2">Pane-Based: tmux and iTerm2</h3>
+<p>The visual path. Each worker is a separate Claude Code process running in a visible terminal pane. The user can watch workers in real time, see their output, and even type into their panes. This mode exists because observability matters — for complex multi-agent tasks, watching the workers is more informative than reading their final summaries.</p>
+<p><strong>tmux mode</strong> has two sub-cases depending on whether the leader is already inside a tmux session.</p>
+<p>If the leader is inside tmux, it splits its own window: 30% on the left for the leader, 70% on the right for workers. Workers stack vertically on the right side. This keeps the leader visible while giving workers most of the screen real estate.</p>
+<p>If the leader is outside tmux, it creates a standalone tmux session named <code>claude-swarm</code> on a separate socket. Workers tile inside this session. The separate socket prevents collision with the user’s existing tmux sessions.</p>
+<p>Pane creation is serialized through an async lock — implemented as promise chaining, not a mutex. Without this lock, concurrent <code>tmux split-pane</code> calls race against each other and produce incorrect layouts. tmux’s internal state is not safe for concurrent modification, so each pane creation must complete before the next one starts. A 200ms shell initialization delay between spawns ensures the pane’s shell is ready before the Claude Code command is sent to it.</p>
+<p><strong>The ORIGINAL_USER_TMUX problem.</strong> Detection of whether the user started Claude from inside tmux must capture the <code>TMUX</code> environment variable at module load time. Later during startup, the shell module overrides <code>TMUX</code> when Claude’s own internal tmux socket is initialized. Without the early capture, the detection function would always think it is inside tmux — it would see Claude’s own socket, not the user’s original session. A separate capture of <code>TMUX_PANE</code> preserves the leader’s original pane ID for the same reason.</p>
+<p><strong>iTerm2 mode</strong> uses the <code>it2</code> CLI, a Python API wrapper for iTerm2’s scripting interface. The first worker splits vertically from the leader’s session. Subsequent workers split horizontally from the last worker, producing a horizontal stack. Dead session recovery prunes disappeared UUIDs and retries with the next-to-last worker, or falls back to the leader’s UUID. This retry is bounded at O(N+1) attempts.</p>
+<p><strong>Detection priority</strong> determines which mode is used when the user has not specified one: tmux (if already inside) > tmux (if available on PATH) > iTerm2 (if available) > in-process (always available). The detection runs once at startup and caches the result. The preference for tmux-inside over tmux-available reflects a UX judgment: if the user is already in tmux, panes should appear in their existing session rather than creating a disconnected one.</p>
+<p><strong>Sticky fallback.</strong> Once the in-process fallback is activated (e.g., because tmux and iTerm2 are both unavailable), it stays active for the entire session. This prevents oscillation — if the detection environment has not changed, re-running detection would produce the same result, so the system caches the fallback decision permanently.</p>
+<h3 id="fork-subagents">Fork Subagents</h3>
+<p>The fork subagent variant is fundamentally different from normal subagents. A normal subagent starts with an empty message history and only its task prompt. A fork subagent inherits the parent’s <strong>entire message history and system prompt byte-for-byte</strong>. This maximizes prompt cache hits — the API caches based on prefix matching, so if five fork children share the same message prefix (the parent’s full history), only the first child incurs the full input cost.</p>
+<p>The critical mechanism is <strong>renderedSystemPrompt threading</strong>. The parent does not tell the fork to re-build its own system prompt by calling the system prompt generator. Re-calling the generator can produce subtly different bytes because feature flags may have warmed up since the parent’s prompt was built — a single bit of divergence busts the cache prefix entirely. Instead, the parent passes its already-rendered system prompt bytes through a shared parameter object. The fork uses those exact bytes, guaranteeing a byte-identical prefix.</p>
+<p>Each fork child’s message history is constructed to be cache-identical through the shared prefix. The parent’s tool results are replaced with placeholder blocks (preserving byte positions), and each child receives its specific task as the final text block. Everything before that final block is identical across siblings.</p>
+<p>Fork guards prevent infinite recursion through two levels:</p>
+<ol>
+<li><strong>Primary</strong>: the query source field. If it indicates a fork origin, the agent cannot re-fork.</li>
+<li><strong>Secondary</strong>: a scan of the message history for a fork boilerplate tag. This guard survives context compaction — even if the system compresses earlier messages, the tag persists in the remaining history.</li>
+<li><strong>Explicit instruction</strong>: fork children are told “Do NOT spawn sub-agents. Execute directly.”</li>
+</ol>
+<hr>
+<h2 id="the-mailbox-system">The Mailbox System</h2>
+<p>Every agent — regardless of execution mode — has a JSON inbox file on disk. Communication between agents is message passing through these files, serialized by file-level advisory locks.</p>
+<h3 id="path-structure">Path Structure</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>~/.claude/teams/{team_name}/inboxes/{agent_name}.json</span></span></code></pre>
+<p>Each team gets its own directory. Each agent within the team gets a single inbox file. The inbox is a JSON array of messages.</p>
+<h3 id="write-protocol">Write Protocol</h3>
+<p>Writing a message to another agent’s inbox follows a careful protocol to prevent data loss:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function write_to_mailbox(recipient, message):</span></span>
+<span class="line"><span>    ensure inbox directory exists</span></span>
+<span class="line"><span>    create inbox file atomically (exclusive-create, exists-ok)</span></span>
+<span class="line"><span>    acquire advisory lock (retry 10x, backoff 5-100ms exponential)</span></span>
+<span class="line"><span>    re-read messages from file</span></span>
+<span class="line"><span>    append new message with read=false</span></span>
+<span class="line"><span>    write updated array back to file</span></span>
+<span class="line"><span>    release lock</span></span></code></pre>
+<p>The critical step is the <strong>re-read after lock acquisition</strong>. Without it, two concurrent writers would both read the inbox before either acquires the lock. Writer A acquires, appends its message, writes. Writer B acquires, appends its message to the <strong>stale</strong> copy it read before the lock, writes — overwriting Writer A’s message. By re-reading inside the lock, Writer B sees Writer A’s message and appends to the current state.</p>
+<p>The advisory lock uses 10 retries with 5ms minimum and 100ms maximum exponential backoff. This is sized for approximately 10 concurrent agents. The fast path acquires in under 5ms; the worst case retries 10 times before failing. The bound is finite and will not hang indefinitely.</p>
+<h3 id="read-protocol">Read Protocol</h3>
+<p>Reading follows the same locking discipline. The recipient acquires the advisory lock, reads its inbox file, filters for unread messages, processes them, marks them as read, and writes the updated array back. The same lock protects the read-modify-write cycle.</p>
+<h3 id="clearing-and-fail-closed-semantics">Clearing and Fail-Closed Semantics</h3>
+<p>The <code>clearMailbox</code> function opens the file with a flag that requires the file to already exist. If the inbox does not exist (no messages have ever been sent), the open fails silently rather than creating an empty file. This prevents a subtle bug where clearing a nonexistent inbox would create an empty file, which other code might interpret as “inbox exists, agent is active.”</p>
+<p>The <code>readMailbox</code> function returns an empty array on ENOENT — no crash on a missing inbox. The <code>writeToMailbox</code> function treats EEXIST on file creation as silently ok. These are fail-closed boundaries: no operation creates phantom state, and missing state is treated as empty, not as error.</p>
+<h3 id="why-files">Why Files?</h3>
+<p>The file-based approach has tradeoffs. It is slower than shared memory or Unix sockets. It requires lock management. It creates filesystem artifacts that need cleanup.</p>
+<p>But it has properties that matter for this system: it works across process boundaries without IPC setup, it is inspectable by users and agents, it survives brief crashes (the inbox persists on disk), and it requires no daemon process. The filesystem is the message broker.</p>
+<hr>
+<h2 id="structured-protocol-messages">Structured Protocol Messages</h2>
+<p>The mailbox carries both free-text messages (task assignments, status updates, questions between agents) and structured protocol messages that drive the coordination machinery. A type-checking function gates them: structured messages are dispatched to specific handlers, never fed to the language model as conversation input. If a <code>shutdown_request</code> JSON blob appeared in the model’s history, it might try to “respond” conversationally or generate text that mimics the protocol format.</p>
+<h3 id="shutdown-protocol">Shutdown Protocol</h3>
+<p>Shutdown uses a three-message handshake:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>leader -> worker:  shutdown_request  { requestId, reason }</span></span>
+<span class="line"><span>worker -> leader:  shutdown_approved { requestId, paneId, backendType }</span></span>
+<span class="line"><span>              OR</span></span>
+<span class="line"><span>worker -> leader:  shutdown_rejected { requestId, reason }</span></span></code></pre>
+<p>A worker in the middle of a critical operation — mid-file-write, mid-git-commit — can reject the shutdown and finish its work. The <code>requestId</code> ties the response to the request, preventing a stale response from a previous attempt from matching a new one.</p>
+<p>Force-kill bypasses the handshake entirely: abort the worker’s lifecycle controller (in-process), kill the pane (tmux), or close the session (iTerm2).</p>
+<h3 id="permission-escalation">Permission Escalation</h3>
+<p>When a worker encounters an operation that requires user permission, it cannot prompt the user directly. The permission must be escalated to the leader. The escalation has two paths and a preliminary classifier step.</p>
+<h4 id="bash-classifier-pre-check">Bash Classifier Pre-Check</h4>
+<p>Before escalating, in-process workers try the bash classifier for auto-approval on bash commands. The worker <strong>awaits</strong> the classifier result — it does not race it against user interaction the way the main agent does. The main agent shows a permission prompt while the classifier runs in the background, accepting whichever resolves first. Workers cannot show prompts, so they wait for the classifier’s verdict. If the classifier approves, the tool executes immediately with no leader involvement. If it does not approve, the worker falls through to escalation.</p>
+<p>This is a latency-for-safety tradeoff specific to workers. The main agent races because it has a UI and can show a prompt while the classifier thinks. Workers have no UI, so racing would mean escalating to the leader while a classifier approval is still in flight — which would show the user a prompt that auto-resolves moments later. Awaiting avoids this confusing UX.</p>
+<h4 id="in-process-fast-path">In-Process Fast Path</h4>
+<p>The worker writes to the leader’s <code>ToolUseConfirmQueue</code> — an in-memory data structure shared within the process. The entry includes the tool name, input, and a <code>workerBadge</code> with the worker’s name and color. The leader’s UI picks up the queued request and renders a colored badge identifying which worker is asking. The user sees something like “[researcher] wants to run: npm install lodash” and can approve or deny. Sub-millisecond latency since it is just a shared memory write.</p>
+<p>The entry also carries a <code>recheckPermission</code> callback. While the permission prompt is showing, conditions may change — the bash classifier might finish, or a team-wide permission broadcast might grant the needed access. The UI periodically calls <code>recheckPermission</code> to check if the prompt can auto-resolve without user input.</p>
+<h4 id="mailbox-fallback-path">Mailbox Fallback Path</h4>
+<p>For pane-based workers (separate processes), the in-memory queue is not available. The escalation follows a longer path:</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>worker: createPermissionRequest(tool, input)</span></span>
+<span class="line"><span>     -> registerPermissionCallback({ requestId, onAllow, onReject })</span></span>
+<span class="line"><span>     -> sendPermissionRequestViaMailbox(leaderInbox, request)</span></span>
+<span class="line"><span>     -> start polling own mailbox at 500ms intervals</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>leader: inbox poller detects permission_request</span></span>
+<span class="line"><span>     -> renders PermissionRequest UI with WorkerBadge</span></span>
+<span class="line"><span>     -> user approves or denies</span></span>
+<span class="line"><span>     -> sendPermissionResponseViaMailbox(workerInbox, response)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>worker: poll finds permission_response</span></span>
+<span class="line"><span>     -> processMailboxPermissionResponse()</span></span>
+<span class="line"><span>     -> fires registered callback (onAllow or onReject)</span></span>
+<span class="line"><span>     -> tool executes or returns denial</span></span></code></pre>
+<p>The registered callback pattern decouples the mailbox polling loop from the specific permission request. Multiple permission requests from different tool calls can be in flight simultaneously, each with its own callback.</p>
+<h4 id="permission-persistence">Permission Persistence</h4>
+<p>Permission updates — the allow-rules the user creates when they say “always allow this” — are persisted to the leader’s permission context with a <code>preserveMode</code> flag. This flag ensures the worker’s restricted mode does not widen the leader’s mode. If a worker is running in a more restricted permission mode and the user approves a specific tool for that worker, the approval is scoped. Without <code>preserveMode</code>, the worker’s mode could leak upward and relax the leader’s security posture.</p>
+<h3 id="other-protocol-messages">Other Protocol Messages</h3>
+<p><strong>Plan approval</strong>: workers in plan mode send the plan file path and content; the leader presents it to the user and responds with approval, optional feedback, and the execution permission mode.</p>
+<p><strong>Sandbox network permissions</strong>: when a sandboxed worker’s code attempts to reach a non-allowlisted host, the sandbox escalates to the leader with the host pattern.</p>
+<p><strong>Task assignment</strong>: carries task IDs from the shared task system, allowing the leader to assign specific tasks to specific workers.</p>
+<p><strong>Mode control</strong>: allows the leader to remotely change a worker’s permission mode — e.g., upgrading from plan mode to full execution after approving the plan.</p>
+<p><strong>Team permission broadcast</strong>: when one worker gets permission to access a directory, that permission is broadcast to all workers on the team, preventing the user from approving the same directory for every worker individually.</p>
+<hr>
+<h2 id="git-worktree-isolation">Git Worktree Isolation</h2>
+<p>File-level isolation prevents collisions for mutable runtime state, but it does not solve the fundamental problem of multiple agents editing the same repository. Two agents modifying different functions in the same file produce a merge conflict. Two agents running tests concurrently interfere with each other’s build artifacts. Git worktrees solve this.</p>
+<h3 id="creation-with-path-traversal-protection">Creation with Path Traversal Protection</h3>
+<p>When an agent is spawned with worktree isolation, the slug is validated before any filesystem operation. Each slash-separated segment must match <code>[a-zA-Z0-9._-]+</code>, and the literal segments <code>.</code> and <code>..</code> are rejected. The total length is capped at 64 characters. Without this validation, a slug like <code>../../../etc</code> would escape the worktrees directory via <code>path.join</code> normalization and create a worktree anywhere on the filesystem.</p>
+<p>Symlink targets are also validated. Before creating a symlink from the worktree to the main repository, the system checks for path traversal in the target — preventing a malicious symlink target from pointing outside the repository.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function create_agent_worktree(slug):</span></span>
+<span class="line"><span>    validate slug (per-segment regex, reject . and .., max 64 chars)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    if WorktreeCreate hook exists:</span></span>
+<span class="line"><span>        delegate to hook (VCS-agnostic)</span></span>
+<span class="line"><span>        return</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    worktree_path = {repo}/.claude/worktrees/{slug}/</span></span>
+<span class="line"><span>    branch = "claude-wt-{timestamp}-{slug}"</span></span>
+<span class="line"><span>    git worktree add {worktree_path} -b {branch}</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>    post-creation setup:</span></span>
+<span class="line"><span>        copy settings.local.json</span></span>
+<span class="line"><span>        configure git hooks (symlink .husky or .git/hooks)</span></span>
+<span class="line"><span>        symlink large directories (node_modules, .next)</span></span>
+<span class="line"><span>        copy .worktreeinclude files</span></span></code></pre>
+<h3 id="the-worktreeinclude-mechanism">The .worktreeinclude Mechanism</h3>
+<p>Some files are gitignored but essential for the project to function — environment files, generated configuration, binary assets. A plain git worktree does not include these because git does not track them.</p>
+<p>The <code>.worktreeinclude</code> file (in the repository root, using gitignore-style pattern syntax) lists patterns for files that should be copied to worktrees. The copy logic requires files to match BOTH conditions: listed in <code>.worktreeinclude</code> AND gitignored. Files that are tracked by git are already in the worktree via the checkout; this mechanism only handles the gitignored gap.</p>
+<p>The implementation uses <code>git ls-files --directory</code> to efficiently list gitignored paths, collapsing fully-ignored directories into single entries rather than enumerating every file inside them. When a pattern targets a path inside a collapsed directory, the system expands that specific directory with a scoped <code>ls-files</code> call.</p>
+<h3 id="symlink-optimization">Symlink Optimization</h3>
+<p>Multiple concurrent worktrees can consume significant disk space. The <code>node_modules</code> directory alone might be hundreds of megabytes. Multiply by five workers and the cost is gigabytes of duplicated dependencies.</p>
+<p>Directories listed in the worktree symlink configuration (e.g., <code>node_modules</code>, <code>.next</code>) are symlinked from the worktree back to the main repository rather than copied. All worktrees share the same physical directory. The tradeoff: a worker installing a new dependency affects all other workers. In practice workers rarely modify dependencies — they edit source code.</p>
+<h3 id="cleanup-fail-closed">Cleanup: Fail-Closed</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>function cleanup_worktree(info):</span></span>
+<span class="line"><span>    if hook-based:</span></span>
+<span class="line"><span>        keep (cannot detect VCS changes generically)</span></span>
+<span class="line"><span>    if has_uncommitted_changes(worktree, headCommit):</span></span>
+<span class="line"><span>        keep worktree</span></span>
+<span class="line"><span>    else:</span></span>
+<span class="line"><span>        git worktree remove --force</span></span>
+<span class="line"><span>        git branch -D {branch}</span></span></code></pre>
+<p>The change detection check is <strong>fail-closed</strong>: if <code>git status</code> fails, if <code>git rev-list</code> fails, or if any other error occurs, the function returns true — “yes, there are changes, keep the worktree.” The cost of keeping an empty worktree is a few megabytes. The cost of deleting a worktree with the user’s changes is catastrophic.</p>
+<h3 id="fork-subagents-with-worktrees">Fork Subagents with Worktrees</h3>
+<p>When a fork subagent runs in a worktree, it inherits the parent’s message history — which contains file paths from the parent’s working directory. A <code>worktreeNotice</code> is injected:</p>
+<blockquote>
+<p>“You’ve inherited context from a parent at {parentCwd}. You’re in an isolated worktree at {worktreeCwd}. Translate paths. Re-read files before editing — the worktree may have diverged.”</p>
+</blockquote>
+<hr>
+<h2 id="the-idle-loop-and-context-management">The Idle Loop and Context Management</h2>
+<p>After a worker completes its current task, it enters an idle loop that polls the mailbox for new instructions. This loop is where message priority, compaction, and task claiming happen.</p>
+<h3 id="message-priority">Message Priority</h3>
+<p>The idle loop reads all unread messages and applies a strict priority order:</p>
+<ol>
+<li><strong>Shutdown requests</strong> — scanned first across all unread messages. A shutdown request buried behind ten peer messages is still processed immediately.</li>
+<li><strong>Team-lead messages</strong> — the leader represents user intent and coordination. Its messages should not be starved behind peer-to-peer chatter.</li>
+<li><strong>FIFO peer messages</strong> — messages from other workers, processed in arrival order.</li>
+<li><strong>Unclaimed tasks</strong> — if no messages are waiting, the worker checks the shared task list for available work and claims the next item.</li>
+</ol>
+<p>This priority order prevents starvation. Without it, a flood of peer-to-peer messages could delay a shutdown request indefinitely, leaving a zombie worker running after the user thinks everything has stopped.</p>
+<h3 id="compaction-within-the-teammate-loop">Compaction Within the Teammate Loop</h3>
+<p>Workers have their own conversation history that grows with each turn. When the token count (estimated, not exact) exceeds the auto-compact threshold, the worker runs <code>compactConversation</code> — the same compaction logic the main agent uses. This creates an isolated copy of the ToolUseContext for compaction, then resets the microcompact state and content replacement state afterward.</p>
+<p>Without this, a long-running worker would eventually exceed its context window and fail. The compaction keeps the worker’s history bounded while preserving the essential information from earlier turns.</p>
+<h3 id="idle-notification">Idle Notification</h3>
+<p>When a worker finishes a turn and enters the idle loop, it sends an <code>idle_notification</code> to the leader’s mailbox:</p>
+<ul>
+<li><strong>idleReason</strong>: ‘available’ (finished successfully), ‘interrupted’ (user pressed Escape), or ‘failed’ (error occurred).</li>
+<li><strong>summary</strong>: a 5-10 word summary extracted from the worker’s most recent SendMessage tool use. Lets the leader understand what each worker accomplished without reading the worker’s full output.</li>
+<li><strong>completedTaskId</strong> and <strong>completedStatus</strong>: for task-aware coordination, allowing the leader to update the shared task list.</li>
+</ul>
+<hr>
+<h2 id="lifecycle-and-cleanup">Lifecycle and Cleanup</h2>
+<p>Every execution mode has a cleanup chain that ensures workers do not outlive their leader, zombie processes do not accumulate, and resources are released.</p>
+<h3 id="in-process-cleanup">In-Process Cleanup</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>on leader exit:</span></span>
+<span class="line"><span>    registerCleanup -> abort all worker lifecycle AbortControllers</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>on worker completion:</span></span>
+<span class="line"><span>    invoke and clear onIdleCallbacks</span></span>
+<span class="line"><span>    send idle_notification to leader mailbox</span></span>
+<span class="line"><span>    update AppState task status</span></span>
+<span class="line"><span>    unregister Perfetto tracing agent</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>on worker kill:</span></span>
+<span class="line"><span>    abort lifecycle controller</span></span>
+<span class="line"><span>    alreadyTerminal guard: check if status != 'running'</span></span>
+<span class="line"><span>        if already killed/completed, skip (prevents double SDK bookend)</span></span>
+<span class="line"><span>    update task status to 'killed'</span></span>
+<span class="line"><span>    remove from teammates list</span></span>
+<span class="line"><span>    evict task output from disk</span></span>
+<span class="line"><span>    emit SDK task_terminated event</span></span></code></pre>
+<p>The <strong>alreadyTerminal guard</strong> prevents a race between natural completion and forced kill. If a worker finishes its task and sets its status to “completed” at the same moment the leader sends a kill, the kill handler would find a non-running status and skip the status update. Without this guard, the SDK would emit two lifecycle bookend events for the same worker, confusing any tooling consuming the event stream.</p>
+<h3 id="pane-based-cleanup">Pane-Based Cleanup</h3>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>on leader exit:</span></span>
+<span class="line"><span>    registerCleanup -> Promise.allSettled(kill all panes)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>on pane close:</span></span>
+<span class="line"><span>    worker process exits naturally (stdin closed)</span></span>
+<span class="line"><span>    leader detects via is_active check on next poll</span></span></code></pre>
+<p>Pane cleanup uses <code>Promise.allSettled</code>, not <code>Promise.all</code>. If one pane kill fails (the user already closed it manually, or the tmux server crashed), the remaining panes are still killed. <code>Promise.all</code> would short-circuit on the first failure and leave surviving panes as zombies.</p>
+<p>For tmux, the leader polls pane liveness by checking whether the pane target still exists. For iTerm2, the leader checks session UUIDs. A disappeared pane means the worker is dead — no ambiguity, no zombie state.</p>
+<h3 id="cleanup-registration">Cleanup Registration</h3>
+<p>Both execution modes register their cleanup functions at the point of worker creation, not at the point of leader exit. This ensures cleanup runs even if the leader crashes unexpectedly. The cleanup registry is invoked on process exit, signal handlers (SIGINT, SIGTERM), and uncaught exception handlers.</p>
+<h3 id="the-zombie-prevention-invariant">The Zombie Prevention Invariant</h3>
+<p>The <code>setAppStateForTasks</code> punch-through is the most important cleanup invariant. When a worker spawns a background bash command, that command runs as a child process that must be registered in the root application state for tracking and cleanup.</p>
+<p>For in-process workers, <code>setAppState</code> is a no-op — workers cannot mutate the leader’s UI. If <code>setAppStateForTasks</code> were also a no-op, the bash command would be spawned but never registered. When the session ends, the command would still be running — its parent PID becomes 1 (init/launchd), making it an untracked zombie.</p>
+<p>The punch-through points directly at the root store. Every background command is registered regardless of which agent spawned it. This is an explicit choice of safety over purity: a cleaner isolation model would fully isolate workers from the root store, but the consequence — zombies — is worse than the consequence of partial isolation.</p>
+<hr>
+<h2 id="the-full-round-trip">The Full Round-Trip</h2>
+<p>Here is every function in the path from the user invoking the Task tool to a worker requesting and receiving permission for a bash command. This is the in-process execution mode.</p>
+<pre class="astro-code github-dark" style="background-color:#24292e;color:#e1e4e8; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>User invokes Task tool with agent configuration</span></span>
+<span class="line"><span>-> AgentTool handler: spawnTeammate(config, toolUseContext)</span></span>
+<span class="line"><span>-> spawnMultiAgent: route to handleSpawnInProcess()</span></span>
+<span class="line"><span>-> spawnInProcess:</span></span>
+<span class="line"><span>    create TeammateContext (AsyncLocalStorage container)</span></span>
+<span class="line"><span>    create independent lifecycle AbortController</span></span>
+<span class="line"><span>    register task state in AppState</span></span>
+<span class="line"><span>    register cleanup handler</span></span>
+<span class="line"><span>-> InProcessBackend.spawn() -> startInProcessTeammate()</span></span>
+<span class="line"><span>-> runInProcessTeammate() [fire-and-forget]:</span></span>
+<span class="line"><span>    create AgentContext (for analytics)</span></span>
+<span class="line"><span>    build system prompt (default + teammate addendum + custom agent prompt)</span></span>
+<span class="line"><span>    enter main while loop:</span></span>
+<span class="line"><span>        create per-turn currentWorkAbortController</span></span>
+<span class="line"><span>        store in task state</span></span>
+<span class="line"><span>        runWithTeammateContext -> runWithAgentContext -> runAgent:</span></span>
+<span class="line"><span>            query() — core API call</span></span>
+<span class="line"><span>                model returns tool_use blocks</span></span>
+<span class="line"><span>                runTools(): partition tool calls into concurrent/serial batches</span></span>
+<span class="line"><span>                runToolUse():</span></span>
+<span class="line"><span>                    call canUseTool (from createInProcessCanUseTool)</span></span>
+<span class="line"><span>                    hasPermissionsToUseTool() returns 'ask'</span></span>
+<span class="line"><span>                    [CLASSIFIER] if bash command and classifier enabled:</span></span>
+<span class="line"><span>                        await classifier verdict (not race)</span></span>
+<span class="line"><span>                        if approved: return allow, skip escalation</span></span>
+<span class="line"><span>                    [FAST PATH] if leader bridge available:</span></span>
+<span class="line"><span>                        push to ToolUseConfirmQueue with workerBadge</span></span>
+<span class="line"><span>                        leader UI renders permission prompt</span></span>
+<span class="line"><span>                        user approves -> onAllow fires</span></span>
+<span class="line"><span>                        persistPermissionUpdates with preserveMode:true</span></span>
+<span class="line"><span>                        return allow</span></span>
+<span class="line"><span>                    [MAILBOX PATH] if bridge unavailable:</span></span>
+<span class="line"><span>                        createPermissionRequest</span></span>
+<span class="line"><span>                        registerPermissionCallback(requestId, onAllow, onReject)</span></span>
+<span class="line"><span>                        sendPermissionRequestViaMailbox</span></span>
+<span class="line"><span>                        poll own mailbox at 500ms</span></span>
+<span class="line"><span>                        leader detects request, shows prompt</span></span>
+<span class="line"><span>                        leader responds via mailbox</span></span>
+<span class="line"><span>                        poll finds response -> processMailboxPermissionResponse</span></span>
+<span class="line"><span>                        callback fires -> return allow or deny</span></span>
+<span class="line"><span>                    tool.handler(input) executes</span></span>
+<span class="line"><span>                response streamed back</span></span>
+<span class="line"><span>        check compaction threshold -> compact if needed</span></span>
+<span class="line"><span>        clear currentWorkAbortController from task state</span></span>
+<span class="line"><span>    send idle_notification to leader mailbox</span></span>
+<span class="line"><span>    waitForNextPromptOrShutdown():</span></span>
+<span class="line"><span>        poll mailbox every 500ms</span></span>
+<span class="line"><span>        priority: shutdown > team-lead > FIFO peers > unclaimed tasks</span></span>
+<span class="line"><span>        return WaitResult</span></span>
+<span class="line"><span>    on shutdown_request: pass to model (approveShutdown/rejectShutdown tool)</span></span>
+<span class="line"><span>    on new_message: wrap in XML, loop back</span></span>
+<span class="line"><span>    on abort: exit</span></span>
+<span class="line"><span>    on exit: alreadyTerminal guard, update status, emit SDK event, evict output</span></span></code></pre>
+<hr>
+<h2 id="design-trade-offs">Design Trade-Offs</h2>
+<p>Six deliberate design trade-offs, each choosing one property over another:</p>
+<p><strong>Safety over purity.</strong> <code>setAppState</code> is a no-op for workers, but <code>setAppStateForTasks</code> punches through to the root store. Full isolation would be cleaner. Zombie prevention is more important.</p>
+<p><strong>Safety over convenience.</strong> Independent lifecycle AbortControllers per worker. Linking them to the leader’s controller would be simpler. Workers surviving leader interrupts is more important.</p>
+<p><strong>Latency over correctness.</strong> tmux pane creation serialized with a 200ms delay between spawns. Parallel creation would be faster. Correct pane layouts are more important.</p>
+<p><strong>Safety over disk.</strong> <code>hasWorktreeChanges</code> is fail-closed — any error keeps the worktree. Cleaning up empties would save disk. Never deleting user work is more important.</p>
+<p><strong>Cache over isolation.</strong> <code>contentReplacementState</code> is cloned, not fresh. Cloning makes the fork’s API request prefix byte-identical to the parent, preserving prompt cache hits. A fresh state would be more isolated but would diverge and bust the cache.</p>
+<p><strong>Safety over mode leakage.</strong> Permission updates from workers use <code>preserveMode: true</code>. A worker running in a restricted mode cannot widen the leader’s permission mode when its tool approvals are persisted. Without this flag, approving a tool for a restricted worker would relax the leader’s security posture.</p>
+<hr>
+<h2 id="fail-closed-boundaries">Fail-Closed Boundaries</h2>
+<p>Every external interaction has a fail-closed boundary:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Operation</th><th>Failure</th><th>Response</th></tr></thead><tbody><tr><td>readMailbox</td><td>ENOENT</td><td>Return empty array</td></tr><tr><td>writeToMailbox</td><td>EEXIST on create</td><td>Silently ok</td></tr><tr><td>clearMailbox</td><td>ENOENT</td><td>Silently fail (no phantom inbox)</td></tr><tr><td>hasWorktreeChanges</td><td>Any git error</td><td>Return true (keep worktree)</td></tr><tr><td>isStructuredProtocolMessage</td><td>Parse failure</td><td>Return false (treat as free text)</td></tr><tr><td>isInsideTmux</td><td>Shell module overrides env</td><td>Uses captured ORIGINAL_USER_TMUX</td></tr><tr><td>isIt2CliAvailable</td><td>Version check passes when API disabled</td><td>Uses <code>session list</code> not <code>--version</code></td></tr><tr><td>Lock acquisition</td><td>10 retries exhausted</td><td>Fail (finite, no hang)</td></tr><tr><td>Pane cleanup</td><td>One pane kill fails</td><td>Promise.allSettled continues others</td></tr><tr><td>Worker status update</td><td>Already terminal</td><td>Skip (no double bookend)</td></tr></tbody></table>
+<p>No failure mode creates phantom state, hangs indefinitely, or silently loses data. The system is designed so that the worst case of any single failure is a slightly degraded experience — an extra worktree on disk, a protocol message treated as text, a slower detection path — never data loss or zombie processes.</p>  <div class="subscribe-cta" data-astro-cid-bvzihdzo> <p data-astro-cid-bvzihdzo>Get new posts delivered to your inbox</p> <a href="https://oldeucryptoboi.substack.com/subscribe" target="_blank" rel="noopener" data-astro-cid-bvzihdzo>Subscribe on Substack →</a> </div> <nav class="post-nav" data-astro-cid-bvzihdzo> <a class="nav-link nav-prev" href="/blog/cross-session-lessons-active-memory/" data-astro-cid-bvzihdzo> <span class="nav-label" data-astro-cid-bvzihdzo>Previous</span> <span class="nav-title" data-astro-cid-bvzihdzo>Cross-Session Lessons in Carnival9: How an Agent Remembers What Worked</span> </a> <span data-astro-cid-bvzihdzo></span> </nav> </div> </article> </main> <footer data-astro-cid-sz7xmlte> <div class="footer-inner" data-astro-cid-sz7xmlte> <div class="status-line" data-astro-cid-sz7xmlte> <span class="hal-dot" data-astro-cid-sz7xmlte></span> <span data-astro-cid-sz7xmlte>OPERATIONAL</span> </div> <div class="copyright" data-astro-cid-sz7xmlte>
+&copy; 2026 Laurent DeSegur
+</div> <div class="social-links" data-astro-cid-sz7xmlte> <a href="https://x.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>X</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://oldeucryptoboi.substack.com" target="_blank" data-astro-cid-sz7xmlte>Substack</a> <span class="sep" data-astro-cid-sz7xmlte>/</span> <a href="https://github.com/oldeucryptoboi" target="_blank" data-astro-cid-sz7xmlte>GitHub</a> </div> </div> </footer>  </body></html>

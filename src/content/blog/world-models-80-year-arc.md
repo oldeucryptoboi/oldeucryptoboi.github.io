@@ -1,8 +1,10 @@
 ---
 title: "The Eighty-Year Argument: Who Owns World Models?"
-description: "The concept is older than everyone claiming credit. The dispute tells you more than the history."
+description: "LeCun and Schmidhuber are fighting over who invented world models. Neither did. Kenneth Craik described the idea in 1943. The full timeline from Craik through JEPA, Dreamer, MuZero, and LeWorldModel."
 pubDate: 2026-04-25
-tags: ["world-models", "JEPA", "LeCun", "Schmidhuber", "AI-research"]
+heroImage: "../../assets/hero-world-models-80-year-arc.png"
+heroAlt: "A vintage bicycle leaning against a stone wall at Cambridge University, evoking Kenneth Craik's era"
+tags: ["World Models", "JEPA", "LeCun", "Schmidhuber", "AI Research", "Reinforcement Learning", "Kenneth Craik"]
 ---
 
 ## The concept is older than everyone claiming credit. The dispute tells you more than the history.

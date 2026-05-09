@@ -42,8 +42,6 @@ In 1948, Edward Tolman published "Cognitive Maps in Rats and Men" in *Psychologi
 
 In 1969, Arthur Bryson and Yu-Chi Ho published *Applied Optimal Control*, the canonical reference for trajectory optimization with forward models. Pontryagin's minimum principle, the Hamilton-Jacobi-Bellman equation, gradient methods on action sequences. This is where model-predictive control got its modern form. LeCun's 2022 paper cites it directly.
 
-![The author's copy of Applied Optimal Control, published in 1969](chapter2.png)
-
 Before Schmidhuber, before Nguyen and Widrow, late-1980s researchers were already applying neural networks to learn world models for control. Paul Werbos on neural-network forward models. Michael Jordan on the distal teacher framework. K. S. Narendra on adaptive control with neural networks. Bernie Widrow's adaptive systems lineage going back to the 1960s. LeCun explicitly named all of these in his 2022 reply to Schmidhuber as predating both of their work. Schmidhuber does not dispute this.
 
 By 1990, the field knew the idea was right. What it did not know was how to make it work with the compute available. Two groups tried, took different paths, and both saw their proposals go mostly dormant for 25 years.
